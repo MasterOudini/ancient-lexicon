@@ -161,6 +161,14 @@ check(
   'every cluster member resolves in the database',
   CLUSTERS.every((c) => c.members.every((m) => findRoot('hebrew', m)))
 )
+check(
+  'no final letters in DOUBLETS root strings',
+  DOUBLETS.every((d) => d.roots.every((r) => !FINALS.test(r)))
+)
+check(
+  'no final letters in CLUSTERS member strings',
+  CLUSTERS.every((c) => c.members.every((m) => !FINALS.test(m)))
+)
 
 // --- No reconstructed forms anywhere in the data files -----------------------
 
@@ -199,6 +207,18 @@ check(
 )
 const glyphResults = searchEntries(LEXICON, cp(0x12217))
 check('pasting the LUGAL glyph finds king', glyphResults[0]?.id === 'king')
+// Aramaic and Musnad glyphs are derived at render time; pasting the glyphs
+// the app displays must still find the entry.
+const aramaicPaste = searchEntries(LEXICON, toImperialAramaic('מלכא'))
+check(
+  'pasting the displayed Imperial Aramaic glyphs finds king',
+  aramaicPaste[0]?.id === 'king'
+)
+const musnadPaste = searchEntries(LEXICON, toMusnad(['m', 'l', 'k']))
+check(
+  'pasting the displayed Musnad glyphs finds king',
+  musnadPaste[0]?.id === 'king'
+)
 const sulmuResults = searchEntries(LEXICON, 'sulmu')
 check(
   "searching 'sulmu' (šulmu without diacritics) finds peace",

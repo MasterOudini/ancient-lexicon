@@ -45,7 +45,7 @@ function RootDetail({ root, onSelectRoot }) {
         ‹ All roots
       </button>
 
-      <div className="root-letters-large" lang="he">
+      <div className="root-letters-large" dir="rtl" lang="he">
         {lettersLabel(root.letters)}
       </div>
       <div className="root-gloss">{root.gloss}</div>
@@ -53,7 +53,7 @@ function RootDetail({ root, onSelectRoot }) {
       <div className="section-label">Attested words</div>
       {root.attested.map((a) => (
         <div className="attested-word" key={a.word}>
-          <span className="w" lang="he">
+          <span className="w" dir="rtl" lang="he">
             {a.word}
           </span>
           <span className="g">{a.gloss}</span>
@@ -103,7 +103,7 @@ function RootDetail({ root, onSelectRoot }) {
                 className="perm-tile found"
                 onClick={() => onSelectRoot(found.id)}
               >
-                <div className="letters" lang="he">
+                <div className="letters" dir="rtl" lang="he">
                   {lettersLabel(p)}
                 </div>
                 <div className="g">{found.gloss}</div>
@@ -112,7 +112,7 @@ function RootDetail({ root, onSelectRoot }) {
           }
           return (
             <div key={p} className="perm-tile ghost" aria-disabled="true">
-              <div className="letters" lang="he">
+              <div className="letters" dir="rtl" lang="he">
                 {lettersLabel(p)}
               </div>
               <div className="g">{GHOST_LABEL}</div>
@@ -130,8 +130,14 @@ function RootDetail({ root, onSelectRoot }) {
                 {d.type === 'metathesis' ? METATHESIS_LABEL : VARIANT_LABEL}
               </div>
               <div>
-                <bdi lang="he">{d.roots[0]}</bdi> ↔{' '}
-                <bdi lang="he">{d.roots[1]}</bdi> — {d.meaning}
+                <bdi dir="rtl" lang="he">
+                  {d.roots[0]}
+                </bdi>{' '}
+                ↔{' '}
+                <bdi dir="rtl" lang="he">
+                  {d.roots[1]}
+                </bdi>{' '}
+                — {d.meaning}
               </div>
               <div>{d.citation}</div>
               {d.note && <div>{d.note}</div>}
@@ -153,6 +159,7 @@ function RootDetail({ root, onSelectRoot }) {
                     <button
                       key={m}
                       className="clusterchip"
+                      dir="rtl"
                       lang="he"
                       onClick={() =>
                         memberRoot && onSelectRoot(memberRoot.id)
@@ -222,7 +229,7 @@ export default function RootsView({ selectedRootId, onSelectRoot }) {
           className="rootlist-item"
           onClick={() => onSelectRoot(root.id)}
         >
-          <span className="rootlist-letters" lang="he">
+          <span className="rootlist-letters" dir="rtl" lang="he">
             {lettersLabel(root.letters)}
           </span>
           <span className="rootlist-gloss">{root.gloss}</span>

@@ -518,7 +518,7 @@ export const DOUBLETS = [
   },
   {
     type: 'metathesis',
-    roots: ['שמל', 'שלם'],
+    roots: ['שמל', 'שלמ'],
     meaning: 'garment',
     citation: 'שִׂמְלָה Genesis 9:23; שַׂלְמָה Exodus 22:8.',
     note:
@@ -539,7 +539,7 @@ export const CLUSTERS = [
   {
     id: 'pr-splitting',
     title: 'The פ־ר roots in the area of splitting and dividing',
-    members: ['פרד', 'פרם', 'פרס', 'פרצ', 'פרק', 'פרר'],
+    members: ['פרד', 'פרמ', 'פרס', 'פרצ', 'פרק', 'פרר'],
     note:
       'Each root and its meaning is attested in the Hebrew Bible; the idea that a shared two-letter core פ־ר explains the family resemblance is an interpretation and is not provable from the texts alone.'
   }

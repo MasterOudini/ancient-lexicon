@@ -7,7 +7,7 @@
 //     and stripped of the transliteration marks ʾ ʿ ' ' ` so a user can type
 //     "shalom" or "salamu" without diacritics.
 
-import { foldFinals } from './scripts.js'
+import { foldFinals, toImperialAramaic, toMusnad } from './scripts.js'
 
 const HEBREW_POINTING = /[֑-ׇ]/g
 const COMBINING_MARKS = /\p{M}/gu
@@ -40,6 +40,11 @@ function searchFields(entry) {
   ]
   for (const form of Object.values(entry.forms || {})) {
     fields.push(form.translit, form.script, form.hebrewLetters)
+    // Aramaic and Musnad glyphs are derived at render time, so index the
+    // derived strings too — pasting a glyph the app displays must find
+    // its entry.
+    if (form.hebrewLetters) fields.push(toImperialAramaic(form.hebrewLetters))
+    if (form.tokens) fields.push(toMusnad(form.tokens))
   }
   return fields.filter(Boolean)
 }
