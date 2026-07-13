@@ -1,0 +1,634 @@
+/* Ancient Lexicon — museum-vitrine, object-label aesthetic.
+   Colors live here; content lives in src/data/; app settings in the CONFIG
+   block at the top of src/App.jsx. */
+
+:root {
+  --ink: #26201a;        /* carbon ink text */
+  --ink-soft: #5c5142;   /* softened ink for secondary text */
+  --ground: #ece5d5;     /* limestone page */
+  --card: #f6f1e4;       /* papyrus cards */
+  --plaque: #efe7d2;     /* clay-slip plaques */
+  --line: #cfc4aa;       /* hairlines */
+  --faience: #1f6f63;    /* blue-green accent: active states, eyebrows, links */
+  --clay: #9a5b2b;       /* root and cluster chips */
+  --danger: #8c3b2e;
+
+  --serif: 'New York', 'Iowan Old Style', Georgia, serif;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+}
+
+/* Script fonts, bundled locally (never from a CDN — the app is offline).
+   Noto fonts are licensed under the SIL Open Font License. */
+@font-face {
+  font-family: 'Noto Sans Cuneiform';
+  src: url('/fonts/NotoSansCuneiform.woff2') format('woff2');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Sans Egyptian Hieroglyphs';
+  src: url('/fonts/NotoSansEgyptianHieroglyphs.woff2') format('woff2');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Sans Imperial Aramaic';
+  src: url('/fonts/NotoSansImperialAramaic.woff2') format('woff2');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Sans Old South Arabian';
+  src: url('/fonts/NotoSansOldSouthArabian.woff2') format('woff2');
+  font-display: swap;
+}
+
+.script-cuneiform {
+  font-family: 'Noto Sans Cuneiform', var(--sans);
+}
+.script-egyptian {
+  font-family: 'Noto Sans Egyptian Hieroglyphs', var(--sans);
+}
+.script-aramaic {
+  font-family: 'Noto Sans Imperial Aramaic', var(--sans);
+}
+.script-osa {
+  font-family: 'Noto Sans Old South Arabian', var(--sans);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-weight: 400;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--faience);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---- Layout ---------------------------------------------------------- */
+
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: calc(12px + env(safe-area-inset-top)) 16px
+    calc(84px + env(safe-area-inset-bottom)) 16px;
+}
+
+.brand {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 0.85rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  text-align: center;
+  margin: 8px 0 16px;
+}
+
+/* ---- Tab bar ---------------------------------------------------------- */
+
+.tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  background: var(--card);
+  border-top: 1px solid var(--line);
+  padding: 6px 8px;
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 10;
+}
+
+.tabbar button {
+  flex: 0 1 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+
+.tabbar button .tab-glyph {
+  font-size: 1.25rem;
+  line-height: 1.3;
+}
+
+.tabbar button.active {
+  color: var(--faience);
+}
+
+/* ---- Search and chips -------------------------------------------------- */
+
+.searchbar {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 1rem;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.searchbar::placeholder {
+  color: var(--ink-soft);
+  opacity: 0.7;
+}
+
+.chiprow {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 12px 2px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.chip {
+  flex: 0 0 auto;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.chip.on {
+  border-color: var(--faience);
+  color: var(--faience);
+  background: #e4ded0;
+}
+
+/* ---- Info boxes -------------------------------------------------------- */
+
+details.infobox {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 14px;
+  margin: 4px 0 14px;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+
+details.infobox summary {
+  cursor: pointer;
+  color: var(--faience);
+  font-size: 0.85rem;
+  letter-spacing: 0.03em;
+}
+
+details.infobox p,
+details.infobox li {
+  margin: 8px 0 0;
+}
+
+details.infobox ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+/* ---- Cards (museum object labels) -------------------------------------- */
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+}
+
+.headword {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
+.headword-translit {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--ink-soft);
+  font-size: 1rem;
+}
+
+.glosses {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  color: var(--ink);
+}
+
+.head-note {
+  width: 100%;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+.rootchip {
+  padding: 2px 10px;
+  border: 1px solid var(--clay);
+  border-radius: 999px;
+  color: var(--clay);
+  font-family: var(--serif);
+  font-size: 0.95rem;
+}
+
+.badge-custom {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--faience);
+  border: 1px solid var(--faience);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.btn-delete {
+  margin-left: auto;
+  color: var(--danger);
+  font-size: 0.8rem;
+  border: 1px solid var(--danger);
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+
+/* ---- Plaques ------------------------------------------------------------ */
+
+.plaque {
+  background: var(--plaque);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-top: 10px;
+}
+
+.eyebrow {
+  font-variant-caps: small-caps;
+  letter-spacing: 0.14em;
+  font-size: 0.78rem;
+  color: var(--faience);
+}
+
+.plaque-body {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-top: 4px;
+}
+
+.plaque-glyph {
+  font-size: 34px;
+  line-height: 1.25;
+  min-width: 40px;
+}
+
+.plaque-caption {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  min-width: 0;
+}
+
+.plaque-caption .translit {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.plaque-square {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  color: var(--ink);
+}
+
+.plaque-empty {
+  color: var(--ink-soft);
+  opacity: 0.65;
+  font-size: 0.85rem;
+  margin-top: 2px;
+}
+
+.tag-verify {
+  display: inline-block;
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  color: var(--clay);
+  border: 1px solid var(--clay);
+  border-radius: 4px;
+  padding: 0 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* ---- Roots view ---------------------------------------------------------- */
+
+.rootlist-item {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+}
+
+.rootlist-letters {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 1.3rem;
+  direction: rtl;
+}
+
+.rootlist-gloss {
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+}
+
+.root-letters-large {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 2.4rem;
+  direction: rtl;
+  text-align: center;
+  margin: 6px 0;
+}
+
+.root-gloss {
+  font-family: var(--serif);
+  text-align: center;
+  font-size: 1.05rem;
+  margin-bottom: 12px;
+}
+
+.btn-back {
+  color: var(--faience);
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+
+.section-label {
+  font-variant-caps: small-caps;
+  letter-spacing: 0.14em;
+  font-size: 0.78rem;
+  color: var(--faience);
+  margin: 16px 0 6px;
+}
+
+.attested-word {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.attested-word .w {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  direction: rtl;
+}
+
+.attested-word .g {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+
+.note-block {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  background: var(--plaque);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin: 8px 0;
+}
+
+.fixed-line {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  font-style: italic;
+  margin: 6px 0;
+}
+
+.perm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.perm-tile {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px;
+  text-align: center;
+  background: var(--card);
+}
+
+.perm-tile .letters {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  direction: rtl;
+}
+
+.perm-tile .g {
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+
+.perm-tile.found {
+  border-color: var(--clay);
+  background: var(--plaque);
+}
+
+.perm-tile.ghost {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.cognate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 0.9rem;
+}
+
+.cognate .lang {
+  font-variant-caps: small-caps;
+  letter-spacing: 0.08em;
+  color: var(--faience);
+  font-size: 0.8rem;
+}
+
+.cognate .form {
+  font-family: var(--serif);
+}
+
+.cognate .cnote {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  width: 100%;
+}
+
+.cluster-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.clusterchip {
+  padding: 2px 10px;
+  border: 1px solid var(--clay);
+  border-radius: 999px;
+  color: var(--clay);
+  font-family: var(--serif);
+  direction: rtl;
+}
+
+.doublet-label {
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  color: var(--clay);
+}
+
+/* ---- Settings ------------------------------------------------------------ */
+
+.settings-section {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+
+.settings-section h2 {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 1.05rem;
+  margin: 0 0 8px;
+}
+
+.settings-section p {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin: 6px 0;
+}
+
+.btnrow {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0 4px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: 1px solid var(--faience);
+  border-radius: 10px;
+  color: var(--faience);
+  font-size: 0.9rem;
+  background: transparent;
+}
+
+.btn.primary {
+  background: var(--faience);
+  color: var(--card);
+}
+
+.field {
+  display: block;
+  margin: 10px 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.field input,
+.field textarea {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 10px;
+  font: inherit;
+  color: var(--ink);
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+details.langfields {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin: 8px 0;
+  background: var(--plaque);
+}
+
+details.langfields summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--faience);
+}
+
+.form-status {
+  font-size: 0.85rem;
+  color: var(--faience);
+  margin-top: 6px;
+}
+
+.form-error {
+  color: var(--danger);
+}
