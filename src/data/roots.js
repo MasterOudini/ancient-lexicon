@@ -265,7 +265,8 @@ export const ROOTS = [
     gloss: 'bread / fight — two attested word groups',
     attested: [
       { word: 'לֶחֶם', gloss: 'bread' },
-      { word: 'נִלְחַם', gloss: 'he fought' }
+      { word: 'נִלְחַם', gloss: 'he fought' },
+      { word: 'מִלְחָמָה', gloss: 'war, battle' }
     ]
   },
   {
@@ -275,7 +276,8 @@ export const ROOTS = [
     gloss: 'be great, grow',
     attested: [
       { word: 'גָּדוֹל', gloss: 'great' },
-      { word: 'גָּדַל', gloss: 'he grew great' }
+      { word: 'גָּדַל', gloss: 'he grew great' },
+      { word: 'מִגְדָּל', gloss: 'tower' }
     ]
   },
   {
@@ -377,7 +379,8 @@ export const ROOTS = [
       { word: 'עֶרֶב', gloss: 'evening' },
       { word: 'עֵרֶב', gloss: 'mixture, mixed multitude' },
       { word: 'עָרַב', gloss: 'he stood surety, pledged' },
-      { word: 'עֹרֵב', gloss: 'raven' }
+      { word: 'עֹרֵב', gloss: 'raven' },
+      { word: 'מַעֲרָב', gloss: 'west, sunset side' }
     ]
   },
   {
@@ -3722,6 +3725,42 @@ export const ROOTS = [
     ],
     interpretationNote:
       'אֱמֶת truth is filed under אמנ by dictionary convention; the assumed assimilation of the נ is the account of the dictionaries, not something the texts state.'
+  },
+
+  // --- Doublet and cluster support ---
+  {
+    id: 'he-ayf',
+    lang: 'hebrew',
+    letters: ['ע', 'י', 'פ'],
+    gloss: 'be weary, faint',
+    attested: [{ word: 'עָיֵף', gloss: 'weary, faint' }]
+  },
+  {
+    id: 'he-yaf',
+    lang: 'hebrew',
+    letters: ['י', 'ע', 'פ'],
+    gloss: 'be weary, faint',
+    attested: [
+      { word: 'יָעֵף', gloss: 'weary, faint' },
+      { word: 'וְיִעֲפוּ', gloss: 'and they grow weary' }
+    ]
+  },
+  {
+    id: 'he-qtsh',
+    lang: 'hebrew',
+    letters: ['ק', 'צ', 'ה'],
+    gloss: 'end, edge',
+    attested: [{ word: 'קָצֶה', gloss: 'end, edge' }]
+  },
+  {
+    id: 'he-qtsts',
+    lang: 'hebrew',
+    letters: ['ק', 'צ', 'צ'],
+    gloss: 'cut off',
+    attested: [
+      { word: 'קִצֵּץ', gloss: 'he cut off, cut in pieces' },
+      { word: 'קֵץ', gloss: 'end' }
+    ]
   }
 ]
 
@@ -3752,6 +3791,13 @@ export const DOUBLETS = [
     citation:
       'Both attested: וְצָעַק Exodus 22:26; וּזְעַקְתֶּם 1 Samuel 8:18.',
     note: 'A consonant-variant pair (z / ṣ), not a permutation.'
+  },
+  {
+    type: 'metathesis',
+    roots: ['עיפ', 'יעפ'],
+    meaning: 'weary, faint',
+    citation: 'עָיֵף Genesis 25:29; יָעֵף Isaiah 40:29',
+    note: 'The same adjective attested in both consonant orders.'
   }
 ]
 
@@ -3763,6 +3809,12 @@ export const CLUSTERS = [
     members: ['פרד', 'פרמ', 'פרס', 'פרצ', 'פרק', 'פרר'],
     note:
       'Each root and its meaning is attested in the Hebrew Bible; the idea that a shared two-letter core פ־ר explains the family resemblance is an interpretation and is not provable from the texts alone.'
+  },
+  {
+    id: 'qts-ends',
+    title: 'ק־צ roots of cutting and ending',
+    members: ['קצר', 'קצה', 'קצצ'],
+    note: 'An interpretive grouping: these roots share ק־צ and senses of cutting, ending, or shortness. Suggestive, not provable from the texts alone.'
   }
 ]
 
