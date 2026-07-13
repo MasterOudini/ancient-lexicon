@@ -1487,6 +1487,254 @@ export const ROOTS = [
     ],
     homographNote:
       'שֵׂעָר hair, שַׁעַר gate, and שְׂעֹרָה barley are all written with the same consonants שער; śin/shin is a Masoretic pointing distinction on an identical consonantal letter. שָׂעִיר he-goat (the hairy one) is filed with the hair group in the dictionaries.'
+  },
+
+  // --- Food & colors ---
+  // --- Food & drink ---
+  {
+    id: 'he-yyn',
+    lang: 'hebrew',
+    letters: ['י', 'י', 'נ'],
+    gloss: 'wine (noun base)',
+    attested: [{ word: 'יַיִן', gloss: 'wine' }],
+    interpretationNote:
+      'יַיִן is widely held to be a wandering culture word connected with Hittite wiyana- and Greek oinos; the connection is an interpretation, not provable from the texts alone.'
+  },
+  {
+    id: 'he-shkr',
+    lang: 'hebrew',
+    letters: ['ש', 'כ', 'ר'],
+    gloss: 'be drunk; strong drink',
+    attested: [
+      { word: 'שֵׁכָר', gloss: 'strong drink, beer' },
+      { word: 'שִׁכּוֹר', gloss: 'drunken' },
+      { word: 'וַיִּשְׁכָּר', gloss: 'and he became drunk (Genesis 9:21)' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'šikaru', note: 'beer; the textbook cognate' }
+    ],
+    homographNote:
+      'שָׂכָר wages is written with the same consonantal letters; śin/shin is a Masoretic pointing distinction on an identical letter.'
+  },
+  {
+    id: 'he-dbsh',
+    lang: 'hebrew',
+    letters: ['ד', 'ב', 'ש'],
+    gloss: 'honey (noun base)',
+    attested: [{ word: 'דְּבַשׁ', gloss: 'honey' }],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'dišpu',
+        note: 'honey, syrup; the standard comparison with Hebrew dvash'
+      }
+    ]
+  },
+  {
+    id: 'he-chlb',
+    lang: 'hebrew',
+    letters: ['ח', 'ל', 'ב'],
+    gloss: 'milk (noun base)',
+    attested: [{ word: 'חָלָב', gloss: 'milk' }],
+    homographNote:
+      'חֵלֶב fat is written with the same consonants חלב; the distinction is Masoretic pointing only.'
+  },
+  {
+    id: 'he-chth',
+    lang: 'hebrew',
+    letters: ['ח', 'ט', 'ה'],
+    gloss: 'wheat (noun base)',
+    attested: [
+      { word: 'חִטָּה', gloss: 'wheat' },
+      { word: 'חִטִּים', gloss: 'wheat (plural)' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'חנטין',
+        note: 'wheat (plural), with n where Hebrew has doubled ṭ; Ezra 6:9 חִנְטִין'
+      }
+    ]
+  },
+  {
+    id: 'he-gpn',
+    lang: 'hebrew',
+    letters: ['ג', 'פ', 'נ'],
+    gloss: 'vine (noun base)',
+    attested: [{ word: 'גֶּפֶן', gloss: 'vine, grapevine' }],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'gapnu / gupnu',
+        note: 'bush, tree trunk; the comparison with Hebrew gefen is one made in the dictionaries'
+      }
+    ]
+  },
+  {
+    id: 'he-tan',
+    lang: 'hebrew',
+    letters: ['ת', 'א', 'נ'],
+    gloss: 'fig tree (noun base)',
+    attested: [
+      { word: 'תְּאֵנָה', gloss: 'fig tree, fig' },
+      { word: 'תְּאֵנִים', gloss: 'figs (plural)' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'tittu',
+        note: 'fig; the standard comparison with Hebrew teenah'
+      }
+    ]
+  },
+  {
+    id: 'he-zyt',
+    lang: 'hebrew',
+    letters: ['ז', 'י', 'ת'],
+    gloss: 'olive (noun base)',
+    attested: [
+      { word: 'זַיִת', gloss: 'olive, olive tree' },
+      { word: 'זֵיתִים', gloss: 'olive trees (plural)' }
+    ]
+  },
+  {
+    id: 'he-rmn',
+    lang: 'hebrew',
+    letters: ['ר', 'מ', 'נ'],
+    gloss: 'pomegranate (noun base)',
+    attested: [{ word: 'רִמּוֹן', gloss: 'pomegranate' }],
+    homographNote:
+      'רִמּוֹן also occurs as a divine name and in place names (2 Kings 5:18 בֵּית רִמּוֹן).',
+    interpretationNote:
+      'Akkadian nurmû pomegranate is sometimes compared with רִמּוֹן; the relationship is debated and is an interpretation, not provable from the texts alone.'
+  },
+  {
+    id: 'he-mlch',
+    lang: 'hebrew',
+    letters: ['מ', 'ל', 'ח'],
+    gloss: 'salt (noun base)',
+    attested: [
+      { word: 'מֶלַח', gloss: 'salt' },
+      { word: 'תִּמְלָח', gloss: 'you shall salt (Leviticus 2:13)' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'מלח',
+        note: 'salt; Ezra 4:14 מְלַח הֵיכְלָא (the salt of the palace); Ezra 6:9'
+      }
+    ],
+    homographNote:
+      'מַלָּח sailor (Jonah 1:5 הַמַּלָּחִים) is written with the same consonants; the dictionaries treat it as a separate word, compared with Akkadian malāḫu.'
+  },
+
+  // --- Colors ---
+  {
+    id: 'he-lbn',
+    lang: 'hebrew',
+    letters: ['ל', 'ב', 'נ'],
+    gloss: 'be white',
+    attested: [
+      { word: 'לָבָן', gloss: 'white' },
+      { word: 'יַלְבִּינוּ', gloss: 'they shall be white (Isaiah 1:18)' }
+    ],
+    homographNote:
+      'לְבֵנָה brick, לְבוֹנָה frankincense, and לְבָנָה moon are written with the same consonants לבנ; the dictionaries treat them as separate words. לָבָן is also the personal name Laban.'
+  },
+  {
+    id: 'he-shchr',
+    lang: 'hebrew',
+    letters: ['ש', 'ח', 'ר'],
+    gloss: 'be black',
+    attested: [
+      { word: 'שָׁחֹר', gloss: 'black' },
+      { word: 'שְׁחַרְחֹרֶת', gloss: 'swarthy, blackish (Song of Songs 1:6)' }
+    ],
+    homographNote:
+      'שַׁחַר dawn is written with the same consonants שחר; the dictionaries keep black and dawn as separate roots.'
+  },
+  {
+    id: 'he-adm',
+    lang: 'hebrew',
+    letters: ['א', 'ד', 'מ'],
+    gloss: 'be red',
+    attested: [
+      { word: 'אָדֹם', gloss: 'red' },
+      { word: 'אֲדָמָה', gloss: 'ground, soil' },
+      { word: 'אָדָם', gloss: 'man, mankind; the name Adam' },
+      { word: 'אֲדַמְדָּם', gloss: 'reddish (Leviticus 13:49)' }
+    ],
+    homographNote:
+      'The consonants אדמ write אָדֹם red, אָדָם man, and אֲדָמָה ground; the dictionaries file these as separate word groups.',
+    interpretationNote:
+      'Any historical chain linking red, ground, and man (red earth) is an interpretation, not provable from the texts alone.'
+  },
+  {
+    id: 'he-yrq',
+    lang: 'hebrew',
+    letters: ['י', 'ר', 'ק'],
+    gloss: 'be green; herbs יֶרֶק',
+    attested: [
+      { word: 'יֶרֶק', gloss: 'green plants, herbage (Genesis 1:30 יֶרֶק עֵשֶׂב)' },
+      { word: 'יָרָק', gloss: 'garden vegetables (1 Kings 21:2 גַן־יָרָק)' },
+      { word: 'יְרַקְרַק', gloss: 'greenish (Leviticus 13:49)' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'arqu',
+        note: 'green-yellow; Old Babylonian warqum, with w where Hebrew has y'
+      }
+    ]
+  },
+  {
+    id: 'he-argmn',
+    lang: 'hebrew',
+    letters: ['א', 'ר', 'ג', 'מ', 'נ'],
+    gloss: 'purple wool (noun base)',
+    attested: [{ word: 'אַרְגָּמָן', gloss: 'purple, purple wool' }],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'argamannu',
+        note: 'purple wool; a parallel form of the same culture word, not a demonstrated ancestor'
+      },
+      {
+        lang: 'aramaic',
+        form: 'ארגון',
+        note: 'purple; Daniel 5:7 אַרְגְּוָנָא, with w where Hebrew has m'
+      }
+    ],
+    interpretationNote:
+      'אַרְגָּמָן is generally taken as a culture word or loanword of debated origin (Anatolian sources are often suggested), not a native Semitic triliteral; any derivation is interpretation.'
+  },
+  {
+    id: 'he-shny',
+    lang: 'hebrew',
+    letters: ['ש', 'נ', 'י'],
+    gloss: 'crimson (noun base)',
+    attested: [
+      { word: 'שָׁנִי', gloss: 'crimson, scarlet' },
+      { word: 'תּוֹלַעַת שָׁנִי', gloss: 'scarlet stuff (Exodus 25:4)' }
+    ],
+    homographNote:
+      'שֵׁנִי second is written with the same letters שני; the dictionaries treat crimson and second as separate words, filing שֵׁנִי under שנה.'
+  },
+  {
+    id: 'he-tklt',
+    lang: 'hebrew',
+    letters: ['ת', 'כ', 'ל', 'ת'],
+    gloss: 'blue-purple dye (noun base)',
+    attested: [{ word: 'תְּכֵלֶת', gloss: 'blue, blue-purple wool (Exodus 25:4)' }],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'takiltu',
+        note: 'blue-purple wool; the standard parallel of the same culture word'
+      }
+    ],
+    interpretationNote:
+      'A culture word of the dye trade; the direction of any borrowing between Hebrew תְּכֵלֶת and Akkadian takiltu is debated, and any derivation is interpretation.'
   }
 ]
 
