@@ -41,10 +41,25 @@ export default defineConfig({
       },
       workbox: {
         // Precache the whole app shell, including the script fonts, so the
-        // app is fully usable offline after the first load.
+        // curated app (comparative database, roots, Strong's) is fully usable
+        // offline after the first load.
         globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
         // The default 2 MiB limit would silently skip larger assets.
-        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
+        // The large reference dictionaries in public/dicts/ are not precached
+        // (they would bloat the install); they load on demand and are cached
+        // here after first open, so each is available offline once viewed.
+        runtimeCaching: [
+          {
+            urlPattern: /\/dicts\/.*\.json$/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'reference-dictionaries',
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          }
+        ]
       }
     })
   ]

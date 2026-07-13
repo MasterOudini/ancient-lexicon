@@ -1,6 +1,7 @@
 import { LANGUAGES, HEBREW_CAVEAT } from '../data/languages.js'
 import { LEXICON } from '../data/lexicon.js'
 import { ROOTS } from '../data/roots.js'
+import { REFERENCE_DICTIONARIES } from '../data/referenceDictionaries.js'
 
 // The About screen: what the app is, how to read an entry (the data-honesty
 // statement), the reference works the conventions follow, and font licenses.
@@ -14,17 +15,22 @@ export default function AboutView() {
           A comparative dictionary of the ancient Near East, pivoting on
           Hebrew and English across Akkadian, Sumerian, Egyptian, Hittite,
           Imperial Aramaic, and Old South Arabian, with a Semitic root
-          explorer and the complete Strong&rsquo;s Hebrew lexicon.
+          explorer and a shelf of complete public-domain and openly-licensed
+          reference dictionaries.
         </p>
         <p>
-          The database currently holds {LEXICON.length} curated concepts and{' '}
-          {ROOTS.length} Hebrew roots, alongside the 8,674 headwords of
-          Strong&rsquo;s dictionary.
+          The curated comparative database holds {LEXICON.length} concepts and{' '}
+          {ROOTS.length} Hebrew roots. The Dictionary tab&rsquo;s Reference
+          dictionaries mode adds complete published lexicons &mdash; tens of
+          thousands of headwords each &mdash; that load on demand and are then
+          available offline.
         </p>
         <p>
-          Everything works offline after the first load. There is no backend,
-          no account, no analytics, and no network request at any point; your
-          settings and custom entries stay on this device.
+          There is no backend, no account, and no analytics; your settings and
+          custom entries never leave this device. The curated dictionary, the
+          root explorer, and Strong&rsquo;s are precached and work offline from
+          the first load. The other reference dictionaries download once, the
+          first time you open each, and are then available offline too.
         </p>
       </div>
 
@@ -72,14 +78,30 @@ export default function AboutView() {
           typed from memory — and an integrity test keeps each script inside
           its own Unicode block.
         </p>
+      </div>
+
+      <div className="settings-section">
+        <h2>Reference dictionaries</h2>
         <p>
-          The Full Hebrew lexicon section reproduces &lsquo;A Concise
-          Dictionary of the Words in the Hebrew Bible&rsquo; by James Strong
-          (1894), a public-domain work, unmodified and presented as published.
-          Machine-readable arrangement by the Open Scriptures project
-          (CC-BY-SA). It is a nineteenth-century reference: read it as a
-          historical document, not as current scholarship.
+          The Dictionary tab&rsquo;s second mode is a shelf of complete
+          published lexicons. Each is either public domain or openly licensed,
+          reproduced unmodified and presented as published &mdash; they are the
+          works themselves, not the hand-curated comparative data. The older
+          ones are historical references: read them as documents of their time,
+          not as current scholarship. There is no open full dictionary for
+          Hittite or Old South Arabian, so those are covered only by the
+          curated comparative entries.
         </p>
+        <ul className="about-sources">
+          {REFERENCE_DICTIONARIES.map((d) => (
+            <li key={d.id}>
+              <strong>
+                {d.language} &mdash; {d.label}
+              </strong>{' '}
+              ({d.license}). {d.attribution}
+            </li>
+          ))}
+        </ul>
       </div>
 
       <div className="settings-section">

@@ -33,7 +33,7 @@ export const TIME = [
       aramaic: {
         translit: 'yōm',
         hebrewLetters: 'יום',
-        note: 'Daniel 6:11 בְּיוֹמָא; Ezra 6:9'
+        note: 'Daniel 6:11 בְיוֹמָא; Ezra 6:9'
       },
       osa: {
         translit: 'ywm',
@@ -142,7 +142,7 @@ export const TIME = [
       aramaic: {
         translit: 'yəraḥ',
         hebrewLetters: 'ירח',
-        note: 'Ezra 6:15 לִירַח אֲדָר (the month Adar); Elephantine date formulae'
+        note: 'Ezra 6:15 לִירַח אֲדָר (the month Adar); also in Egyptian Aramaic documents (check TAD)'
       },
       osa: {
         translit: 'wrḫ',
@@ -256,7 +256,7 @@ export const TIME = [
       akkadian: {
         translit: 'dārû',
         pron: 'daa-roo',
-        note: 'lasting, everlasting'
+        note: 'lasting, everlasting (an adjective; a functional equivalent, not a noun for eternity)'
       },
       egyptian: {
         translit: 'nḥḥ',

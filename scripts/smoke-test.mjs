@@ -315,6 +315,48 @@ check(
   typeof strongs.work === 'string' && strongs.work.includes('public domain')
 )
 
+// --- The on-demand reference dictionaries in public/dicts/ ------------------
+// Each is a complete published work loaded at runtime; check structure and
+// that every one declared in the registry has its data file present.
+
+const projectRoot = join(here, '..')
+const dictsDir = join(projectRoot, 'public', 'dicts')
+const registryText = readFileSync(
+  join(dataDir, 'referenceDictionaries.js'),
+  'utf8'
+)
+const urlDicts = [...registryText.matchAll(/url:\s*'dicts\/([^']+)'/g)].map(
+  (m) => m[1]
+)
+check('reference registry declares on-demand dictionaries', urlDicts.length >= 1)
+for (const file of urlDicts) {
+  let dict
+  try {
+    dict = JSON.parse(readFileSync(join(dictsDir, file), 'utf8'))
+  } catch {
+    check(`reference dictionary ${file} is present and valid JSON`, false)
+    continue
+  }
+  check(
+    `${file}: has entries and a matching count`,
+    Array.isArray(dict.entries) &&
+      dict.entries.length > 100 &&
+      dict.count === dict.entries.length
+  )
+  check(
+    `${file}: every entry has an id, a headword, and a definition`,
+    dict.entries.every((e) => e.id && e.lemma && typeof e.def === 'string' && e.def.length > 0)
+  )
+  check(
+    `${file}: ids are unique`,
+    new Set(dict.entries.map((e) => e.id)).size === dict.entries.length
+  )
+  check(
+    `${file}: declares its source work`,
+    typeof dict.work === 'string' && dict.work.length > 0
+  )
+}
+
 const categoryIds = CATEGORIES.map((c) => c.id)
 check(
   'category ids are unique',
