@@ -3,7 +3,7 @@
 // runs under bare node. Expected glyph strings are built with
 // String.fromCodePoint so no astral literal can be silently corrupted.
 
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
@@ -22,7 +22,7 @@ import {
   uniquePermutations,
   findRoot
 } from '../src/data/roots.js'
-import { LEXICON } from '../src/data/lexicon.js'
+import { LEXICON, CATEGORIES } from '../src/data/lexicon.js'
 import { LANGUAGES } from '../src/data/languages.js'
 import { normalize, searchEntries, searchRoots } from '../src/lib/search.js'
 
@@ -147,7 +147,7 @@ for (const entry of LEXICON) {
   }
 }
 
-check('DOUBLETS has exactly 3 entries', DOUBLETS.length === 3)
+check('DOUBLETS has at least 3 entries', DOUBLETS.length >= 3)
 check(
   'every doublet type is metathesis or variant',
   DOUBLETS.every((d) => d.type === 'metathesis' || d.type === 'variant')
@@ -156,7 +156,17 @@ check(
   'every doublet root resolves in the database',
   DOUBLETS.every((d) => d.roots.every((r) => findRoot('hebrew', r)))
 )
-check('CLUSTERS has exactly 1 entry', CLUSTERS.length === 1)
+check(
+  'every doublet has a citation',
+  DOUBLETS.every((d) => typeof d.citation === 'string' && d.citation.length > 0)
+)
+check('CLUSTERS has at least 1 entry', CLUSTERS.length >= 1)
+check(
+  'every cluster has id, title, note, and at least 2 members',
+  CLUSTERS.every(
+    (c) => c.id && c.title && c.note && Array.isArray(c.members) && c.members.length >= 2
+  )
+)
 check(
   'every cluster member resolves in the database',
   CLUSTERS.every((c) => c.members.every((m) => findRoot('hebrew', m)))
@@ -173,8 +183,15 @@ check(
 // --- No reconstructed forms anywhere in the data files -----------------------
 
 const here = dirname(fileURLToPath(import.meta.url))
-for (const file of ['languages.js', 'lexicon.js', 'roots.js']) {
-  const text = readFileSync(join(here, '..', 'src', 'data', file), 'utf8')
+const dataDir = join(here, '..', 'src', 'data')
+const dataFiles = [
+  'languages.js',
+  'lexicon.js',
+  'roots.js',
+  ...readdirSync(join(dataDir, 'lexicon')).map((f) => join('lexicon', f))
+]
+for (const file of dataFiles) {
+  const text = readFileSync(join(dataDir, file), 'utf8')
   check(`no asterisked forms in ${file}`, !text.includes('*'))
   // Comment lines may state the no-proto-forms policy; data strings may not.
   const dataLines = text
@@ -183,6 +200,100 @@ for (const file of ['languages.js', 'lexicon.js', 'roots.js']) {
     .join('\n')
   check(`no proto-forms in ${file}`, !/proto-/i.test(dataLines))
 }
+
+// --- Database integrity at scale ---------------------------------------------
+// These invariants keep a growing database honest: pointing present where the
+// conventions promise it, ids well-formed, and every original-script string
+// inside the Unicode block of its own script (a glyph pasted from the wrong
+// script, or typed from memory, fails loudly here).
+
+const NIQQUD = /[ְ-ׇּׁׂ]/
+check(
+  'every lexicon hebrew.word carries Masoretic pointing',
+  LEXICON.every((e) => NIQQUD.test(e.hebrew.word))
+)
+check(
+  'every root attested word carries Masoretic pointing',
+  ROOTS.every((r) => (r.attested || []).every((a) => NIQQUD.test(a.word)))
+)
+check(
+  'every root has at least one attested word',
+  ROOTS.every((r) => Array.isArray(r.attested) && r.attested.length > 0)
+)
+check(
+  'every lexicon entry has at least one English gloss',
+  LEXICON.every(
+    (e) => Array.isArray(e.english) && e.english.length > 0 && e.english.every(Boolean)
+  )
+)
+check(
+  'every lexicon entry has hebrew word, translit, and root',
+  LEXICON.every((e) => e.hebrew?.word && e.hebrew?.translit && e.hebrew?.root)
+)
+check(
+  'every form is a non-empty object with a payload field',
+  LEXICON.every((e) =>
+    Object.values(e.forms || {}).every(
+      (f) => f && (f.translit || f.script || f.hebrewLetters || f.tokens)
+    )
+  )
+)
+check(
+  'lexicon ids are well-formed (lowercase, hyphenated)',
+  LEXICON.every((e) => /^[a-z][a-z0-9-]*$/.test(e.id))
+)
+check(
+  'root ids are well-formed (he- prefix)',
+  ROOTS.every((r) => /^he-[a-z0-9-]+$/.test(r.id))
+)
+check(
+  'aramaic hebrewLetters use Hebrew letters only (no pointing)',
+  LEXICON.every((e) => {
+    const hl = e.forms?.aramaic?.hebrewLetters
+    return !hl || /^[א-ת]+$/.test(hl)
+  })
+)
+check(
+  'every hebrew.word stays inside the Hebrew block',
+  LEXICON.every((e) => [...e.hebrew.word].every((ch) => {
+    const c = ch.codePointAt(0)
+    return c >= 0x0590 && c <= 0x05ff
+  }))
+)
+
+const inCuneiform = (c) =>
+  (c >= 0x12000 && c <= 0x123ff) || (c >= 0x12400 && c <= 0x1247f)
+const inHieroglyphs = (c) => c >= 0x13000 && c <= 0x1342f
+const SCRIPT_BLOCKS = {
+  akkadian: inCuneiform,
+  sumerian: inCuneiform,
+  hittite: inCuneiform,
+  egyptian: inHieroglyphs
+}
+for (const [lang, inBlock] of Object.entries(SCRIPT_BLOCKS)) {
+  check(
+    `every ${lang} script string stays inside its own Unicode block`,
+    LEXICON.every((e) => {
+      const s = e.forms?.[lang]?.script
+      return !s || [...s].every((ch) => inBlock(ch.codePointAt(0)))
+    })
+  )
+}
+
+const categoryIds = CATEGORIES.map((c) => c.id)
+check(
+  'category ids are unique',
+  new Set(categoryIds).size === categoryIds.length
+)
+check(
+  'every lexicon entry carries a valid category id',
+  LEXICON.every((e) => categoryIds.includes(e.category))
+)
+const primaryGlosses = LEXICON.map((e) => e.english[0].toLowerCase())
+check(
+  'no duplicate primary gloss across entries',
+  new Set(primaryGlosses).size === primaryGlosses.length
+)
 
 // --- Search normalization ----------------------------------------------------
 
