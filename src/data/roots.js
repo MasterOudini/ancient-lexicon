@@ -2833,6 +2833,287 @@ export const ROOTS = [
       { word: 'עָשָׂה', gloss: 'he made, did' },
       { word: 'מַעֲשֶׂה', gloss: 'work, deed' }
     ]
+  },
+
+  // --- Verbs of worship & rule; places & directions ---
+  // --- Verbs of worship & rule ---
+  {
+    id: 'he-arr',
+    lang: 'hebrew',
+    letters: ['א', 'ר', 'ר'],
+    gloss: 'curse',
+    attested: [
+      { word: 'אָרוּר', gloss: 'cursed (Genesis 3:14 אָרוּר אַתָּה)' },
+      { word: 'אֵרְרָהּ', gloss: 'he cursed it (Genesis 5:29, of the ground)' },
+      { word: 'מְאֵרָה', gloss: 'curse (Malachi 2:2)' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'arāru', note: 'to curse; the textbook cognate' }
+    ]
+  },
+  {
+    id: 'he-shyr',
+    lang: 'hebrew',
+    letters: ['ש', 'י', 'ר'],
+    gloss: 'sing',
+    attested: [
+      { word: 'שִׁיר', gloss: 'song' },
+      { word: 'שִׁירָה', gloss: 'song (Exodus 15:1 אֶת־הַשִּׁירָה הַזֹּאת)' },
+      { word: 'וַתָּשַׁר', gloss: 'and she sang (Judges 5:1)' },
+      { word: 'שָׁרִים', gloss: 'singers (2 Samuel 19:36 שָׁרִים וְשָׁרוֹת)' }
+    ]
+  },
+  {
+    id: 'he-pll',
+    lang: 'hebrew',
+    letters: ['פ', 'ל', 'ל'],
+    gloss: 'intervene, arbitrate; pray (hitpael)',
+    attested: [
+      { word: 'הִתְפַּלֵּל', gloss: 'pray (hitpael; 1 Samuel 12:19 הִתְפַּלֵּל בְּעַד, pray for)' },
+      { word: 'תְּפִלָּה', gloss: 'prayer' },
+      { word: 'פִלָּלְתִּי', gloss: 'I had (not) expected, judged (Genesis 48:11)' }
+    ],
+    interpretationNote:
+      'How the hitpael הִתְפַּלֵּל pray relates to the qal and piel senses judge, intervene is much discussed; any derivation of pray from arbitrate is an interpretation, not provable from the texts alone.'
+  },
+  {
+    id: 'he-rchts',
+    lang: 'hebrew',
+    letters: ['ר', 'ח', 'צ'],
+    gloss: 'wash, bathe',
+    attested: [
+      { word: 'רָחַץ', gloss: 'he washed (Isaiah 4:4 אִם רָחַץ אֲדֹנָי)' },
+      { word: 'רַחְצָה', gloss: 'washing (Song of Songs 4:2)' }
+    ],
+    interpretationNote:
+      'Biblical Aramaic רחץ means trust (Daniel 3:28 הִתְרְחִצוּ, they trusted); whether the Aramaic trust verb and the Hebrew wash verb are historically the same root is not established.'
+  },
+  {
+    id: 'he-mshch',
+    lang: 'hebrew',
+    letters: ['מ', 'ש', 'ח'],
+    gloss: 'anoint',
+    attested: [
+      { word: 'מָשַׁח', gloss: 'he anointed (Isaiah 61:1 יַעַן מָשַׁח יְהוָה אֹתִי)' },
+      { word: 'מָשִׁיחַ', gloss: 'anointed one (1 Samuel 24:7 מְשִׁיחַ יְהוָה)' },
+      { word: 'מִשְׁחָה', gloss: 'anointing (Exodus 29:7 שֶׁמֶן הַמִּשְׁחָה, the anointing oil)' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'משח',
+        note: 'oil, the noun of the same root (Ezra 6:9 וּמְשַׁח); the anointing verb itself is not attested in Biblical Aramaic'
+      }
+    ]
+  },
+  {
+    id: 'he-gal',
+    lang: 'hebrew',
+    letters: ['ג', 'א', 'ל'],
+    gloss: 'redeem, act as kinsman',
+    attested: [
+      { word: 'גָּאַל', gloss: 'he redeemed (Isaiah 44:23 כִּי־גָאַל יְהוָה יַעֲקֹב)' },
+      { word: 'גֹּאֵל', gloss: 'redeemer, kinsman-redeemer (Ruth 4:14)' },
+      { word: 'גְּאֻלָּה', gloss: 'right of redemption (Leviticus 25:24)' }
+    ],
+    homographNote:
+      'A second word group גאל means defile (Isaiah 59:3 נְגֹאֲלוּ, defiled with blood); the dictionaries keep redeem and defile as separate roots written with the same consonants.'
+  },
+  {
+    id: 'he-zkr',
+    lang: 'hebrew',
+    letters: ['ז', 'כ', 'ר'],
+    gloss: 'remember',
+    attested: [
+      { word: 'זָכַר', gloss: 'he remembered (Psalm 98:3 זָכַר חַסְדּוֹ)' },
+      { word: 'זִכָּרוֹן', gloss: 'memorial, remembrance (Exodus 12:14)' },
+      { word: 'זֵכֶר', gloss: 'remembrance' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'zakāru',
+        note: 'to speak, name, invoke; the formal cognate — the ordinary Akkadian verb for remember is ḫasāsu'
+      },
+      {
+        lang: 'aramaic',
+        form: 'דכרן',
+        note: 'record, memorandum, with d for Hebrew z; Ezra 6:2 דִּכְרוֹנָה (a record)'
+      }
+    ],
+    homographNote:
+      'זָכָר male is written with the same consonants זכר; the dictionaries treat remember and male as separate word groups.'
+  },
+  {
+    id: 'he-shkch',
+    lang: 'hebrew',
+    letters: ['ש', 'כ', 'ח'],
+    gloss: 'forget',
+    attested: [
+      { word: 'שָׁכַח', gloss: 'he forgot (Psalm 10:11 שָׁכַח אֵל)' },
+      { word: 'פֶּן־תִּשְׁכַּח', gloss: 'lest you forget (Deuteronomy 8:11)' }
+    ],
+    interpretationNote:
+      'Biblical Aramaic שכח means find (Daniel 2:25 הַשְׁכַּחַת, I have found); whether the Aramaic find verb and the Hebrew forget verb are historically the same root is not established.'
+  },
+  {
+    id: 'he-bqsh',
+    lang: 'hebrew',
+    letters: ['ב', 'ק', 'ש'],
+    gloss: 'seek (piel)',
+    attested: [
+      { word: 'בִּקֵּשׁ', gloss: 'he sought (Ecclesiastes 12:10 בִּקֵּשׁ קֹהֶלֶת)' },
+      { word: 'בַּקָּשָׁה', gloss: 'request (Esther 5:7 שְׁאֵלָתִי וּבַקָּשָׁתִי)' }
+    ]
+  },
+  {
+    id: 'he-mtsa',
+    lang: 'hebrew',
+    letters: ['מ', 'צ', 'א'],
+    gloss: 'find',
+    attested: [
+      { word: 'מָצָא', gloss: 'he found (Proverbs 18:22 מָצָא אִשָּׁה מָצָא טוֹב)' },
+      { word: 'נִמְצָא', gloss: 'it was found (1 Samuel 13:22)' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'מטא',
+        note: 'to reach, arrive (Daniel 4:8 יִמְטֵא, it reached to heaven); Aramaic ṭ answers to Hebrew ṣ here, and the sense is reach rather than find'
+      }
+    ]
+  },
+
+  // --- Places & directions ---
+  {
+    id: 'he-qdm',
+    lang: 'hebrew',
+    letters: ['ק', 'ד', 'מ'],
+    gloss: 'be in front; east, ancient',
+    attested: [
+      { word: 'קֶדֶם', gloss: 'east; ancient time' },
+      { word: 'קָדִים', gloss: 'east wind (Genesis 41:6)' },
+      { word: 'קִדַּמְתִּי', gloss: 'I came before, anticipated (Psalm 119:147)' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'qudmu',
+        note: 'front, former time; chiefly in literary texts'
+      },
+      {
+        lang: 'aramaic',
+        form: 'קדם',
+        note: 'before, in front of; Daniel 6:11 קֳדָם אֱלָהֵהּ (before his God)'
+      }
+    ],
+    interpretationNote:
+      'קדם yields both in front and east; the usual explanation, that the east is what lies before one facing the sunrise, is an interpretation, not provable from the texts alone.'
+  },
+  {
+    id: 'he-tspn',
+    lang: 'hebrew',
+    letters: ['צ', 'פ', 'נ'],
+    gloss: 'hide, store up; north',
+    attested: [
+      { word: 'צָפוֹן', gloss: 'north' },
+      { word: 'צָפֹנָה', gloss: 'northward (Genesis 13:14)' },
+      { word: 'צָפַנְתִּי', gloss: 'I have stored up (Psalm 119:11)' }
+    ],
+    homographNote:
+      'צָפוֹן north and the verb צָפַן hide, store up are written with the same consonants צפנ and are conventionally filed together.',
+    interpretationNote:
+      'Explanations of the north as the hidden, sunless quarter, or via the mountain Zaphon of Canaanite tradition, are interpretations, not provable from the texts alone.'
+  },
+  {
+    id: 'he-ngb',
+    lang: 'hebrew',
+    letters: ['נ', 'ג', 'ב'],
+    gloss: 'south, dry region (noun base)',
+    attested: [
+      { word: 'נֶגֶב', gloss: 'south; the Negev, the dry country south of Judah' },
+      { word: 'וָנֶגְבָּה', gloss: 'and southward (Genesis 13:14)' }
+    ],
+    interpretationNote:
+      'The dictionaries connect נֶגֶב with an Aramaic verb meaning be dry (the Negev as the parched land); the explanation is an interpretation, not provable from the Hebrew texts alone.'
+  },
+  {
+    id: 'he-ymn',
+    lang: 'hebrew',
+    letters: ['י', 'מ', 'נ'],
+    gloss: 'right hand, right side',
+    attested: [
+      { word: 'יָמִין', gloss: 'right hand, right side' },
+      { word: 'הַיְמָנִי', gloss: 'the right-hand (pillar) (1 Kings 7:21)' },
+      { word: 'וְאֵימִנָה', gloss: 'then I will go to the right (Genesis 13:9)' },
+      { word: 'תֵּימָן', gloss: 'south, the south country (Habakkuk 3:3)' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'imnu / imittu',
+        note: 'right hand, right side'
+      },
+      {
+        lang: 'osa',
+        form: 'ymnt',
+        note: 'Yamnat, the south country (the later Yemen), in royal titulature; check corpus records (DASI/CSAI)'
+      }
+    ],
+    interpretationNote:
+      'תֵּימָן south as the right-hand side presumes orientation toward the sunrise; the explanation is standard but is an interpretation.'
+  },
+  {
+    id: 'he-shmal',
+    lang: 'hebrew',
+    letters: ['ש', 'מ', 'א', 'ל'],
+    gloss: 'left (noun base)',
+    attested: [
+      { word: 'שְׂמֹאל', gloss: 'left hand, left side' },
+      { word: 'וְאַשְׂמְאִילָה', gloss: 'then I will go to the left (Genesis 13:9)' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'šumēlu',
+        note: 'left hand, left side; the textbook cognate'
+      }
+    ]
+  },
+  {
+    id: 'he-gbl',
+    lang: 'hebrew',
+    letters: ['ג', 'ב', 'ל'],
+    gloss: 'bound; border',
+    attested: [
+      { word: 'גְּבוּל', gloss: 'border, territory' },
+      { word: 'וְהִגְבַּלְתָּ', gloss: 'and you shall set bounds (Exodus 19:12)' }
+    ],
+    homographNote:
+      'גְּבַל Gebal (Byblos; Ezekiel 27:9 זִקְנֵי גְבַל) and the region גְּבָל (Psalm 83:8) are written with the same consonants.'
+  },
+  {
+    id: 'he-amq',
+    lang: 'hebrew',
+    letters: ['ע', 'מ', 'ק'],
+    gloss: 'be deep; valley',
+    attested: [
+      { word: 'עֵמֶק', gloss: 'valley' },
+      { word: 'עָמֹק', gloss: 'deep (Leviticus 13:3)' },
+      { word: 'עָמְקוּ', gloss: 'they are deep (Psalm 92:6 מְאֹד עָמְקוּ מַחְשְׁבֹתֶיךָ)' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'emqu',
+        note: 'wise — deep in wisdom, as the dictionaries put it; the formal cognate, whose meaning diverges from the Hebrew'
+      },
+      {
+        lang: 'aramaic',
+        form: 'עמיק',
+        note: 'deep; Daniel 2:22 עַמִּיקָתָא (the deep things)'
+      }
+    ]
   }
 ]
 
