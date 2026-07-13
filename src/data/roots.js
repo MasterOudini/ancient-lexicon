@@ -3114,6 +3114,310 @@ export const ROOTS = [
         note: 'deep; Daniel 2:22 עַמִּיקָתָא (the deep things)'
       }
     ]
+  },
+
+  // --- Faith, law & kingship; people & society ---
+  {
+    id: 'he-bryt',
+    lang: 'hebrew',
+    letters: ['ב', 'ר', 'י', 'ת'],
+    gloss: 'covenant (noun base)',
+    attested: [{ word: 'בְּרִית', gloss: 'covenant' }],
+    interpretationNote:
+      'The derivation of בְּרִית is debated in the dictionaries; the idiom כָּרַת בְּרִית, to cut a covenant (Genesis 15:18), is attested usage whatever the etymology.'
+  },
+  {
+    id: 'he-zbch',
+    lang: 'hebrew',
+    letters: ['ז', 'ב', 'ח'],
+    gloss: 'slaughter for sacrifice',
+    attested: [
+      { word: 'זֶבַח', gloss: 'sacrifice' },
+      { word: 'זָבַח', gloss: 'he sacrificed' },
+      { word: 'מִזְבֵּחַ', gloss: 'altar' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'דבח',
+        note: 'with d where Hebrew has z (as דהב gold beside זהב); Ezra 6:3 דִּבְחִין (sacrifices), Ezra 7:17 מַדְבְּחָה (altar)'
+      },
+      {
+        lang: 'osa',
+        form: 'ḏbḥ',
+        note: 'sacrifice; attested in Sabaic inscriptions'
+      }
+    ]
+  },
+  {
+    id: 'he-khn',
+    lang: 'hebrew',
+    letters: ['כ', 'ה', 'נ'],
+    gloss: 'serve as priest',
+    attested: [
+      { word: 'כֹּהֵן', gloss: 'priest' },
+      { word: 'כִּהֵן', gloss: 'he served as priest' },
+      { word: 'כְּהֻנָּה', gloss: 'priesthood' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'כהן',
+        note: 'the priests (כָּהֲנַיָּא) in the Aramaic of Ezra; the Elephantine petitions concern the priests of YHW'
+      }
+    ]
+  },
+  {
+    id: 'he-nba',
+    lang: 'hebrew',
+    letters: ['נ', 'ב', 'א'],
+    gloss: 'prophesy',
+    attested: [
+      { word: 'נָבִיא', gloss: 'prophet' },
+      { word: 'נִבָּא', gloss: 'he prophesied' },
+      { word: 'נְבוּאָה', gloss: 'prophecy' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'נביא',
+        note: 'Ezra 5:1, Haggai the prophet; the same verse uses the verb (he prophesied)'
+      }
+    ],
+    interpretationNote:
+      'The comparison with Akkadian nabû, to call, name — the נָבִיא as one called — is discussed in the dictionaries; it is an interpretation, not provable from the texts alone.'
+  },
+  {
+    id: 'he-yrh',
+    lang: 'hebrew',
+    letters: ['י', 'ר', 'ה'],
+    gloss: 'throw, shoot; direct, instruct — several attested groups',
+    attested: [
+      { word: 'תּוֹרָה', gloss: 'law, instruction' },
+      { word: 'יָרָה', gloss: 'he cast (Exodus 15:4, he cast into the sea)' },
+      { word: 'מוֹרֶה', gloss: 'teacher' }
+    ],
+    homographNote:
+      'The consonants ירה write the throwing and shooting verb and the hiphil הוֹרָה, direct, instruct, under which the dictionaries file תּוֹרָה and מוֹרֶה; מוֹרֶה also names the early rain (Joel 2:23).'
+  },
+  {
+    id: 'he-qdsh',
+    lang: 'hebrew',
+    letters: ['ק', 'ד', 'ש'],
+    gloss: 'be holy',
+    attested: [
+      { word: 'קָדוֹשׁ', gloss: 'holy' },
+      { word: 'קֹדֶשׁ', gloss: 'holiness' },
+      { word: 'מִקְדָּשׁ', gloss: 'sanctuary' },
+      { word: 'קִדֵּשׁ', gloss: 'he sanctified' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'קדיש',
+        note: 'holy; Daniel 4:10 עִיר וְקַדִּישׁ (a watcher and a holy one)'
+      },
+      {
+        lang: 'akkadian',
+        form: 'qadāšu',
+        note: 'to become clean, pure; the comparison made in the dictionaries — check CAD'
+      }
+    ]
+  },
+  {
+    id: 'he-ksa',
+    lang: 'hebrew',
+    letters: ['כ', 'ס', 'א'],
+    gloss: 'throne (noun base)',
+    attested: [{ word: 'כִּסֵּא', gloss: 'throne' }],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'kussû',
+        note: 'throne, chair; a loanword from Sumerian gu-za'
+      },
+      {
+        lang: 'aramaic',
+        form: 'כרסא',
+        note: 'Daniel 7:9 כָרְסָוָן (thrones were set); with r before the s'
+      }
+    ],
+    interpretationNote:
+      'Standard doctrine treats כִּסֵּא as part of a loan history running from Sumerian gu-za through Akkadian kussû; the chain is stated as loan history resting on attested words in each language, and כִּסֵּא is a noun base, not a verbal root.'
+  },
+  {
+    id: 'he-shpt',
+    lang: 'hebrew',
+    letters: ['ש', 'פ', 'ט'],
+    gloss: 'judge, govern',
+    attested: [
+      { word: 'שָׁפַט', gloss: 'he judged' },
+      { word: 'שֹׁפֵט', gloss: 'judge' },
+      { word: 'מִשְׁפָּט', gloss: 'judgment, justice' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'šapāṭu',
+        note: 'to exercise authority, issue rulings; at Mari the šāpiṭum is a governing official; the standard comparison'
+      },
+      {
+        lang: 'aramaic',
+        form: 'שפטין',
+        note: 'judges, magistrates; Ezra 7:25'
+      }
+    ]
+  },
+  {
+    id: 'he-npsh',
+    lang: 'hebrew',
+    letters: ['נ', 'פ', 'ש'],
+    gloss: 'breathe, refresh oneself; soul',
+    attested: [
+      { word: 'נֶפֶשׁ', gloss: 'soul, life, self' },
+      { word: 'וַיִּנָּפַשׁ', gloss: 'and he was refreshed (Exodus 31:17)' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'napištu',
+        note: 'life, breath, throat; the textbook cognate'
+      },
+      {
+        lang: 'osa',
+        form: 'nfs1',
+        note: 'soul, person; also a funerary monument; check corpus records (DASI/CSAI)'
+      }
+    ]
+  },
+  {
+    id: 'he-chta',
+    lang: 'hebrew',
+    letters: ['ח', 'ט', 'א'],
+    gloss: 'miss a mark, sin',
+    attested: [
+      { word: 'חָטָא', gloss: 'he sinned' },
+      { word: 'חֵטְא', gloss: 'sin' },
+      { word: 'חַטָּאת', gloss: 'sin; sin offering' },
+      { word: 'יַחֲטִא', gloss: 'he misses the mark (Judges 20:16, of slingers)' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'ḫaṭû',
+        note: 'to sin, do wrong; the textbook cognate'
+      },
+      {
+        lang: 'aramaic',
+        form: 'חטי',
+        note: 'sin; Daniel 4:24, break off your sins by righteousness'
+      }
+    ]
+  },
+  {
+    id: 'he-rah-shepherd',
+    lang: 'hebrew',
+    letters: ['ר', 'ע', 'ה'],
+    gloss: 'pasture, tend, shepherd',
+    attested: [
+      { word: 'רָעָה', gloss: 'he pastured' },
+      { word: 'רֹעֶה', gloss: 'shepherd' },
+      { word: 'מִרְעֶה', gloss: 'pasture' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'rēʾû',
+        note: 'shepherd; the textbook cognate, with the verb reʾû, to pasture, beside it'
+      }
+    ],
+    homographNote:
+      'רֵעַ friend, companion, neighbor is conventionally filed as a second group under the same consonants רעה; both word groups are attested.'
+  },
+  {
+    id: 'he-ayb',
+    lang: 'hebrew',
+    letters: ['א', 'י', 'ב'],
+    gloss: 'be hostile',
+    attested: [
+      { word: 'אֹיֵב', gloss: 'enemy' },
+      { word: 'אֵיבָה', gloss: 'enmity (Genesis 3:15)' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'ayyābu',
+        note: 'enemy; the textbook cognate; the ordinary Akkadian word nakru stands beside it'
+      }
+    ]
+  },
+  {
+    id: 'he-gwr',
+    lang: 'hebrew',
+    letters: ['ג', 'ו', 'ר'],
+    gloss: 'sojourn',
+    attested: [
+      { word: 'גֵּר', gloss: 'sojourner, stranger' },
+      { word: 'גָּר', gloss: 'he sojourned' },
+      { word: 'מְגוּרֵי', gloss: 'sojournings of (construct; אֶרֶץ מְגוּרֵי אָבִיו, Genesis 37:1)' }
+    ],
+    homographNote:
+      'גּוּר lion cub (Genesis 49:9 גּוּר אַרְיֵה) and מָגוֹר dread (Jeremiah 20:10 מָגוֹר מִסָּבִיב) are separate attested word groups on the same consonants.'
+  },
+  {
+    id: 'he-awd',
+    lang: 'hebrew',
+    letters: ['ע', 'ו', 'ד'],
+    gloss: 'repeat, do again; bear witness',
+    attested: [
+      { word: 'עֵד', gloss: 'witness' },
+      { word: 'עֵדוּת', gloss: 'testimony' },
+      { word: 'עוֹד', gloss: 'again, still' }
+    ],
+    interpretationNote:
+      'The dictionaries file עֵד witness and עוֹד again together under עוד by convention; the semantic bridge between repetition and testimony is the arrangement of the lexicographers, not a claim of the texts.'
+  },
+  {
+    id: 'he-lak',
+    lang: 'hebrew',
+    letters: ['ל', 'א', 'כ'],
+    gloss: 'send (attested only in derived nouns)',
+    attested: [
+      { word: 'מַלְאָךְ', gloss: 'messenger, angel' },
+      { word: 'מְלָאכָה', gloss: 'work, mission' }
+    ],
+    interpretationNote:
+      'No verb of this root is attested in Hebrew; the nouns מַלְאָךְ and מְלָאכָה are the attested material, and the send gloss comes from the comparative dictionaries, where the verb is attested in other Semitic languages.'
+  },
+  {
+    id: 'he-gbr',
+    lang: 'hebrew',
+    letters: ['ג', 'ב', 'ר'],
+    gloss: 'be strong, prevail',
+    attested: [
+      { word: 'גָּבַר', gloss: 'he prevailed' },
+      { word: 'גִּבּוֹר', gloss: 'warrior, mighty man' },
+      { word: 'גֶּבֶר', gloss: 'man' },
+      { word: 'גְּבוּרָה', gloss: 'might' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'גבר',
+        note: 'man; very common at Elephantine; Daniel 2:25 גְּבַר (a man)'
+      }
+    ]
+  },
+  {
+    id: 'he-qhl',
+    lang: 'hebrew',
+    letters: ['ק', 'ה', 'ל'],
+    gloss: 'assemble',
+    attested: [
+      { word: 'קָהָל', gloss: 'assembly, congregation' },
+      { word: 'וַיַּקְהֵל', gloss: 'and he assembled (Exodus 35:1)' },
+      { word: 'קֹהֶלֶת', gloss: 'Qoheleth (Ecclesiastes 1:1), conventionally connected with the assembly' }
+    ]
   }
 ]
 
