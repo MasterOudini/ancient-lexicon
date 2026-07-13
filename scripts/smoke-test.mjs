@@ -280,6 +280,41 @@ for (const [lang, inBlock] of Object.entries(SCRIPT_BLOCKS)) {
   )
 }
 
+// --- Imported Strong's lexicon (published reference work; checked
+// structurally, not editorially — see scripts/import-strongs.mjs) ------------
+
+const strongs = JSON.parse(
+  readFileSync(join(dataDir, 'strongs.json'), 'utf8')
+)
+check('strongs.json has more than 8000 entries', strongs.count > 8000)
+check(
+  'strongs.json count matches entries length',
+  strongs.count === strongs.entries.length
+)
+const strongsIds = strongs.entries.map((e) => e.id)
+check(
+  'strongs ids are unique and well-formed',
+  new Set(strongsIds).size === strongsIds.length &&
+    strongsIds.every((id) => /^H\d+$/.test(id))
+)
+check(
+  'every strongs entry has a Hebrew lemma and a definition',
+  strongs.entries.every(
+    (e) =>
+      e.lemma &&
+      [...e.lemma].some((ch) => {
+        const c = ch.codePointAt(0)
+        return c >= 0x0590 && c <= 0x05ff
+      }) &&
+      typeof e.def === 'string' &&
+      e.def.length > 0
+  )
+)
+check(
+  'strongs.json declares its provenance',
+  typeof strongs.work === 'string' && strongs.work.includes('public domain')
+)
+
 const categoryIds = CATEGORIES.map((c) => c.id)
 check(
   'category ids are unique',
