@@ -501,6 +501,426 @@ export const ROOTS = [
     letters: ['פ', 'ר', 'ר'],
     gloss: 'annul',
     attested: [{ word: 'הֵפֵר', gloss: 'he annulled' }]
+  },
+
+  // --- Kinship & family ---
+  {
+    id: 'he-ach',
+    lang: 'hebrew',
+    letters: ['א', 'ח'],
+    gloss: 'brother (noun base)',
+    attested: [
+      { word: 'אָח', gloss: 'brother' },
+      { word: 'אָחוֹת', gloss: 'sister' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'aḫu',
+        note: 'brother; a separate Akkadian word aḫu means arm, side'
+      },
+      {
+        lang: 'aramaic',
+        form: 'אח',
+        note: 'address form in Elephantine letters (אחי my brother)'
+      },
+      {
+        lang: 'osa',
+        form: 'ʾḫ',
+        note: 'in personal names; check corpus records (DASI/CSAI)'
+      }
+    ],
+    homographNote:
+      'אָח fire-pot (Jeremiah 36:22) is written with the same consonants.'
+  },
+  {
+    id: 'he-aysh',
+    lang: 'hebrew',
+    letters: ['א', 'י', 'ש'],
+    gloss: 'man (noun base)',
+    attested: [{ word: 'אִישׁ', gloss: 'man, husband' }],
+    interpretationNote:
+      'אִישׁ and its plural-in-use אֲנָשִׁים are conventionally filed together; whether אִישׁ derives from the root אנש is an interpretation, not provable from the texts alone.'
+  },
+  {
+    id: 'he-ashh',
+    lang: 'hebrew',
+    letters: ['א', 'ש', 'ה'],
+    gloss: 'woman (noun base)',
+    attested: [
+      { word: 'אִשָּׁה', gloss: 'woman, wife' },
+      { word: 'נָשִׁים', gloss: 'women (the plural in use)' }
+    ],
+    interpretationNote:
+      'The אִישׁ / אִשָּׁה wordplay of Genesis 2:23 is presented in the text itself; the dictionaries nevertheless usually keep the two words under separate roots.'
+  },
+  {
+    id: 'he-yld',
+    lang: 'hebrew',
+    letters: ['י', 'ל', 'ד'],
+    gloss: 'bear, give birth',
+    attested: [
+      { word: 'יָלַד', gloss: 'he begot' },
+      { word: 'יָלְדָה', gloss: 'she bore' },
+      { word: 'יֶלֶד', gloss: 'child, boy' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'alādu',
+        note: 'to give birth; Old Babylonian walādum'
+      }
+    ]
+  },
+  {
+    id: 'he-bkr',
+    lang: 'hebrew',
+    letters: ['ב', 'כ', 'ר'],
+    gloss: 'firstborn, early',
+    attested: [
+      { word: 'בְּכוֹר', gloss: 'firstborn' },
+      { word: 'בְּכֹרָה', gloss: 'birthright' },
+      { word: 'בִּכּוּרִים', gloss: 'firstfruits' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'bukru',
+        note: 'son, firstborn; chiefly in literary texts'
+      }
+    ]
+  },
+  {
+    id: 'he-zqn',
+    lang: 'hebrew',
+    letters: ['ז', 'ק', 'נ'],
+    gloss: 'be old',
+    attested: [
+      { word: 'זָקֵן', gloss: 'old; elder' },
+      { word: 'זִקְנָה', gloss: 'old age' }
+    ],
+    homographNote: 'זָקָן beard is written with the same consonants.'
+  },
+  {
+    id: 'he-almn',
+    lang: 'hebrew',
+    letters: ['א', 'ל', 'מ', 'נ'],
+    gloss: 'widow (noun base)',
+    attested: [{ word: 'אַלְמָנָה', gloss: 'widow' }],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'almattu',
+        note: 'widow; the ordinary Akkadian word'
+      }
+    ]
+  },
+  {
+    id: 'he-abd',
+    lang: 'hebrew',
+    letters: ['ע', 'ב', 'ד'],
+    gloss: 'work, serve',
+    attested: [
+      { word: 'עֶבֶד', gloss: 'servant, slave' },
+      { word: 'עָבַד', gloss: 'he worked, served' },
+      { word: 'עֲבֹדָה', gloss: 'work, service' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'עבד',
+        note: 'servant (Daniel 6:21 עֲבֵד אֱלָהָא); the Aramaic verb עבד means do, make'
+      },
+      {
+        lang: 'osa',
+        form: 'ʿbd',
+        note: 'in personal names; check corpus records (DASI/CSAI)'
+      }
+    ]
+  },
+  {
+    id: 'he-am',
+    lang: 'hebrew',
+    letters: ['ע', 'מ'],
+    gloss: 'people (noun base)',
+    attested: [{ word: 'עַם', gloss: 'people' }],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'עם',
+        note: 'Daniel 3:29 כָּל־עַם (every people); plural עַמְמַיָּא Daniel 3:4'
+      }
+    ],
+    homographNote: 'עִם (with) is written with the same consonants.'
+  },
+  {
+    id: 'he-zra',
+    lang: 'hebrew',
+    letters: ['ז', 'ר', 'ע'],
+    gloss: 'sow; seed, offspring',
+    attested: [
+      { word: 'זֶרַע', gloss: 'seed, offspring' },
+      { word: 'זָרַע', gloss: 'he sowed' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'zēru', note: 'seed' },
+      {
+        lang: 'aramaic',
+        form: 'זרע',
+        note: 'Daniel 2:43 בִּזְרַע אֲנָשָׁא (with the seed of men)'
+      }
+    ],
+    homographNote:
+      'זְרוֹעַ arm is written with the same consonants and is conventionally filed as a separate homograph.'
+  },
+
+  // --- Time & numbers ---
+  {
+    id: 'he-lyl',
+    lang: 'hebrew',
+    letters: ['ל', 'י', 'ל'],
+    gloss: 'night (noun base)',
+    attested: [
+      { word: 'לַיְלָה', gloss: 'night' },
+      { word: 'לֵיל', gloss: 'night of (construct), Exodus 12:42' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'ליליא',
+        note: 'the night (emphatic form); Daniel 2:19'
+      },
+      {
+        lang: 'akkadian',
+        form: 'lilâtu',
+        note: 'evening; the ordinary Akkadian word for night is mūšu, and the comparison is one made in the dictionaries'
+      }
+    ]
+  },
+  {
+    id: 'he-chdsh',
+    lang: 'hebrew',
+    letters: ['ח', 'ד', 'ש'],
+    gloss: 'be new, renew',
+    attested: [
+      { word: 'חֹדֶשׁ', gloss: 'month, new moon' },
+      { word: 'חָדָשׁ', gloss: 'new' },
+      { word: 'חַדֵּשׁ', gloss: 'renew (imperative), Psalm 51:12' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'חדת',
+        note: 'new; Aramaic t corresponds to Hebrew š in this root'
+      },
+      {
+        lang: 'osa',
+        form: 'ḥdṯ',
+        note: 'renew, restore; common in Sabaic building inscriptions'
+      }
+    ],
+    homographNote:
+      'חֹדֶשׁ denotes both the new-moon day and the month reckoned from it (1 Samuel 20:5 מָחָר חֹדֶשׁ, tomorrow is the new moon); the same consonants write חָדָשׁ new.'
+  },
+  {
+    id: 'he-shnh',
+    lang: 'hebrew',
+    letters: ['ש', 'נ', 'ה'],
+    gloss: 'year; repeat, do again',
+    attested: [
+      { word: 'שָׁנָה', gloss: 'year' },
+      { word: 'שְׁנוּ', gloss: 'do it a second time (imperative), 1 Kings 18:34' },
+      { word: 'שֵׁנִית', gloss: 'a second time' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'šattu', note: 'year' },
+      {
+        lang: 'aramaic',
+        form: 'שנה',
+        note: 'year; Elephantine date formulae; Ezra 5:11 שְׁנִין (years)'
+      }
+    ],
+    homographNote:
+      'שָׁנָה year and the verb שָׁנָה he repeated are written identically, and the number שְׁנַיִם two shares the consonants שנ; the dictionaries file שְׁנַיִם under שנה by convention.'
+  },
+  {
+    id: 'he-shba',
+    lang: 'hebrew',
+    letters: ['ש', 'ב', 'ע'],
+    gloss: 'seven; week; swear',
+    attested: [
+      { word: 'שֶׁבַע', gloss: 'seven' },
+      { word: 'שָׁבוּעַ', gloss: 'week, period of seven' },
+      { word: 'נִשְׁבַּע', gloss: 'he swore' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'sebe', note: 'seven' },
+      {
+        lang: 'aramaic',
+        form: 'שבע',
+        note: 'seven; Ezra 7:14 שִׁבְעַת (seven of)'
+      },
+      { lang: 'osa', form: 's1bʿ', note: 'seven' }
+    ],
+    homographNote:
+      'The consonants שבע write the number שֶׁבַע seven, שָׁבוּעַ week, and the verb נִשְׁבַּע he swore; שָׂבַע he was sated is written with the same consonantal letters, shin/śin being a Masoretic pointing distinction.',
+    interpretationNote:
+      'The suggestion that swearing (נִשְׁבַּע) is derived from the number seven is an interpretation, not provable from the texts alone.'
+  },
+  {
+    id: 'he-shbt',
+    lang: 'hebrew',
+    letters: ['ש', 'ב', 'ת'],
+    gloss: 'cease, rest',
+    attested: [
+      { word: 'שַׁבָּת', gloss: 'sabbath' },
+      { word: 'שָׁבַת', gloss: 'he ceased, rested' }
+    ],
+    interpretationNote:
+      'Akkadian šapattu, the mid-month (full-moon) day, is often discussed as a comparison to שַׁבָּת; the comparison is an interpretation, not an established equation.'
+  },
+  {
+    id: 'he-yad',
+    lang: 'hebrew',
+    letters: ['י', 'ע', 'ד'],
+    gloss: 'appoint',
+    attested: [
+      { word: 'מוֹעֵד', gloss: 'appointed time, season, meeting' },
+      { word: 'וְנוֹעַדְתִּי', gloss: 'and I will meet (with you), Exodus 25:22' }
+    ]
+  },
+  {
+    id: 'he-alm',
+    lang: 'hebrew',
+    letters: ['ע', 'ל', 'מ'],
+    gloss: 'long duration (noun base); hidden',
+    attested: [
+      { word: 'עוֹלָם', gloss: 'eternity, long duration' },
+      { word: 'נֶעְלַם', gloss: 'it was hidden' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'עלם',
+        note: 'eternity; Daniel 2:20 מִן־עָלְמָא וְעַד־עָלְמָא'
+      }
+    ],
+    homographNote:
+      'עֶלֶם young man and נֶעְלַם it was hidden are written with the same consonants עלמ as עוֹלָם; any connection between long duration and hiddenness is an interpretation, not provable from the texts alone.'
+  },
+  {
+    id: 'he-achd',
+    lang: 'hebrew',
+    letters: ['א', 'ח', 'ד'],
+    gloss: 'be one, unite',
+    attested: [
+      { word: 'אֶחָד', gloss: 'one' },
+      { word: 'אַחַת', gloss: 'one (feminine)' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'חד',
+        note: 'one; Daniel 2:31 חַד; the initial aleph of the Hebrew word has no counterpart in the Aramaic form'
+      }
+    ]
+  },
+  {
+    id: 'he-shlsh',
+    lang: 'hebrew',
+    letters: ['ש', 'ל', 'ש'],
+    gloss: 'three',
+    attested: [
+      { word: 'שָׁלוֹשׁ', gloss: 'three' },
+      { word: 'שְׁלִישִׁי', gloss: 'third' },
+      { word: 'שְׁלוֹשִׁים', gloss: 'thirty' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'šalāš', note: 'three' },
+      {
+        lang: 'aramaic',
+        form: 'תלת',
+        note: 'three; Daniel 6:11 תְּלָתָה; Aramaic t corresponds to Hebrew š in this word'
+      }
+    ]
+  },
+  {
+    id: 'he-chmsh',
+    lang: 'hebrew',
+    letters: ['ח', 'מ', 'ש'],
+    gloss: 'five',
+    attested: [
+      { word: 'חָמֵשׁ', gloss: 'five' },
+      { word: 'חֲמִישִׁי', gloss: 'fifth' },
+      { word: 'חֲמִשִּׁים', gloss: 'fifty' }
+    ],
+    cognates: [{ lang: 'akkadian', form: 'ḫamiš', note: 'five' }]
+  },
+  {
+    id: 'he-shsh',
+    lang: 'hebrew',
+    letters: ['ש', 'ש'],
+    gloss: 'six (noun base)',
+    attested: [
+      { word: 'שֵׁשׁ', gloss: 'six' },
+      { word: 'שִׁשִּׁי', gloss: 'sixth' },
+      { word: 'שִׁשִּׁים', gloss: 'sixty' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'šediš', note: 'six' },
+      { lang: 'aramaic', form: 'שת', note: 'six; Ezra 6:15 שְׁנַת שֵׁת (the sixth year)' }
+    ],
+    homographNote:
+      'שֵׁשׁ fine linen (as in the tabernacle fabrics) is written and pointed identically with שֵׁשׁ six; the two are distinguished by context.'
+  },
+  {
+    id: 'he-shmn',
+    lang: 'hebrew',
+    letters: ['ש', 'מ', 'נ'],
+    gloss: 'eight / oil, fat — two attested word groups',
+    attested: [
+      { word: 'שְׁמֹנֶה', gloss: 'eight' },
+      { word: 'שֶׁמֶן', gloss: 'oil' },
+      { word: 'שָׁמֵן', gloss: 'fat' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'šamnu', note: 'oil' },
+      { lang: 'akkadian', form: 'samāne', note: 'eight' }
+    ],
+    homographNote:
+      'The consonants שמן write both שְׁמֹנֶה eight and the oil/fat group שֶׁמֶן and שָׁמֵן; the texts state no connection between the two word groups.'
+  },
+  {
+    id: 'he-tsha',
+    lang: 'hebrew',
+    letters: ['ת', 'ש', 'ע'],
+    gloss: 'nine',
+    attested: [
+      { word: 'תֵּשַׁע', gloss: 'nine' },
+      { word: 'תִּשְׁעִים', gloss: 'ninety' }
+    ],
+    cognates: [{ lang: 'akkadian', form: 'tiše', note: 'nine' }]
+  },
+  {
+    id: 'he-asr-ten',
+    lang: 'hebrew',
+    letters: ['ע', 'ש', 'ר'],
+    gloss: 'ten',
+    attested: [
+      { word: 'עֶשֶׂר', gloss: 'ten' },
+      { word: 'עָשָׂר', gloss: 'ten (in the numbers eleven to nineteen)' },
+      { word: 'עֶשְׂרִים', gloss: 'twenty' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'ešer', note: 'ten' },
+      {
+        lang: 'aramaic',
+        form: 'עשר',
+        note: 'ten; Daniel 7:7 עֲשַׂר (ten horns)'
+      }
+    ],
+    homographNote:
+      'עֹשֶׁר wealth is written with the same consonantal letters; śin/shin is a Masoretic pointing distinction on an identical letter.'
   }
 ]
 

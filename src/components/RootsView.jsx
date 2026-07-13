@@ -29,9 +29,19 @@ function lettersLabel(letters) {
   return arr.join(MAQAF)
 }
 
+const LONG_ROOT_NOTE =
+  'For roots of more than three letters only the reorderings attested as roots are shown ({found} of {all} possible orderings).'
+
 function RootDetail({ root, onSelectRoot }) {
   const key = rootKey(root.letters)
-  const perms = uniquePermutations(root.letters)
+  const allPerms = uniquePermutations(root.letters)
+  // A 4-letter root has 24 orderings and a 5-letter one 120 — showing every
+  // ghost tile would drown the attested ones, so long roots list only found
+  // permutations, with an honest count of what was omitted.
+  const longRoot = root.letters.length > 3
+  const perms = longRoot
+    ? allPerms.filter((p) => findRoot(root.lang, p))
+    : allPerms
   const doublets = DOUBLETS.filter((d) =>
     d.roots.some((r) => rootKey(r) === key)
   )
@@ -93,6 +103,14 @@ function RootDetail({ root, onSelectRoot }) {
 
       <div className="section-label">Permutation explorer</div>
       <p className="fixed-line">{PERM_DISCLAIMER}</p>
+      {longRoot && (
+        <p className="fixed-line">
+          {LONG_ROOT_NOTE.replace('{found}', String(perms.length)).replace(
+            '{all}',
+            String(allPerms.length)
+          )}
+        </p>
+      )}
       <div className="perm-grid">
         {perms.map((p) => {
           const found = findRoot(root.lang, p)
