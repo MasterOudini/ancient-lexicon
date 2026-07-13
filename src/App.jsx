@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import DictionaryList from './components/DictionaryList.jsx'
-import HebrewLexiconView from './components/HebrewLexiconView.jsx'
+import ReferenceDictionaries from './components/ReferenceDictionaries.jsx'
 import RootsView from './components/RootsView.jsx'
 import SettingsView from './components/SettingsView.jsx'
 import AboutView from './components/AboutView.jsx'
@@ -44,7 +44,7 @@ const CONFIG = {
       about: 'About',
       settings: 'Settings'
     },
-    modes: { concepts: 'Comparative', strongs: 'Hebrew lexicon' },
+    modes: { concepts: 'Comparative', strongs: 'Reference dictionaries' },
     noResults: 'No entries match this search.',
     searchHint:
       'Search by English (lion), Hebrew (אריה), transliteration (labbu), or paste glyphs from any plaque.',
@@ -53,14 +53,10 @@ const CONFIG = {
     matchCount: '{n} matches',
     oneMatch: '1 match',
     showingOf: 'Showing {shown} of {total} — keep scrolling for more',
-    strongsSearchPlaceholder: 'Search lemma, meaning, or Strong’s number…',
-    strongsSearchHint:
-      'Search by Hebrew (שלום), transliteration (shalom), meaning (peace), or number (H7965).',
-    strongsLoading: 'Loading the full Hebrew lexicon…',
+    refSearchPlaceholder: 'Search {name} — headword, meaning, or number…',
+    strongsLoading: 'Loading dictionary…',
     strongsLoadFailed:
-      'The lexicon data could not be loaded. Reload the app and try again.',
-    strongsKjvLabel: 'KJV renderings:',
-    strongsPronLabel: 'Pronunciation (Strong’s notation):',
+      'This dictionary could not be loaded. Check your connection and try again.',
     strongsPresentedNote: 'Presented as published.'
   }
 }
@@ -170,7 +166,7 @@ export default function App() {
         <p className="header-subtitle">{CONFIG.subtitle}</p>
         <p className="header-meta">
           {LEXICON.length} concepts · {LANGUAGES.length} ancient languages ·
-          Strong’s Hebrew lexicon
+          reference dictionaries
         </p>
       </header>
 
@@ -245,7 +241,7 @@ export default function App() {
           )}
 
           {dictMode === 'strongs' && (
-            <HebrewLexiconView strings={CONFIG.strings} />
+            <ReferenceDictionaries strings={CONFIG.strings} />
           )}
         </main>
       )}
