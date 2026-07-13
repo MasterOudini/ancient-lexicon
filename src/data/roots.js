@@ -921,6 +921,266 @@ export const ROOTS = [
     ],
     homographNote:
       'עֹשֶׁר wealth is written with the same consonantal letters; śin/shin is a Masoretic pointing distinction on an identical letter.'
+  },
+
+  // --- Animals ---
+  {
+    id: 'he-ary',
+    lang: 'hebrew',
+    letters: ['א', 'ר', 'י'],
+    gloss: 'lion (noun base)',
+    attested: [
+      { word: 'אַרְיֵה', gloss: 'lion' },
+      { word: 'אֲרִי', gloss: 'lion (shorter form)' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'אריה',
+        note: 'Daniel 7:4 כְאַרְיֵה (like a lion); the lions of the den in Daniel 6 are אַרְיָוָתָא'
+      }
+    ]
+  },
+  {
+    id: 'he-sws',
+    lang: 'hebrew',
+    letters: ['ס', 'ו', 'ס'],
+    gloss: 'horse (noun base)',
+    attested: [{ word: 'סוּס', gloss: 'horse' }],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'sīsû',
+        note: 'horse; the same wandering culture word'
+      }
+    ]
+  },
+  {
+    id: 'he-chmr',
+    lang: 'hebrew',
+    letters: ['ח', 'מ', 'ר'],
+    gloss: 'donkey; also clay/mortar חֹמֶר — several attested word groups',
+    attested: [
+      { word: 'חֲמוֹר', gloss: 'donkey' },
+      { word: 'חֹמֶר', gloss: 'clay, mortar' },
+      { word: 'חֹמֶר', gloss: 'homer (a dry measure)' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'imēru',
+        note: 'donkey; Akkadian has no ḥ'
+      },
+      {
+        lang: 'aramaic',
+        form: 'חמר',
+        note: 'donkey; the ordinary Aramaic word'
+      }
+    ],
+    homographNote:
+      'The consonants חמר write several attested words: חֲמוֹר donkey, חֹמֶר clay, and the dry measure חֹמֶר. Biblical Aramaic חֲמַר wine (Daniel 5:1 חַמְרָא) is a different word again.'
+  },
+  {
+    id: 'he-gml',
+    lang: 'hebrew',
+    letters: ['ג', 'מ', 'ל'],
+    gloss: 'camel; deal fully, wean',
+    attested: [
+      { word: 'גָּמָל', gloss: 'camel' },
+      { word: 'גָּמַל', gloss: 'he dealt fully, requited; also weaned' },
+      { word: 'גְּמוּל', gloss: 'recompense' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'gammalu',
+        note: 'camel, in first-millennium sources'
+      },
+      {
+        lang: 'osa',
+        form: 'gml',
+        note: 'check corpus records (DASI/CSAI)'
+      }
+    ],
+    homographNote:
+      'גָּמָל camel and the verb גָּמַל deal fully, wean are written with the same consonants; the dictionaries treat them as separate word groups.'
+  },
+  {
+    id: 'he-az',
+    lang: 'hebrew',
+    letters: ['ע', 'ז'],
+    gloss: 'goat (noun base)',
+    attested: [
+      { word: 'עֵז', gloss: 'goat, she-goat' },
+      { word: 'עִזִּים', gloss: 'goats' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'enzu', note: 'goat' },
+      {
+        lang: 'aramaic',
+        form: 'עז',
+        note: 'Ezra 6:17 צְפִירֵי עִזִּין (he-goats)'
+      }
+    ],
+    homographNote:
+      'עַז strong, fierce is written with the same consonants; the dictionaries file it under עזז.'
+  },
+  {
+    id: 'he-ayl',
+    lang: 'hebrew',
+    letters: ['א', 'י', 'ל'],
+    gloss: 'ram; also leader, terebinth — several attested groups',
+    attested: [
+      { word: 'אַיִל', gloss: 'ram' },
+      { word: 'אַיָּל', gloss: 'hart, deer' },
+      { word: 'אֵילִים', gloss: 'terebinths (Isaiah 1:29)' }
+    ],
+    homographNote:
+      'The consonants איל write several attested words: אַיִל ram (also leader, as in אֵילֵי הָאָרֶץ Ezekiel 17:13), אַיָּל hart, and אֵילִים terebinths.'
+  },
+  {
+    id: 'he-tspr',
+    lang: 'hebrew',
+    letters: ['צ', 'פ', 'ר'],
+    gloss: 'bird (noun base)',
+    attested: [{ word: 'צִפּוֹר', gloss: 'bird' }],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'iṣṣūru',
+        note: 'bird; the standard comparison with Hebrew צִפּוֹר'
+      },
+      {
+        lang: 'aramaic',
+        form: 'צפר',
+        note: 'צִפֲּרֵי שְׁמַיָּא (the birds of the heavens) in the tree vision of Daniel 4'
+      }
+    ],
+    homographNote:
+      'צָפִיר he-goat (Daniel 8:5, Hebrew) is written with the same consonants; the dictionaries treat it as a separate word.'
+  },
+  {
+    id: 'he-ywn',
+    lang: 'hebrew',
+    letters: ['י', 'ו', 'נ'],
+    gloss: 'dove (noun base)',
+    attested: [{ word: 'יוֹנָה', gloss: 'dove' }]
+  },
+  {
+    id: 'he-nshr',
+    lang: 'hebrew',
+    letters: ['נ', 'ש', 'ר'],
+    gloss: 'eagle, vulture (noun base)',
+    attested: [{ word: 'נֶשֶׁר', gloss: 'eagle, vulture' }],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'נשר',
+        note: 'Daniel 7:4 גַּפִּין דִּי־נְשַׁר (wings of an eagle)'
+      }
+    ]
+  },
+  {
+    id: 'he-dg',
+    lang: 'hebrew',
+    letters: ['ד', 'ג'],
+    gloss: 'fish (noun base)',
+    attested: [
+      { word: 'דָּג', gloss: 'fish' },
+      { word: 'דָּגָה', gloss: 'fish (collective)' }
+    ]
+  },
+  {
+    id: 'he-nchsh',
+    lang: 'hebrew',
+    letters: ['נ', 'ח', 'ש'],
+    gloss: 'snake; practice divination נִחֵשׁ; bronze נְחֹשֶׁת shares the consonants',
+    attested: [
+      { word: 'נָחָשׁ', gloss: 'snake' },
+      { word: 'נִחֵשׁ', gloss: 'he practiced divination' },
+      { word: 'נְחֹשֶׁת', gloss: 'bronze, copper' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'נחש',
+        note: 'bronze, copper in Biblical Aramaic (Daniel 2:32 דִּי נְחָשׁ); the Aramaic snake word is different'
+      }
+    ],
+    homographNote:
+      'The consonants נחש write the snake נָחָשׁ and the verb נִחֵשׁ practice divination; נְחֹשֶׁת bronze shares the same three consonants. The dictionaries treat these as separate word groups.',
+    interpretationNote:
+      'A historical link between נָחָשׁ snake, נִחֵשׁ divination, and נְחֹשֶׁת bronze has often been suggested; it is an interpretation, not provable from the texts alone.'
+  },
+  {
+    id: 'he-aqrb',
+    lang: 'hebrew',
+    letters: ['ע', 'ק', 'ר', 'ב'],
+    gloss: 'scorpion (noun base)',
+    attested: [{ word: 'עַקְרָב', gloss: 'scorpion' }]
+  },
+  {
+    id: 'he-zab',
+    lang: 'hebrew',
+    letters: ['ז', 'א', 'ב'],
+    gloss: 'wolf (noun base)',
+    attested: [{ word: 'זְאֵב', gloss: 'wolf' }]
+  },
+  {
+    id: 'he-db',
+    lang: 'hebrew',
+    letters: ['ד', 'ב'],
+    gloss: 'bear (noun base)',
+    attested: [{ word: 'דֹּב', gloss: 'bear' }],
+    cognates: [
+      { lang: 'akkadian', form: 'dabû', note: 'bear' },
+      {
+        lang: 'aramaic',
+        form: 'דב',
+        note: 'Daniel 7:5 דָּמְיָה לְדֹב (resembling a bear)'
+      }
+    ]
+  },
+  {
+    id: 'he-tsby',
+    lang: 'hebrew',
+    letters: ['צ', 'ב', 'י'],
+    gloss: 'gazelle; beauty, splendor — both attested',
+    attested: [
+      { word: 'צְבִי', gloss: 'gazelle' },
+      { word: 'צְבִי', gloss: 'beauty, splendor (אֶרֶץ הַצְּבִי Daniel 11:16)' },
+      { word: 'צְבִיָּה', gloss: 'female gazelle' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'ṣabītu', note: 'gazelle' },
+      {
+        lang: 'aramaic',
+        form: 'טבי',
+        note: 'Aramaic ṭ here corresponds to Hebrew ṣ; standard in later Aramaic'
+      }
+    ],
+    homographNote:
+      'צְבִי gazelle and צְבִי beauty, splendor are written and pointed identically; the dictionaries treat them as separate words.'
+  },
+  {
+    id: 'he-yal',
+    lang: 'hebrew',
+    letters: ['י', 'ע', 'ל'],
+    gloss: 'ibex (noun base)',
+    attested: [
+      { word: 'יָעֵל', gloss: 'ibex, wild goat' },
+      { word: 'יְעֵלִים', gloss: 'ibexes (Psalm 104:18)' },
+      { word: 'יַעֲלָה', gloss: 'female ibex (Proverbs 5:19 יַעֲלַת־חֵן)' }
+    ],
+    cognates: [
+      {
+        lang: 'osa',
+        form: 'wʿl',
+        note: 'ibex, a recurring motif in Sabaic dedicatory contexts; Sabaic w corresponds to Hebrew initial y'
+      }
+    ],
+    homographNote:
+      'The verb הוֹעִיל profit, avail is conventionally filed under the same consonants יעל; the animal noun and the verb are treated as separate words.'
   }
 ]
 
