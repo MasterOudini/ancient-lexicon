@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
-import ConceptCard from './components/ConceptCard.jsx'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import DictionaryList from './components/DictionaryList.jsx'
+import HebrewLexiconView from './components/HebrewLexiconView.jsx'
 import RootsView from './components/RootsView.jsx'
 import SettingsView from './components/SettingsView.jsx'
+import AboutView from './components/AboutView.jsx'
 import { LANGUAGES, HEBREW_CAVEAT } from './data/languages.js'
 import { LEXICON } from './data/lexicon.js'
 import { findRoot } from './data/roots.js'
@@ -16,11 +18,12 @@ import {
 // ---------------------------------------------------------------------------
 // CONFIG — user-editable app settings.
 // Colors are CSS custom properties at the top of src/styles.css.
-// Dictionary content lives in src/data/lexicon.js; roots in
+// Dictionary content lives in src/data/lexicon/ modules; roots in
 // src/data/roots.js; the language registry in src/data/languages.js.
 // ---------------------------------------------------------------------------
 const CONFIG = {
   appName: 'Ancient Lexicon',
+  subtitle: 'A comparative lexicon of the ancient Near East',
   // Language ids (from src/data/languages.js) enabled on first launch.
   defaultEnabledLangs: LANGUAGES.map((l) => l.id),
   // The app starts in dark. Settings offers Light and Auto (follow the
@@ -33,15 +36,39 @@ const CONFIG = {
     notInDatabase: 'not in database',
     verifyTag: 'verify against corpus',
     addedByYou: 'added by you',
+    addedByYouGroup: 'Added by you',
     deleteEntry: 'Delete',
-    tabs: { dictionary: 'Dictionary', roots: 'Roots', settings: 'Settings' },
-    noResults: 'No entries match this search.'
+    tabs: {
+      dictionary: 'Dictionary',
+      roots: 'Roots',
+      about: 'About',
+      settings: 'Settings'
+    },
+    modes: { concepts: 'Comparative', strongs: 'Hebrew lexicon' },
+    noResults: 'No entries match this search.',
+    searchHint:
+      'Search by English (lion), Hebrew (אריה), transliteration (labbu), or paste glyphs from any plaque.',
+    clearSearch: 'Clear search',
+    entryCount: '{n} entries',
+    matchCount: '{n} matches',
+    oneMatch: '1 match',
+    showingOf: 'Showing {shown} of {total} — keep scrolling for more',
+    strongsSearchPlaceholder: 'Search lemma, meaning, or Strong’s number…',
+    strongsSearchHint:
+      'Search by Hebrew (שלום), transliteration (shalom), meaning (peace), or number (H7965).',
+    strongsLoading: 'Loading the full Hebrew lexicon…',
+    strongsLoadFailed:
+      'The lexicon data could not be loaded. Reload the app and try again.',
+    strongsKjvLabel: 'KJV renderings:',
+    strongsPronLabel: 'Pronunciation (Strong’s notation):',
+    strongsPresentedNote: 'Presented as published.'
   }
 }
 // ---------------------------------------------------------------------------
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dictionary')
+  const [dictMode, setDictMode] = useState('concepts')
   const [enabledLangs, setEnabledLangs] = useState(() => {
     const stored = getJSON(SETTINGS_KEY, null)
     return Array.isArray(stored?.enabledLangs)
@@ -93,7 +120,12 @@ export default function App() {
     () => searchEntries(allEntries, query),
     [allEntries, query]
   )
-  const enabledLanguages = LANGUAGES.filter((l) => enabledLangs.includes(l.id))
+  // Stable references keep the memoized cards from re-rendering on every
+  // keystroke in the search box.
+  const enabledLanguages = useMemo(
+    () => LANGUAGES.filter((l) => enabledLangs.includes(l.id)),
+    [enabledLangs]
+  )
   const allOn = enabledLangs.length === LANGUAGES.length
 
   function toggleLang(id) {
@@ -103,17 +135,19 @@ export default function App() {
   }
 
   // A root chip on a dictionary card navigates to that root's detail view.
-  function openRoot(letters) {
+  const openRoot = useCallback((letters) => {
     const root = findRoot('hebrew', letters)
     if (root) {
       setSelectedRootId(root.id)
       setActiveTab('roots')
     }
-  }
+  }, [])
 
-  function deleteCustomEntry(id) {
+  const deleteCustomEntry = useCallback((id) => {
     setCustomEntries((prev) => prev.filter((e) => e.id !== id))
-  }
+  }, [])
+
+  const clearQuery = useCallback(() => setQuery(''), [])
 
   function addCustomEntry(entry) {
     setCustomEntries((prev) => [...prev, entry])
@@ -131,61 +165,88 @@ export default function App() {
 
   return (
     <div className="app">
-      <div className="brand">{CONFIG.appName}</div>
+      <header className="header">
+        <div className="brand">{CONFIG.appName}</div>
+        <p className="header-subtitle">{CONFIG.subtitle}</p>
+        <p className="header-meta">
+          {LEXICON.length} concepts · {LANGUAGES.length} ancient languages ·
+          Strong’s Hebrew lexicon
+        </p>
+      </header>
 
       {activeTab === 'dictionary' && (
         <main>
-          <input
-            className="searchbar"
-            type="search"
-            dir="auto"
-            placeholder={CONFIG.strings.searchPlaceholder}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-label={CONFIG.strings.searchPlaceholder}
-          />
-
-          <div className="chiprow" role="group" aria-label="Language filters">
-            <button
-              className={'chip' + (allOn ? ' on' : '')}
-              onClick={() =>
-                setEnabledLangs(allOn ? [] : LANGUAGES.map((l) => l.id))
-              }
-            >
-              {CONFIG.strings.allChip}
-            </button>
-            {LANGUAGES.map((l) => (
+          <div className="segmented" role="tablist" aria-label="Dictionary mode">
+            {['concepts', 'strongs'].map((mode) => (
               <button
-                key={l.id}
-                className={'chip' + (enabledLangs.includes(l.id) ? ' on' : '')}
-                onClick={() => toggleLang(l.id)}
+                key={mode}
+                role="tab"
+                aria-selected={dictMode === mode}
+                className={'segment' + (dictMode === mode ? ' on' : '')}
+                onClick={() => setDictMode(mode)}
               >
-                {l.name}
+                {CONFIG.strings.modes[mode]}
               </button>
             ))}
           </div>
 
-          <details className="infobox">
-            <summary>{CONFIG.strings.scriptsCaveatsTitle}</summary>
-            <ul>
-              <li>{HEBREW_CAVEAT}</li>
-              {LANGUAGES.map((l) => (
-                <li key={l.id}>{l.caveat}</li>
-              ))}
-            </ul>
-          </details>
+          {dictMode === 'concepts' && (
+            <>
+              <input
+                className="searchbar"
+                type="search"
+                dir="auto"
+                placeholder={CONFIG.strings.searchPlaceholder}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                aria-label={CONFIG.strings.searchPlaceholder}
+              />
 
-          {results.length === 0 && <p>{CONFIG.strings.noResults}</p>}
-          {results.map((entry) => (
-            <ConceptCard
-              key={entry.id}
-              entry={entry}
-              languages={enabledLanguages}
-              onRootClick={openRoot}
-              onDelete={entry.custom ? () => deleteCustomEntry(entry.id) : null}
-              strings={CONFIG.strings}
-            />
-          ))}
+              <div className="chiprow" role="group" aria-label="Language filters">
+                <button
+                  className={'chip' + (allOn ? ' on' : '')}
+                  onClick={() =>
+                    setEnabledLangs(allOn ? [] : LANGUAGES.map((l) => l.id))
+                  }
+                >
+                  {CONFIG.strings.allChip}
+                </button>
+                {LANGUAGES.map((l) => (
+                  <button
+                    key={l.id}
+                    className={'chip' + (enabledLangs.includes(l.id) ? ' on' : '')}
+                    onClick={() => toggleLang(l.id)}
+                  >
+                    {l.name}
+                  </button>
+                ))}
+              </div>
+
+              <details className="infobox">
+                <summary>{CONFIG.strings.scriptsCaveatsTitle}</summary>
+                <ul>
+                  <li>{HEBREW_CAVEAT}</li>
+                  {LANGUAGES.map((l) => (
+                    <li key={l.id}>{l.caveat}</li>
+                  ))}
+                </ul>
+              </details>
+
+              <DictionaryList
+                results={results}
+                query={query}
+                languages={enabledLanguages}
+                onRootClick={openRoot}
+                onDelete={deleteCustomEntry}
+                strings={CONFIG.strings}
+                onClearQuery={clearQuery}
+              />
+            </>
+          )}
+
+          {dictMode === 'strongs' && (
+            <HebrewLexiconView strings={CONFIG.strings} />
+          )}
         </main>
       )}
 
@@ -195,6 +256,8 @@ export default function App() {
           onSelectRoot={setSelectedRootId}
         />
       )}
+
+      {activeTab === 'about' && <AboutView />}
 
       {activeTab === 'settings' && (
         <SettingsView
@@ -228,6 +291,16 @@ export default function App() {
             √
           </span>
           {CONFIG.strings.tabs.roots}
+        </button>
+        <button
+          className={activeTab === 'about' ? 'active' : ''}
+          onClick={() => setActiveTab('about')}
+          aria-current={activeTab === 'about'}
+        >
+          <span className="tab-glyph script-egyptian" aria-hidden="true">
+            𓏞
+          </span>
+          {CONFIG.strings.tabs.about}
         </button>
         <button
           className={activeTab === 'settings' ? 'active' : ''}

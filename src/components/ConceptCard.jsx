@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { toImperialAramaic, toMusnad } from '../lib/scripts.js'
 
 // One dictionary entry rendered as a museum object label: Hebrew headword
@@ -67,13 +68,9 @@ function Plaque({ language, form, strings }) {
   )
 }
 
-export default function ConceptCard({
-  entry,
-  languages,
-  onRootClick,
-  onDelete,
-  strings
-}) {
+// Memoized: with stable languages/handler props from App, typing in the
+// search box re-renders only cards entering or leaving the result list.
+function ConceptCard({ entry, languages, onRootClick, onDelete, strings }) {
   return (
     <article className="card">
       <div className="card-head">
@@ -96,7 +93,7 @@ export default function ConceptCard({
           <span className="badge-custom">{strings.addedByYou}</span>
         )}
         {onDelete && (
-          <button className="btn-delete" onClick={onDelete}>
+          <button className="btn-delete" onClick={() => onDelete(entry.id)}>
             {strings.deleteEntry}
           </button>
         )}
@@ -116,3 +113,5 @@ export default function ConceptCard({
     </article>
   )
 }
+
+export default memo(ConceptCard)

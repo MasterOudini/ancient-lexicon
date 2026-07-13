@@ -9,8 +9,8 @@
   --card: #f6f1e4;       /* papyrus cards */
   --plaque: #efe7d2;     /* clay-slip plaques */
   --line: #cfc4aa;       /* hairlines */
-  --faience: #1f6f63;    /* blue-green accent: active states, eyebrows, links */
-  --clay: #9a5b2b;       /* root and cluster chips */
+  --faience: #1d685c;    /* blue-green accent: active states, eyebrows, links */
+  --clay: #8a5126;       /* root and cluster chips */
   --danger: #8c3b2e;
   --chip-on-bg: #e4ded0; /* background of an active filter chip */
   color-scheme: light;
@@ -146,6 +146,13 @@ button {
     calc(84px + env(safe-area-inset-bottom)) 16px;
 }
 
+.header {
+  text-align: center;
+  border-bottom: 1px solid var(--line);
+  padding: 8px 0 12px;
+  margin-bottom: 14px;
+}
+
 .brand {
   font-family: var(--serif);
   font-weight: 500;
@@ -153,8 +160,48 @@ button {
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--ink-soft);
-  text-align: center;
-  margin: 8px 0 16px;
+  margin: 0 0 4px;
+}
+
+.header-subtitle {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--ink);
+  margin: 0 0 2px;
+}
+
+.header-meta {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+/* ---- Dictionary mode toggle -------------------------------------------- */
+
+.segmented {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  padding: 3px;
+  margin-bottom: 12px;
+}
+
+.segment {
+  flex: 1 1 0;
+  min-height: 40px;
+  padding: 6px 10px;
+  border-radius: 9px;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  letter-spacing: 0.02em;
+}
+
+.segment.on {
+  background: var(--chip-on-bg);
+  color: var(--faience);
+  border: 1px solid var(--faience);
 }
 
 /* ---- Tab bar ---------------------------------------------------------- */
@@ -175,12 +222,14 @@ button {
 }
 
 .tabbar button {
-  flex: 0 1 160px;
+  flex: 0 1 140px;
+  min-height: 48px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 1px;
-  padding: 6px 10px;
+  padding: 4px 8px;
   border-radius: 10px;
   color: var(--ink-soft);
   font-size: 0.72rem;
@@ -200,7 +249,8 @@ button {
 
 .searchbar {
   width: 100%;
-  padding: 10px 14px;
+  min-height: 44px;
+  padding: 11px 14px;
   font-size: 1rem;
   color: var(--ink);
   background: var(--card);
@@ -222,6 +272,7 @@ button {
 }
 
 .chip {
+  position: relative;
   flex: 0 0 auto;
   padding: 4px 12px;
   border: 1px solid var(--line);
@@ -230,6 +281,23 @@ button {
   color: var(--ink-soft);
   font-size: 0.82rem;
   white-space: nowrap;
+}
+
+/* Invisible hit-area extension: the pill stays small, the tap target
+   reaches ~44px. */
+.chip::after,
+.rootchip::after,
+.clusterchip::after,
+.btn-delete::after {
+  content: '';
+  position: absolute;
+  inset: -8px 0;
+}
+
+.rootchip,
+.clusterchip,
+.btn-delete {
+  position: relative;
 }
 
 .chip.on {
@@ -275,6 +343,10 @@ details.infobox ul {
   border-radius: 14px;
   padding: 16px;
   margin-bottom: 14px;
+  /* Off-screen cards skip layout and paint; the intrinsic size keeps the
+     scrollbar stable while they are skipped. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
 }
 
 .card-head {
@@ -387,8 +459,10 @@ details.infobox ul {
 }
 
 .plaque-empty {
+  /* Meaningful text (absence is information) — italic, not faded, so it
+     keeps WCAG contrast in both themes. */
   color: var(--ink-soft);
-  opacity: 0.65;
+  font-style: italic;
   font-size: 0.85rem;
   margin-top: 2px;
 }
@@ -530,8 +604,13 @@ details.infobox ul {
 }
 
 .perm-tile.ghost {
-  opacity: 0.45;
+  border-style: dashed;
+  background: transparent;
   cursor: default;
+}
+
+.perm-tile.ghost .letters {
+  color: var(--ink-soft);
 }
 
 .cognate {
@@ -667,4 +746,187 @@ details.langfields summary {
 
 .form-error {
   color: var(--danger);
+}
+
+/* ---- Dictionary list: counts, grouping, empty state ---------------------- */
+
+.result-count {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  letter-spacing: 0.04em;
+  margin: 2px 2px 10px;
+}
+
+.jumprow {
+  padding-top: 0;
+  margin-bottom: 2px;
+}
+
+.category-head {
+  font-variant-caps: small-caps;
+  font-family: var(--serif);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  font-size: 0.95rem;
+  color: var(--faience);
+  margin: 22px 2px 10px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.category-count {
+  font-variant-caps: normal;
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  letter-spacing: 0.04em;
+  margin-left: 6px;
+}
+
+.list-footer {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  margin: 14px 0;
+}
+
+.empty-state {
+  text-align: center;
+  background: var(--card);
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  padding: 28px 18px;
+  margin: 10px 0;
+}
+
+.empty-title {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  margin: 0 0 6px;
+}
+
+.empty-hint {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin: 0 0 14px;
+}
+
+/* ---- Full Hebrew lexicon (Strong's) -------------------------------------- */
+
+.alefbet .chip-letter {
+  font-family: var(--serif);
+  font-size: 1rem;
+  min-width: 40px;
+  text-align: center;
+}
+
+.lexrow {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-bottom: 6px;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 52px;
+}
+
+.lexrow summary {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 9px 12px;
+  cursor: pointer;
+  list-style: none;
+  min-height: 44px;
+}
+
+.lexrow summary::-webkit-details-marker {
+  display: none;
+}
+
+.lex-lemma {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 1.2rem;
+  flex: 0 0 auto;
+}
+
+.lex-xlit {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  flex: 0 0 auto;
+}
+
+.lex-id {
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  color: var(--faience);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0 5px;
+  flex: 0 0 auto;
+}
+
+.lex-def {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.lexrow[open] .lex-def {
+  display: none;
+}
+
+.lex-body {
+  border-top: 1px solid var(--line);
+  padding: 8px 12px 10px;
+  font-size: 0.88rem;
+}
+
+.lex-body p {
+  margin: 6px 0;
+}
+
+.lex-kjv,
+.lex-pron {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+
+.lex-attribution {
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--ink-soft);
+  text-align: center;
+  margin: 18px 0 8px;
+}
+
+/* ---- About ---------------------------------------------------------------- */
+
+.about-sources {
+  margin: 6px 0;
+  padding-left: 18px;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.about-sources li {
+  margin: 4px 0;
+}
+
+/* ---- Small screens -------------------------------------------------------- */
+
+@media (max-width: 380px) {
+  .headword {
+    font-size: 1.7rem;
+  }
+
+  .plaque-glyph {
+    font-size: 30px;
+  }
 }
