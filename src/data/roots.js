@@ -3418,6 +3418,310 @@ export const ROOTS = [
       { word: 'וַיַּקְהֵל', gloss: 'and he assembled (Exodus 35:1)' },
       { word: 'קֹהֶלֶת', gloss: 'Qoheleth (Ecclesiastes 1:1), conventionally connected with the assembly' }
     ]
+  },
+
+  // --- Emotions, virtues & qualities ---
+  {
+    id: 'he-shmch',
+    lang: 'hebrew',
+    letters: ['ש', 'מ', 'ח'],
+    gloss: 'rejoice',
+    attested: [
+      { word: 'שָׂמַח', gloss: 'he rejoiced' },
+      { word: 'שִׂמְחָה', gloss: 'joy, gladness' },
+      { word: 'שָׂמֵחַ', gloss: 'glad, joyful' }
+    ]
+  },
+  {
+    id: 'he-kbd',
+    lang: 'hebrew',
+    letters: ['כ', 'ב', 'ד'],
+    gloss: 'be heavy; be honored',
+    attested: [
+      { word: 'כָּבֵד', gloss: 'heavy' },
+      { word: 'כָּבוֹד', gloss: 'glory, honor' },
+      { word: 'כָּבֵד', gloss: 'liver' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'kabātu',
+        note: 'to be heavy; also to be honored — the same weight-to-honor pairing'
+      }
+    ],
+    homographNote:
+      'כָּבֵד heavy and כָּבֵד liver are written and pointed identically; both are attested, and the dictionaries keep the liver noun as its own entry.'
+  },
+  {
+    id: 'he-chkm',
+    lang: 'hebrew',
+    letters: ['ח', 'כ', 'מ'],
+    gloss: 'be wise',
+    attested: [
+      { word: 'חָכָם', gloss: 'wise' },
+      { word: 'חָכְמָה', gloss: 'wisdom' },
+      { word: 'חֲכַם', gloss: 'be wise (imperative), Proverbs 27:11' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'חכמה',
+        note: 'Daniel 2:20 חָכְמְתָא (wisdom); Daniel 2:21 לְחַכִּימִין (to the wise)'
+      }
+    ]
+  },
+  {
+    id: 'he-chsd',
+    lang: 'hebrew',
+    letters: ['ח', 'ס', 'ד'],
+    gloss: 'loyal love (noun base)',
+    attested: [
+      { word: 'חֶסֶד', gloss: 'loyal love, kindness' },
+      { word: 'חָסִיד', gloss: 'faithful, devout one' }
+    ],
+    homographNote:
+      'A second חֶסֶד meaning shame, reproach is attested (Leviticus 20:17 חֶסֶד הוּא); the dictionaries treat it as a separate word.'
+  },
+  {
+    id: 'he-chnn',
+    lang: 'hebrew',
+    letters: ['ח', 'נ', 'נ'],
+    gloss: 'be gracious',
+    attested: [
+      { word: 'חָנַן', gloss: 'he was gracious' },
+      { word: 'חֵן', gloss: 'grace, favor' },
+      { word: 'תְּחִנָּה', gloss: 'supplication' },
+      { word: 'חַנּוּן', gloss: 'gracious' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'חנן',
+        note: 'Daniel 4:24 בְּמִחַן עֲנָיִן (by showing favor to the poor)'
+      }
+    ]
+  },
+  {
+    id: 'he-rchm',
+    lang: 'hebrew',
+    letters: ['ר', 'ח', 'מ'],
+    gloss: 'womb; compassion — both attested word groups',
+    attested: [
+      { word: 'רֶחֶם', gloss: 'womb' },
+      { word: 'רַחֲמִים', gloss: 'compassion, mercy' },
+      { word: 'רִחַם', gloss: 'he had compassion (Psalm 103:13)' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'rēmu',
+        note: 'womb, and also compassion — the same pairing; the verb rêmu means to have mercy'
+      },
+      {
+        lang: 'aramaic',
+        form: 'רחמין',
+        note: 'mercies; Daniel 2:18 וְרַחֲמִין'
+      },
+      {
+        lang: 'osa',
+        form: 'rḥmnn',
+        note: 'Rḥmnn (the Merciful), the divine name of the late monotheistic Sabaic inscriptions'
+      }
+    ],
+    homographNote:
+      'רֶחֶם womb and רַחֲמִים compassion are written from the same consonants רחמ; both word groups are attested.',
+    interpretationNote:
+      'The account of compassion as womb-feeling (a mother toward the child of her womb) is the standard dictionary explanation; as a semantic history it is interpretation, not provable from the texts alone.'
+  },
+  {
+    id: 'he-azz',
+    lang: 'hebrew',
+    letters: ['ע', 'ז', 'ז'],
+    gloss: 'be strong',
+    attested: [
+      { word: 'עֹז', gloss: 'strength, might' },
+      { word: 'עַז', gloss: 'strong, fierce' }
+    ],
+    homographNote:
+      'עַז strong and עֵז goat differ only in pointing; the goat noun is filed under the two-letter base עז.'
+  },
+  {
+    id: 'he-tsdq',
+    lang: 'hebrew',
+    letters: ['צ', 'ד', 'ק'],
+    gloss: 'be just, righteous',
+    attested: [
+      { word: 'צֶדֶק', gloss: 'righteousness, rightness' },
+      { word: 'צְדָקָה', gloss: 'righteousness' },
+      { word: 'צַדִּיק', gloss: 'righteous' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'צדקה',
+        note: 'Daniel 4:24 בְּצִדְקָה (by righteousness)'
+      },
+      {
+        lang: 'osa',
+        form: 'ṣdq',
+        note: 'in royal names and epithets; check corpus records (DASI/CSAI)'
+      }
+    ]
+  },
+  {
+    id: 'he-twb',
+    lang: 'hebrew',
+    letters: ['ט', 'ו', 'ב'],
+    gloss: 'be good',
+    attested: [
+      { word: 'טוֹב', gloss: 'good' },
+      { word: 'טוֹבָה', gloss: 'good things, welfare' },
+      { word: 'טוּב', gloss: 'goodness, the best (of the land)' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'ṭābu',
+        note: 'good; the verb ṭâbu, to be good'
+      },
+      {
+        lang: 'aramaic',
+        form: 'טב',
+        note: 'Daniel 2:32 דִּי־דְהַב טָב (of fine gold)'
+      }
+    ]
+  },
+  {
+    id: 'he-raa',
+    lang: 'hebrew',
+    letters: ['ר', 'ע', 'ע'],
+    gloss: 'be evil, bad',
+    attested: [
+      { word: 'רַע', gloss: 'evil, bad' },
+      { word: 'רָעָה', gloss: 'evil, distress (noun)' },
+      { word: 'הֵרַע', gloss: 'he did evil' }
+    ],
+    homographNote:
+      'The geminate root רעע (be evil) is distinct from רעה (pasture, and the friend word רֵעַ): the consonant sets differ, רעע against רעה, though several surface forms look alike.'
+  },
+  {
+    id: 'he-qtn',
+    lang: 'hebrew',
+    letters: ['ק', 'ט', 'נ'],
+    gloss: 'be small',
+    attested: [
+      { word: 'קָטָן', gloss: 'small, young' },
+      { word: 'קָטֹן', gloss: 'small' },
+      { word: 'קָטֹנְתִּי', gloss: 'I am too small (for all the kindnesses), Genesis 32:11' }
+    ]
+  },
+  {
+    id: 'he-yshn',
+    lang: 'hebrew',
+    letters: ['י', 'ש', 'נ'],
+    gloss: 'sleep; be old — both attested word groups',
+    attested: [
+      { word: 'יָשֵׁן', gloss: 'sleeping, asleep' },
+      { word: 'יָשָׁן', gloss: 'old (of things)' },
+      { word: 'וַיִּישָׁן', gloss: 'and he slept (Genesis 2:21)' }
+    ],
+    homographNote:
+      'יָשֵׁן sleeping and יָשָׁן old (of things) are written with the same consonants ישן; both word groups are attested, and the dictionaries keep them apart. The noun שֵׁנָה sleep is conventionally filed with the sleep group.'
+  },
+  {
+    id: 'he-chzq',
+    lang: 'hebrew',
+    letters: ['ח', 'ז', 'ק'],
+    gloss: 'be strong, firm',
+    attested: [
+      { word: 'חָזָק', gloss: 'strong' },
+      { word: 'חָזַק', gloss: 'he was strong' },
+      { word: 'וַיְחַזֵּק', gloss: 'and he hardened (the heart of Pharaoh), Exodus 9:12' }
+    ]
+  },
+  {
+    id: 'he-mla',
+    lang: 'hebrew',
+    letters: ['מ', 'ל', 'א'],
+    gloss: 'be full, fill',
+    attested: [
+      { word: 'מָלֵא', gloss: 'full' },
+      { word: 'מִלֵּא', gloss: 'he filled' },
+      { word: 'מְלֹא', gloss: 'fullness (Isaiah 6:3)' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'malû',
+        note: 'to be full, to fill'
+      },
+      {
+        lang: 'aramaic',
+        form: 'מלא',
+        note: 'Daniel 2:35 וּמְלָת כָּל־אַרְעָא (and it filled the whole earth)'
+      }
+    ]
+  },
+  {
+    id: 'he-rbb',
+    lang: 'hebrew',
+    letters: ['ר', 'ב', 'ב'],
+    gloss: 'be many',
+    attested: [
+      { word: 'רַב', gloss: 'many, much' },
+      { word: 'רֹב', gloss: 'multitude, abundance' },
+      { word: 'רְבָבָה', gloss: 'myriad, ten thousand' },
+      { word: 'רַבּוּ', gloss: 'they are many (Psalm 3:2)' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'rabû',
+        note: 'to be great, big — the cognate verb; the adjective is filed under great'
+      },
+      {
+        lang: 'aramaic',
+        form: 'רב',
+        note: 'great, chief; Daniel 2:35 טוּר רַב (a great mountain)'
+      }
+    ],
+    homographNote:
+      'רַב also serves as great, chief (as in רַב־טַבָּחִים chief of the guard); the Aramaic rab on the great entry is this word.'
+  },
+  {
+    id: 'he-qwl',
+    lang: 'hebrew',
+    letters: ['ק', 'ו', 'ל'],
+    gloss: 'voice (noun base)',
+    attested: [{ word: 'קוֹל', gloss: 'voice, sound' }],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'קל',
+        note: 'Daniel 4:28 קָל מִן־שְׁמַיָּא (a voice from heaven)'
+      }
+    ]
+  },
+  {
+    id: 'he-amn',
+    lang: 'hebrew',
+    letters: ['א', 'מ', 'נ'],
+    gloss: 'confirm, support; be faithful',
+    attested: [
+      { word: 'אֱמֶת', gloss: 'truth' },
+      { word: 'אָמֵן', gloss: 'amen, so be it' },
+      { word: 'אֱמוּנָה', gloss: 'faithfulness' },
+      { word: 'נֶאֱמָן', gloss: 'faithful, confirmed' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'הימן',
+        note: 'he trusted; Daniel 6:24 דִּי הֵימִן בֵּאלָהֵהּ (because he trusted in his God)'
+      }
+    ],
+    interpretationNote:
+      'אֱמֶת truth is filed under אמנ by dictionary convention; the assumed assimilation of the נ is the account of the dictionaries, not something the texts state.'
   }
 ]
 
