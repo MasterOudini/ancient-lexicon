@@ -2065,6 +2065,269 @@ export const ROOTS = [
         note: 'Daniel 2:22 יָדַע מָה בַחֲשׁוֹכָא (he knows what is in the darkness)'
       }
     ]
+  },
+
+  // --- Field, harvest & household ---
+  {
+    id: 'he-shlch',
+    lang: 'hebrew',
+    letters: ['ש', 'ל', 'ח'],
+    gloss: 'send, stretch out',
+    attested: [
+      { word: 'שָׁלַח', gloss: 'he sent' },
+      { word: 'שֻׁלְחָן', gloss: 'table' }
+    ],
+    homographNote:
+      'שֻׁלְחָן table is filed under these consonants by dictionary convention (so BDB); deriving the noun from the verb send is a lexicographic filing, not a fact of the texts.'
+  },
+  {
+    id: 'he-chrsh',
+    lang: 'hebrew',
+    letters: ['ח', 'ר', 'ש'],
+    gloss: 'plow, engrave; also be silent; craftsman חָרָשׁ — several attested word groups',
+    attested: [
+      { word: 'חָרַשׁ', gloss: 'he plowed, engraved' },
+      { word: 'חָרִישׁ', gloss: 'plowing, plowing season (Exodus 34:21)' },
+      { word: 'חָרָשׁ', gloss: 'craftsman' },
+      { word: 'הֶחֱרִישׁ', gloss: 'he kept silent' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'erēšu',
+        note: 'to cultivate, plant; the standard comparison with the plowing group — check CAD'
+      }
+    ],
+    homographNote:
+      'The consonants חרש write several attested word groups: plow, engrave; the craftsman noun חָרָשׁ; be silent (הֶחֱרִישׁ); and חֵרֵשׁ deaf. חֶרֶשׂ potsherd differs only in the Masoretic point on the ש.'
+  },
+  {
+    id: 'he-qtsr',
+    lang: 'hebrew',
+    letters: ['ק', 'צ', 'ר'],
+    gloss: 'reap, harvest; also be short — both attested',
+    attested: [
+      { word: 'קָצַר', gloss: 'he reaped' },
+      { word: 'קָצִיר', gloss: 'harvest, harvest season' },
+      { word: 'קָצְרָה', gloss: 'it is too short (Isaiah 50:2)' }
+    ],
+    homographNote:
+      'The reap group (קָצַר, קָצִיר) and the be-short group (קָצְרָה) are written with the same consonants קצר; the dictionaries keep them as separate roots.'
+  },
+  {
+    id: 'he-grn',
+    lang: 'hebrew',
+    letters: ['ג', 'ר', 'נ'],
+    gloss: 'threshing floor (noun base)',
+    attested: [{ word: 'גֹּרֶן', gloss: 'threshing floor' }]
+  },
+  {
+    id: 'he-krm',
+    lang: 'hebrew',
+    letters: ['כ', 'ר', 'מ'],
+    gloss: 'vineyard (noun base)',
+    attested: [
+      { word: 'כֶּרֶם', gloss: 'vineyard' },
+      { word: 'כֹּרְמִים', gloss: 'vinedressers (2 Kings 25:12)' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'כרם',
+        note: 'the common Aramaic word; check Imperial Aramaic attestation against TAD'
+      },
+      {
+        lang: 'osa',
+        form: 'krm',
+        note: 'vineyard; check corpus records (DASI/CSAI)'
+      }
+    ]
+  },
+  {
+    id: 'he-tsan',
+    lang: 'hebrew',
+    letters: ['צ', 'א', 'נ'],
+    gloss: 'flock (noun base)',
+    attested: [{ word: 'צֹאן', gloss: 'flock, sheep and goats' }],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'ṣēnu',
+        note: 'flock of sheep and goats; the textbook comparison'
+      },
+      {
+        lang: 'aramaic',
+        form: 'ען',
+        note: 'with ʿayin where Hebrew has tsade, a regular correspondence; check attestation against TAD'
+      }
+    ]
+  },
+  {
+    id: 'he-prh',
+    lang: 'hebrew',
+    letters: ['פ', 'ר', 'ה'],
+    gloss: 'bear fruit, be fruitful',
+    attested: [
+      { word: 'פְּרִי', gloss: 'fruit' },
+      { word: 'פְּרוּ', gloss: 'be fruitful (imperative), Genesis 1:28' },
+      { word: 'יִפְרֶה', gloss: 'it shall bear fruit (Isaiah 11:1)' }
+    ],
+    homographNote:
+      'פָּרָה cow is written with the same consonants; the dictionaries keep it as a separate word.'
+  },
+  {
+    id: 'he-anp-branch',
+    lang: 'hebrew',
+    letters: ['ע', 'נ', 'פ'],
+    gloss: 'branch (noun base)',
+    attested: [{ word: 'עָנָף', gloss: 'branch' }],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'ענף',
+        note: 'Daniel 4:9 וּבְעַנְפוֹהִי (and in its branches), in the tree vision'
+      }
+    ]
+  },
+  {
+    id: 'he-shrsh',
+    lang: 'hebrew',
+    letters: ['ש', 'ר', 'ש'],
+    gloss: 'root; uproot',
+    attested: [
+      { word: 'שֹׁרֶשׁ', gloss: 'root' },
+      { word: 'וְשֵׁרֶשְׁךָ', gloss: 'and he will uproot you (Psalm 52:7)' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'šuršu',
+        note: 'root; the textbook comparison'
+      },
+      {
+        lang: 'aramaic',
+        form: 'שרש',
+        note: 'Daniel 4:12 עִקַּר שָׁרְשׁוֹהִי (the stump of its roots)'
+      }
+    ]
+  },
+  {
+    id: 'he-ashb',
+    lang: 'hebrew',
+    letters: ['ע', 'ש', 'ב'],
+    gloss: 'herbage (noun base)',
+    attested: [{ word: 'עֵשֶׂב', gloss: 'grass, herbage' }],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'עשב',
+        note: 'Daniel 4:30 עִשְׂבָּא כְתוֹרִין (grass like oxen)'
+      }
+    ]
+  },
+  {
+    id: 'he-qwts',
+    lang: 'hebrew',
+    letters: ['ק', 'ו', 'צ'],
+    gloss: 'thorn (noun base)',
+    attested: [
+      { word: 'קוֹץ', gloss: 'thorn (Genesis 3:18 קוֹץ וְדַרְדַּר, thorns and thistles)' }
+    ],
+    homographNote:
+      'The verb קוּץ loathe, dread (Genesis 27:46 קַצְתִּי, I loathe) is written with the same consonants; the dictionaries keep it as a separate root.'
+  },
+  {
+    id: 'he-nr',
+    lang: 'hebrew',
+    letters: ['נ', 'ר'],
+    gloss: 'lamp (noun base)',
+    attested: [{ word: 'נֵר', gloss: 'lamp' }],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'nūru',
+        note: 'light; the nwr root, standardly compared with Hebrew ner'
+      },
+      {
+        lang: 'aramaic',
+        form: 'נור',
+        note: 'fire; Daniel 3:6 אַתּוּן נוּרָא יָקִדְתָּא (the burning fiery furnace)'
+      }
+    ]
+  },
+  {
+    id: 'he-kws',
+    lang: 'hebrew',
+    letters: ['כ', 'ו', 'ס'],
+    gloss: 'cup (noun base)',
+    attested: [{ word: 'כּוֹס', gloss: 'cup' }],
+    cognates: [
+      { lang: 'akkadian', form: 'kāsu', note: 'cup; the textbook comparison' },
+      {
+        lang: 'aramaic',
+        form: 'כס',
+        note: 'the common Aramaic word; check Imperial Aramaic attestation against TAD'
+      }
+    ],
+    homographNote:
+      'כּוֹס also names a bird, the little owl (Psalm 102:7 כְּכוֹס חֳרָבוֹת); the dictionaries treat it as a separate word.'
+  },
+  {
+    id: 'he-nth',
+    lang: 'hebrew',
+    letters: ['נ', 'ט', 'ה'],
+    gloss: 'stretch out, incline',
+    attested: [
+      { word: 'נָטָה', gloss: 'he stretched out' },
+      { word: 'מִטָּה', gloss: 'bed' },
+      { word: 'מַטֶּה', gloss: 'staff, rod; tribe' }
+    ],
+    homographNote:
+      'מִטָּה bed and מַטֶּה staff, tribe are written with the same consonants מטה and are distinguished only by the Masoretic pointing; both are nouns with preformative mem filed under נטה.'
+  },
+  {
+    id: 'he-lwch',
+    lang: 'hebrew',
+    letters: ['ל', 'ו', 'ח'],
+    gloss: 'tablet (noun base)',
+    attested: [
+      { word: 'לוּחַ', gloss: 'tablet, board' },
+      { word: 'לֻחֹת', gloss: 'tablets (of stone), Exodus 31:18' }
+    ]
+  },
+  {
+    id: 'he-spr',
+    lang: 'hebrew',
+    letters: ['ס', 'פ', 'ר'],
+    gloss: 'count, recount; document',
+    attested: [
+      { word: 'סֵפֶר', gloss: 'scroll, book, document' },
+      { word: 'סָפַר', gloss: 'he counted' },
+      { word: 'סֹפֵר', gloss: 'scribe' },
+      { word: 'מִסְפָּר', gloss: 'number' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'ספר',
+        note: 'Ezra 4:15 סְפַר דָּכְרָנַיָּא (the book of the records); the ordinary Elephantine word for deed, document'
+      }
+    ],
+    homographNote:
+      'The consonants ספר carry both the counting group (סָפַר, מִסְפָּר) and the writing group (סֵפֶר, סֹפֵר); all are attested, and the dictionaries file them together under one root.'
+  },
+  {
+    id: 'he-tba',
+    lang: 'hebrew',
+    letters: ['ט', 'ב', 'ע'],
+    gloss: 'sink; signet',
+    attested: [
+      { word: 'וַיִּטְבַּע', gloss: 'and he sank (in the mire), Jeremiah 38:6' },
+      { word: 'טָבְעוּ', gloss: 'they sank (Lamentations 2:9)' },
+      { word: 'טַבַּעַת', gloss: 'ring, signet ring' }
+    ],
+    interpretationNote:
+      'Deriving טַבַּעַת signet ring from טָבַע sink (the seal pressed into the clay) is an interpretation; an Egyptian source (ḏbꜥt, seal) has also been proposed. The dictionaries file the noun under טבע by convention.'
   }
 ]
 
