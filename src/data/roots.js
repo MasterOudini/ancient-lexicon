@@ -1181,6 +1181,312 @@ export const ROOTS = [
     ],
     homographNote:
       'The verb הוֹעִיל profit, avail is conventionally filed under the same consonants יעל; the animal noun and the verb are treated as separate words.'
+  },
+
+  // --- The body ---
+  {
+    id: 'he-rash',
+    lang: 'hebrew',
+    letters: ['ר', 'א', 'ש'],
+    gloss: 'head (noun base)',
+    attested: [
+      { word: 'רֹאשׁ', gloss: 'head' },
+      { word: 'רִאשׁוֹן', gloss: 'first' },
+      { word: 'רֵאשִׁית', gloss: 'beginning, first part' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'rēšu', note: 'head, top' },
+      {
+        lang: 'aramaic',
+        form: 'ראש',
+        note: 'Daniel 2:32 רֵאשֵׁהּ (its head)'
+      }
+    ],
+    homographNote:
+      'רֹאשׁ poison, gall (Deuteronomy 29:17 רֹאשׁ וְלַעֲנָה gall and wormwood) is written identically; the dictionaries keep it as a separate word.'
+  },
+  {
+    id: 'he-ayn',
+    lang: 'hebrew',
+    letters: ['ע', 'י', 'נ'],
+    gloss: 'eye (noun base)',
+    attested: [
+      { word: 'עַיִן', gloss: 'eye; spring of water' },
+      { word: 'מַעְיָן', gloss: 'spring of water' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'īnu', note: 'eye' },
+      {
+        lang: 'aramaic',
+        form: 'עין',
+        note: 'Daniel 4:31 עַיְנַי (my eyes)'
+      },
+      {
+        lang: 'osa',
+        form: 'ʿyn',
+        note: 'eye and spring; check corpus records (DASI/CSAI)'
+      }
+    ],
+    homographNote:
+      'עַיִן eye and עַיִן spring of water are the same written word; both senses are attested.'
+  },
+  {
+    id: 'he-azn',
+    lang: 'hebrew',
+    letters: ['א', 'ז', 'נ'],
+    gloss: 'ear (noun base); give ear',
+    attested: [
+      { word: 'אֹזֶן', gloss: 'ear' },
+      { word: 'הַאֲזִינוּ', gloss: 'give ear! (Deuteronomy 32:1)' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'uznu', note: 'ear; by extension attention, understanding' }
+    ]
+  },
+  {
+    id: 'he-ph',
+    lang: 'hebrew',
+    letters: ['פ', 'ה'],
+    gloss: 'mouth (noun base)',
+    attested: [{ word: 'פֶּה', gloss: 'mouth' }],
+    cognates: [
+      { lang: 'akkadian', form: 'pû', note: 'mouth' },
+      {
+        lang: 'aramaic',
+        form: 'פם',
+        note: 'with m where Hebrew has h; Daniel 6:23 פֻּם אַרְיָוָתָא (the mouth of the lions)'
+      }
+    ],
+    homographNote: 'פֹּה here is written with the same letters.'
+  },
+  {
+    id: 'he-lshn',
+    lang: 'hebrew',
+    letters: ['ל', 'ש', 'נ'],
+    gloss: 'tongue, language (noun base)',
+    attested: [{ word: 'לָשׁוֹן', gloss: 'tongue, language' }],
+    cognates: [
+      { lang: 'akkadian', form: 'lišānu', note: 'tongue, language' },
+      {
+        lang: 'aramaic',
+        form: 'לשן',
+        note: 'Daniel 3:4 וְלִשָּׁנַיָּא (and the languages)'
+      }
+    ]
+  },
+  {
+    id: 'he-shn',
+    lang: 'hebrew',
+    letters: ['ש', 'נ'],
+    gloss: 'tooth (noun base)',
+    attested: [
+      { word: 'שֵׁן', gloss: 'tooth' },
+      { word: 'שִׁנַּיִם', gloss: 'teeth (dual)' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'šinnu', note: 'tooth' },
+      {
+        lang: 'aramaic',
+        form: 'שן',
+        note: 'Daniel 7:7 שִׁנַּיִן דִּי־פַרְזֶל (teeth of iron)'
+      }
+    ],
+    homographNote:
+      'The letters שנ also begin שָׁנָה year, שֵׁנָה sleep, and שְׁנַיִם two; the dictionaries file those under separate roots.'
+  },
+  {
+    id: 'he-anp',
+    lang: 'hebrew',
+    letters: ['א', 'נ', 'פ'],
+    gloss: 'nose; anger',
+    attested: [
+      { word: 'אַף', gloss: 'nose; anger' },
+      { word: 'אַפַּיִם', gloss: 'nostrils, face (dual)' },
+      { word: 'אָנַפְתָּ', gloss: 'you were angry (Isaiah 12:1)' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'appu', note: 'nose, tip' },
+      {
+        lang: 'aramaic',
+        form: 'אנף',
+        note: 'face; keeps the n of the root; Daniel 2:46 עַל־אַנְפּוֹהִי (on his face)'
+      }
+    ],
+    homographNote:
+      'אַף nose and אַף anger are the same written word, and both senses are attested; the particle אַף (also, indeed) is spelled identically.',
+    interpretationNote:
+      'Filing אַף under אנפ follows the dual אַפַּיִם, the attested verb (Isaiah 12:1 אָנַפְתָּ), and the Aramaic אֲנַף face; this is the conventional dictionary arrangement.'
+  },
+  {
+    id: 'he-rgl',
+    lang: 'hebrew',
+    letters: ['ר', 'ג', 'ל'],
+    gloss: 'foot (noun base); go about, spy',
+    attested: [
+      { word: 'רֶגֶל', gloss: 'foot' },
+      { word: 'מְרַגְּלִים', gloss: 'spies (Genesis 42:9)' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'רגל',
+        note: 'Daniel 2:33 רַגְלוֹהִי (its feet)'
+      }
+    ],
+    homographNote:
+      'רֶגֶל foot and the verb רִגֵּל (go about as a spy or slanderer) are written with the same consonants; the dictionaries treat the verb as formed from the noun.'
+  },
+  {
+    id: 'he-dm',
+    lang: 'hebrew',
+    letters: ['ד', 'מ'],
+    gloss: 'blood (noun base)',
+    attested: [
+      { word: 'דָּם', gloss: 'blood' },
+      { word: 'דָּמִים', gloss: 'blood, bloodshed (plural)' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'dāmu', note: 'blood' },
+      {
+        lang: 'aramaic',
+        form: 'דם',
+        note: 'the common Aramaic word for blood; check Imperial Aramaic attestation against TAD'
+      }
+    ]
+  },
+  {
+    id: 'he-atsm',
+    lang: 'hebrew',
+    letters: ['ע', 'צ', 'מ'],
+    gloss: 'bone; be mighty, numerous',
+    attested: [
+      { word: 'עֶצֶם', gloss: 'bone' },
+      { word: 'עָצוּם', gloss: 'mighty, numerous' }
+    ],
+    cognates: [{ lang: 'akkadian', form: 'eṣemtu', note: 'bone' }],
+    homographNote:
+      'עֶצֶם bone and עָצוּם mighty are written from the same consonants עצם; both are attested, and עֶצֶם also serves for the selfsame (בְּעֶצֶם הַיּוֹם הַזֶּה on this very day).'
+  },
+  {
+    id: 'he-bshr',
+    lang: 'hebrew',
+    letters: ['ב', 'ש', 'ר'],
+    gloss: 'flesh; bear tidings',
+    attested: [
+      { word: 'בָּשָׂר', gloss: 'flesh' },
+      { word: 'מְבַשֵּׂר', gloss: 'one bearing tidings (Isaiah 52:7)' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'bussuru',
+        note: 'to bring news; compared with the Hebrew verb, not with the flesh noun'
+      },
+      {
+        lang: 'aramaic',
+        form: 'בשר',
+        note: 'flesh; Daniel 7:5 בְּשַׂר שַׂגִּיא (much flesh)'
+      }
+    ],
+    homographNote:
+      'בָּשָׂר flesh and the verb בִּשֵּׂר bear tidings are written with the same consonants בשר; both word groups are attested, and the dictionaries keep them as separate roots.'
+  },
+  {
+    id: 'he-awr',
+    lang: 'hebrew',
+    letters: ['ע', 'ו', 'ר'],
+    gloss: 'skin (noun base)',
+    attested: [{ word: 'עוֹר', gloss: 'skin, hide' }],
+    homographNote:
+      'The consonants עור also write עוּר awake (Psalm 57:9 עוּרָה awake!) and עִוֵּר blind; each word group is attested, and the dictionaries keep them under separate roots.'
+  },
+  {
+    id: 'he-qrn',
+    lang: 'hebrew',
+    letters: ['ק', 'ר', 'נ'],
+    gloss: 'horn; ray',
+    attested: [
+      { word: 'קֶרֶן', gloss: 'horn' },
+      { word: 'קָרַן', gloss: 'it sent out rays (Exodus 34:29)' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'qarnu', note: 'horn' },
+      {
+        lang: 'aramaic',
+        form: 'קרן',
+        note: 'Daniel 7:7 וְקַרְנַיִן עֲשַׂר (and ten horns)'
+      }
+    ]
+  },
+  {
+    id: 'he-knp',
+    lang: 'hebrew',
+    letters: ['כ', 'נ', 'פ'],
+    gloss: 'wing; corner, extremity',
+    attested: [
+      { word: 'כָּנָף', gloss: 'wing' },
+      { word: 'כַּנְפוֹת הָאָרֶץ', gloss: 'the corners of the earth (Isaiah 11:12)' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'kappu',
+        note: 'wing; the standard comparison for kanaf'
+      }
+    ]
+  },
+  {
+    id: 'he-btn',
+    lang: 'hebrew',
+    letters: ['ב', 'ט', 'נ'],
+    gloss: 'belly, womb (noun base)',
+    attested: [{ word: 'בֶּטֶן', gloss: 'belly, womb' }],
+    homographNote:
+      'בָּטְנִים pistachio nuts (Genesis 43:11) is written with the same consonants.'
+  },
+  {
+    id: 'he-brk',
+    lang: 'hebrew',
+    letters: ['ב', 'ר', 'כ'],
+    gloss: 'kneel; bless',
+    attested: [
+      { word: 'בֶּרֶךְ', gloss: 'knee' },
+      { word: 'בֵּרַךְ', gloss: 'he blessed' },
+      { word: 'בְּרָכָה', gloss: 'blessing' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'birku', note: 'knee' },
+      {
+        lang: 'aramaic',
+        form: 'ברך',
+        note: 'Daniel 6:11 בָּרֵךְ עַל־בִּרְכוֹהִי (kneeling on his knees); Daniel 2:20 מְבָרַךְ (blessed)'
+      }
+    ],
+    homographNote:
+      'בֶּרֶךְ knee and the bless word group (בֵּרַךְ, בְּרָכָה) are written with the same consonants ברך; בְּרֵכָה pool is spelled with the same letters as בְּרָכָה.',
+    interpretationNote:
+      'The old suggestion that bless grew out of kneel (kneeling to receive a blessing) is an interpretation, not provable from the texts alone.'
+  },
+  {
+    id: 'he-shar',
+    lang: 'hebrew',
+    letters: ['ש', 'ע', 'ר'],
+    gloss: 'hair; also gate and barley written with the same consonants',
+    attested: [
+      { word: 'שֵׂעָר', gloss: 'hair' },
+      { word: 'שַׁעַר', gloss: 'gate' },
+      { word: 'שְׂעֹרָה', gloss: 'barley' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'šārtu', note: 'hair of the body and head' },
+      {
+        lang: 'aramaic',
+        form: 'שער',
+        note: 'Daniel 7:9 וּשְׂעַר רֵאשֵׁהּ (the hair of his head)'
+      }
+    ],
+    homographNote:
+      'שֵׂעָר hair, שַׁעַר gate, and שְׂעֹרָה barley are all written with the same consonants שער; śin/shin is a Masoretic pointing distinction on an identical consonantal letter. שָׂעִיר he-goat (the hairy one) is filed with the hair group in the dictionaries.'
   }
 ]
 
