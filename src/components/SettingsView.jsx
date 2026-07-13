@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react'
-import { LANGUAGES, HEBREW_CAVEAT } from '../data/languages.js'
+import { LANGUAGES } from '../data/languages.js'
 import { buildExport, parseImport } from '../lib/storage.js'
 import { foldFinals } from '../lib/scripts.js'
 
-// Settings: backup (export/import), add-a-word, and about-the-data.
+// Settings: appearance, backup (export/import), and add-a-word. The
+// data-honesty statement, sources, and font licenses live on the About tab.
 
 const THEMES = [
   { id: 'dark', label: 'Dark' },
@@ -271,31 +272,6 @@ export default function SettingsView({
         </p>
       </div>
 
-      <div className="settings-section">
-        <h2>About the data</h2>
-        <p>{HEBREW_CAVEAT}</p>
-        {LANGUAGES.map((l) => (
-          <p key={l.id}>{l.caveat}</p>
-        ))}
-        <p>
-          Attested facts are stated as facts with citations; conventions are
-          labeled conventions; interpretations are labeled interpretations;
-          unknowns are stated as unknown. No reconstructed proto-forms are
-          shown or implied anywhere in the app. Forms tagged &lsquo;verify
-          against corpus&rsquo; are conventional or uncertain and should be
-          checked against corpus records (CAD, Wb., TAD, DASI/CSAI, museum
-          catalogues) before scholarly use.
-        </p>
-        <p>
-          Seed data lives in src/data/lexicon.js and src/data/roots.js and can
-          be edited by hand; the entry shape is documented in each file.
-        </p>
-        <p>
-          The bundled script fonts (Noto Sans Cuneiform, Noto Sans Egyptian
-          Hieroglyphs, Noto Sans Imperial Aramaic, Noto Sans Old South
-          Arabian) are licensed under the SIL Open Font License.
-        </p>
-      </div>
     </section>
   )
 }
