@@ -723,7 +723,7 @@ export const ROOTS = [
       }
     ],
     homographNote:
-      'חֹדֶשׁ denotes both the new-moon day and the month reckoned from it (1 Samuel 20:5 מָחָר חֹדֶשׁ, tomorrow is the new moon); the same consonants write חָדָשׁ new.'
+      'חֹדֶשׁ denotes both the new-moon day and the month reckoned from it (1 Samuel 20:18 מָחָר חֹדֶשׁ, tomorrow is the new moon); the same consonants write חָדָשׁ new.'
   },
   {
     id: 'he-shnh',
@@ -2749,7 +2749,7 @@ export const ROOTS = [
       {
         lang: 'aramaic',
         form: 'מות',
-        note: 'Ezra 7:26 הֵן לְמוֹת (whether for death), among the penalties of the decree'
+        note: 'Ezra 7:26 הֵן לְמוֹת (whether for death), among the penalties of the decree; the form is the noun/infinitive — finite verb forms are unattested in Biblical Aramaic'
       }
     ]
   },
@@ -3789,7 +3789,7 @@ export const DOUBLETS = [
     roots: ['זעק', 'צעק'],
     meaning: 'cry out',
     citation:
-      'Both attested: וְצָעַק Exodus 22:26; וּזְעַקְתֶּם 1 Samuel 8:18.',
+      'Both attested: יִצְעַק Exodus 22:26; וּזְעַקְתֶּם 1 Samuel 8:18.',
     note: 'A consonant-variant pair (z / ṣ), not a permutation.'
   },
   {

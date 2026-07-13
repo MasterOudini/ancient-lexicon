@@ -394,7 +394,7 @@ export const VERBS = [
       aramaic: {
         translit: 'mût',
         hebrewLetters: 'מות',
-        note: 'Ezra 7:26 הֵן לְמוֹת (whether for death), among the penalties of the decree'
+        note: 'Ezra 7:26 הֵן לְמוֹת (whether for death), among the penalties of the decree; the form is the noun/infinitive — finite verb forms are unattested in Biblical Aramaic'
       }
       // osa: deliberately empty; no securely attested form in this database.
     }
