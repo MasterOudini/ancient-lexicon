@@ -2328,6 +2328,229 @@ export const ROOTS = [
     ],
     interpretationNote:
       'Deriving טַבַּעַת signet ring from טָבַע sink (the seal pressed into the clay) is an interpretation; an Egyptian source (ḏbꜥt, seal) has also been proposed. The dictionaries file the noun under טבע by convention.'
+  },
+
+  // --- Tools, materials & buildings ---
+  // --- Tools & materials ---
+  {
+    id: 'he-chrb',
+    lang: 'hebrew',
+    letters: ['ח', 'ר', 'ב'],
+    gloss: 'sword; also be dry, desolate — several attested groups',
+    attested: [
+      { word: 'חֶרֶב', gloss: 'sword' },
+      { word: 'חֹרֶב', gloss: 'drought, heat (Genesis 31:40)' },
+      { word: 'חָרְבָּה', gloss: 'ruin, waste place' }
+    ],
+    homographNote:
+      'The consonants חרב write חֶרֶב sword and a dry/desolate word group (חֹרֶב drought, חָרְבָּה ruin); the dictionaries treat these as separate word groups.'
+  },
+  {
+    id: 'he-qsht',
+    lang: 'hebrew',
+    letters: ['ק', 'ש', 'ת'],
+    gloss: 'bow (noun base)',
+    attested: [
+      { word: 'קֶשֶׁת', gloss: 'bow' },
+      { word: 'קַשָּׁת', gloss: 'bowman (Genesis 21:20)' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'qaštu', note: 'bow; the textbook cognate' }
+    ]
+  },
+  {
+    id: 'he-chtsts',
+    lang: 'hebrew',
+    letters: ['ח', 'צ', 'צ'],
+    gloss: 'arrow (conventionally filed with חצץ divide)',
+    attested: [
+      { word: 'חֵץ', gloss: 'arrow' },
+      { word: 'חָצָץ', gloss: 'gravel (Proverbs 20:17)' }
+    ],
+    homographNote:
+      'חֵץ arrow is conventionally filed under the doubled root חצצ; חָצָץ gravel is written with the same consonants, and the dictionaries treat the word groups separately.'
+  },
+  {
+    id: 'he-klh',
+    lang: 'hebrew',
+    letters: ['כ', 'ל', 'ה'],
+    gloss: 'be complete, finished',
+    attested: [
+      { word: 'כָּלָה', gloss: 'it was finished, at an end' },
+      { word: 'כְּלִי', gloss: 'vessel, implement' },
+      { word: 'כָּלִיל', gloss: 'entire, whole (offering)' }
+    ],
+    interpretationNote:
+      'כְּלִי vessel is filed under כלה be complete by dictionary convention; the derivation is an interpretation, not provable from the texts alone.'
+  },
+  {
+    id: 'he-chtm',
+    lang: 'hebrew',
+    letters: ['ח', 'ת', 'מ'],
+    gloss: 'seal',
+    attested: [
+      { word: 'חוֹתָם', gloss: 'seal, signet' },
+      { word: 'חֲתֹם', gloss: 'seal up (imperative, Daniel 12:4)' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'חתם',
+        note: 'Daniel 6:18 וְחַתְמַהּ (and the king sealed it with his signet)'
+      }
+    ],
+    interpretationNote:
+      'The relationship between Hebrew חוֹתָם and Egyptian ḫtm seal is much discussed, often as a borrowing from Egyptian; the direction and route of the relationship are interpretation.'
+  },
+  {
+    id: 'he-ksp',
+    lang: 'hebrew',
+    letters: ['כ', 'ס', 'פ'],
+    gloss: 'silver; long for נִכְסַף — both attested',
+    attested: [
+      { word: 'כֶּסֶף', gloss: 'silver, money' },
+      { word: 'נִכְסַפְתָּה', gloss: 'you longed (Genesis 31:30)' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'kaspu', note: 'silver; the textbook cognate' },
+      {
+        lang: 'aramaic',
+        form: 'כסף',
+        note: 'money and silver throughout Elephantine legal documents; Daniel 2:32'
+      }
+    ],
+    homographNote:
+      'The consonants כספ write both כֶּסֶף silver, money and the verb group long for (Genesis 31:30 נִכְסֹף נִכְסַפְתָּה); the dictionaries treat them as separate word groups.'
+  },
+  {
+    id: 'he-zhb',
+    lang: 'hebrew',
+    letters: ['ז', 'ה', 'ב'],
+    gloss: 'gold (noun base)',
+    attested: [{ word: 'זָהָב', gloss: 'gold' }],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'דהב',
+        note: 'Daniel 2:32 דִּי־דְהַב (of gold); Aramaic d corresponds to Hebrew z in this word, a regular correspondence like Hebrew shor beside Aramaic tor (ox)'
+      },
+      {
+        lang: 'osa',
+        form: 'ḏhb',
+        note: 'in Sabaic dedicatory formulas, where the sense gold or bronze is debated; check corpus records (DASI/CSAI)'
+      }
+    ]
+  },
+  {
+    id: 'he-brzl',
+    lang: 'hebrew',
+    letters: ['ב', 'ר', 'ז', 'ל'],
+    gloss: 'iron (noun base)',
+    attested: [{ word: 'בַּרְזֶל', gloss: 'iron' }],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'parzillu',
+        note: 'iron; the parallel form of the same culture-word'
+      },
+      {
+        lang: 'aramaic',
+        form: 'פרזל',
+        note: 'Daniel 2:33 דִּי פַרְזֶל (of iron); Daniel 7:7 שִׁנַּיִן דִּי־פַרְזֶל (teeth of iron)'
+      }
+    ],
+    interpretationNote:
+      'בַּרְזֶל is generally taken as a culture-word of debated, probably non-Semitic origin; Akkadian parzillu is the parallel form, and any account of the route the word traveled is interpretation.'
+  },
+
+  // --- Buildings & the city ---
+  {
+    id: 'he-ayr',
+    lang: 'hebrew',
+    letters: ['ע', 'י', 'ר'],
+    gloss: 'city (noun base)',
+    attested: [
+      { word: 'עִיר', gloss: 'city' },
+      { word: 'עָרִים', gloss: 'cities (the plural in use)' }
+    ],
+    homographNote:
+      'עַיִר young donkey is written with the same consonants; the dictionaries treat it as a separate word.'
+  },
+  {
+    id: 'he-chwm',
+    lang: 'hebrew',
+    letters: ['ח', 'ו', 'מ'],
+    gloss: 'city wall (noun base)',
+    attested: [{ word: 'חוֹמָה', gloss: 'wall, city wall' }]
+  },
+  {
+    id: 'he-dlt',
+    lang: 'hebrew',
+    letters: ['ד', 'ל', 'ת'],
+    gloss: 'door (noun base)',
+    attested: [
+      { word: 'דֶּלֶת', gloss: 'door' },
+      { word: 'דְּלָתַיִם', gloss: 'double doors (dual)' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'daltu', note: 'door; the textbook cognate' }
+    ]
+  },
+  {
+    id: 'he-ahl',
+    lang: 'hebrew',
+    letters: ['א', 'ה', 'ל'],
+    gloss: 'tent (noun base)',
+    attested: [
+      { word: 'אֹהֶל', gloss: 'tent' },
+      { word: 'וַיֶּאֱהַל', gloss: 'and he pitched his tent (Genesis 13:12)' }
+    ]
+  },
+  {
+    id: 'he-drk',
+    lang: 'hebrew',
+    letters: ['ד', 'ר', 'כ'],
+    gloss: 'tread, march; way',
+    attested: [
+      { word: 'דֶּרֶךְ', gloss: 'way, road' },
+      { word: 'דָּרַךְ', gloss: 'he trod, marched (Numbers 24:17)' }
+    ]
+  },
+  {
+    id: 'he-bar-well',
+    lang: 'hebrew',
+    letters: ['ב', 'א', 'ר'],
+    gloss: 'well; make plain בֵּאֵר — both attested',
+    attested: [
+      { word: 'בְּאֵר', gloss: 'well (of water)' },
+      { word: 'בֵּאֵר', gloss: 'he made plain, expounded (Deuteronomy 1:5)' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'būrtu', note: 'well, cistern; check CAD' }
+    ],
+    homographNote:
+      'The consonants באר write both בְּאֵר well and the verb בֵּאֵר make plain (Deuteronomy 1:5); the dictionaries treat them as separate word groups.'
+  },
+  {
+    id: 'he-hykl',
+    lang: 'hebrew',
+    letters: ['ה', 'י', 'כ', 'ל'],
+    gloss: 'palace, temple (noun base)',
+    attested: [{ word: 'הֵיכָל', gloss: 'palace, temple' }],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'ekallu',
+        note: 'palace; from Sumerian e2-gal (big house)'
+      },
+      {
+        lang: 'aramaic',
+        form: 'היכלא',
+        note: 'the palace (emphatic form); Daniel 5:5 הֵיכְלָא; Ezra 4:14'
+      }
+    ],
+    interpretationNote:
+      'הֵיכָל is by standard doctrine a loanword from Sumerian e2-gal (big house) transmitted through Akkadian ekallu; the four-letter filing rather than a triliteral root reflects this loan history.'
   }
 ]
 
