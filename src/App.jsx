@@ -23,9 +23,9 @@ const CONFIG = {
   appName: 'Ancient Lexicon',
   // Language ids (from src/data/languages.js) enabled on first launch.
   defaultEnabledLangs: LANGUAGES.map((l) => l.id),
-  // 'auto' follows the system light/dark preference; Settings offers a
-  // manual override, persisted with the other settings.
-  defaultTheme: 'auto',
+  // The app starts in dark. Settings offers Light and Auto (follow the
+  // system preference); the choice persists with the other settings.
+  defaultTheme: 'dark',
   strings: {
     searchPlaceholder: 'Search Hebrew or English…',
     allChip: 'All',

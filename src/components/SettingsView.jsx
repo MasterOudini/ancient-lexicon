@@ -6,9 +6,9 @@ import { foldFinals } from '../lib/scripts.js'
 // Settings: backup (export/import), add-a-word, and about-the-data.
 
 const THEMES = [
-  { id: 'auto', label: 'Auto' },
+  { id: 'dark', label: 'Dark' },
   { id: 'light', label: 'Light' },
-  { id: 'dark', label: 'Dark' }
+  { id: 'auto', label: 'Auto' }
 ]
 
 export default function SettingsView({
@@ -137,8 +137,8 @@ export default function SettingsView({
       <div className="settings-section">
         <h2>Appearance</h2>
         <p>
-          Auto follows the device light/dark setting; Light and Dark override
-          it.
+          The app starts in Dark. Light overrides it; Auto follows the device
+          light/dark setting.
         </p>
         <div
           className="chiprow"
