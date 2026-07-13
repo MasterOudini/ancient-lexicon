@@ -23,9 +23,14 @@ variables. Deploy it to any static host:
 - Netlify: build command `npm run build`, publish directory `dist`.
 - Vercel: framework preset Vite, output directory `dist`.
 - GitHub Pages: works as-is for a user/organization site. For a project page
-  served at `https://<user>.github.io/<repo-name>/`, set `base: '/<repo-name>/'`
-  in `vite.config.js` and change `start_url` and `scope` in the manifest
-  config there to `'/<repo-name>/'` to match.
+  served at `https://<user>.github.io/<repo-name>/`, build with
+  `VITE_BASE=/<repo-name>/` — this sets the Vite base and the manifest
+  start_url and scope together (see `vite.config.js`). The repository ships
+  a ready-made workflow, `.github/workflows/deploy-pages.yml`, that builds
+  with the right base and deploys on every push; it requires GitHub Pages to
+  be available for the repository (public repository, or a plan that allows
+  Pages on private repositories) and Pages source set to GitHub Actions
+  (the workflow attempts to enable this itself).
 
 The app must be served over HTTPS (or localhost) for the service worker and
 Add to Home Screen to work.

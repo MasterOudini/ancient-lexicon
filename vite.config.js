@@ -2,12 +2,16 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// base '/' works for Cloudflare Pages, Netlify, Vercel, and a GitHub Pages
-// user/organization site. For a GitHub Pages *project* page served at
-// https://<user>.github.io/<repo-name>/, change base to '/<repo-name>/' and
-// change start_url and scope in the manifest below to '/<repo-name>/' to match.
+// The default base '/' works for Cloudflare Pages, Netlify, Vercel, and a
+// GitHub Pages user/organization site, with no environment variables.
+// A GitHub Pages *project* page served at https://<user>.github.io/<repo>/
+// needs the repo name as base, and the manifest start_url and scope must
+// match; set VITE_BASE=/<repo-name>/ at build time to do all three at once
+// (.github/workflows/deploy-pages.yml does exactly this).
+const base = process.env.VITE_BASE || '/'
+
 export default defineConfig({
-  base: '/',
+  base,
   plugins: [
     react(),
     VitePWA({
@@ -15,19 +19,19 @@ export default defineConfig({
       manifest: {
         name: 'Ancient Lexicon',
         short_name: 'Lexicon',
-        start_url: '/',
-        scope: '/',
+        start_url: base,
+        scope: base,
         display: 'standalone',
         background_color: '#ECE5D5',
         theme_color: '#ECE5D5',
         icons: [
           {
-            src: '/icon-192.png',
+            src: base + 'icon-192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: '/icon-512.png',
+            src: base + 'icon-512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
