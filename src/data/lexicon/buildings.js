@@ -106,7 +106,7 @@ export const BUILDINGS = [
       hittite: {
         translit: 'āškaš',
         pron: 'ash-kash',
-        note: 'gate(way); attested syllabically; the attestation should be checked against CHD corpus records',
+        note: 'gate(way); attested syllabically; the attestation should be checked against the Hittite dictionaries (HED, HW²)',
         verify: true
       },
       aramaic: {

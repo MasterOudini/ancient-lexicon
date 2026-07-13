@@ -32,7 +32,7 @@ export const FOOD = [
       aramaic: {
         translit: 'ləḥem',
         hebrewLetters: 'לחם',
-        note: 'Daniel 5:1 לְחֶם'
+        note: 'Daniel 5:1 לְחֶם (there in the extended sense: feast, banquet)'
       }
       // osa: deliberately empty; no securely attested form in this database.
     }
@@ -56,7 +56,7 @@ export const FOOD = [
         note: 'wine and vine'
       },
       egyptian: {
-        translit: 'irp',
+        translit: 'jrp',
         pron: 'irep (modern convention)',
         note: 'spellings vary, so no single sign sequence is shown'
       },
@@ -83,7 +83,7 @@ export const FOOD = [
         script: '𒁉',
         scriptNote: 'shown as the logogram KASH (the sign BI), with which the word was commonly written',
         pron: 'shi-ka-ru',
-        note: 'beer; the textbook cognate of Hebrew shekhar'
+        note: 'beer; the standard comparison with Hebrew shekhar — cognate or shared culture word'
       },
       sumerian: {
         translit: 'kaš',
@@ -149,7 +149,7 @@ export const FOOD = [
         note: 'honey, syrup; the standard comparison with Hebrew dvash'
       },
       egyptian: {
-        translit: 'bit',
+        translit: 'bjt',
         pron: 'bit (modern convention)',
         note: 'honey; spellings vary, so no single sign sequence is shown'
       },
@@ -183,7 +183,7 @@ export const FOOD = [
         pron: 'gah'
       },
       egyptian: {
-        translit: 'irṯt',
+        translit: 'jrṯt',
         pron: 'iretjet (modern convention)',
         note: 'spellings vary, so no single sign sequence is shown'
       },
@@ -227,11 +227,11 @@ export const FOOD = [
     hebrew: { word: 'שְׂעֹרָה', translit: 'seorah', root: 'שער', note: 'usually in the plural שְׂעֹרִים' },
     forms: {
       akkadian: {
-        translit: 'uṭṭatu',
+        translit: 'uṭṭetu',
         script: '𒊺',
         scriptNote: 'shown as the logogram SHE, with which the word was commonly written',
-        pron: 'ut-ta-tu',
-        note: 'barley, grain; the dictionary form varies (uṭṭatu, uṭṭetu) and should be checked against CAD',
+        pron: 'ut-te-tu',
+        note: 'barley, grain; CAD lemmatizes uṭṭetu (AHw has uṭṭatu); check against CAD',
         verify: true
       },
       sumerian: {
@@ -241,14 +241,14 @@ export const FOOD = [
         note: 'barley, grain'
       },
       egyptian: {
-        translit: 'it',
+        translit: 'jt',
         pron: 'it (modern convention)',
         note: 'barley; spellings vary, so no single sign sequence is shown'
       },
       hittite: {
         translit: 'ḫalkiš',
         pron: 'hal-kish',
-        note: 'grain, barley; also the name of the grain deity; the citation form should be checked against CHD corpus records',
+        note: 'grain, barley; also the name of the grain deity; the citation form should be checked against the Hittite dictionaries (HED, HW²)',
         verify: true
       }
       // aramaic: deliberately empty; the Aramaic barley word is not securely

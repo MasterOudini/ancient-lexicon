@@ -15,7 +15,7 @@ export const KINSHIP = [
         pron: 'ah-bu'
       },
       egyptian: {
-        translit: 'it',
+        translit: 'jt',
         script: '𓇋𓏏𓆑',
         scriptNote: 'linearized; monument spellings vary',
         pron: 'it (modern convention)',
@@ -450,7 +450,7 @@ export const KINSHIP = [
       aramaic: {
         translit: 'ʿam',
         hebrewLetters: 'עם',
-        note: 'Daniel 3:29 כָּל־עַם (every people); plural עַמְמַיָּא Daniel 3:4'
+        note: 'Daniel 3:29 דִּי כָל־עַם (that every people); plural עַמְמַיָּא Daniel 3:4'
       }
       // sumerian: deliberately empty; the usual word for people uses a sign
       // reading not verified for this database.

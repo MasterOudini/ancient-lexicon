@@ -84,7 +84,7 @@ export const TOOLS = [
       },
       egyptian: {
         translit: 'šsr',
-        pron: 'shesher (modern convention)',
+        pron: 'shesser (modern convention)',
         note: 'arrow; attestation and spelling should be checked against Wb.',
         verify: true
       }
@@ -140,7 +140,7 @@ export const TOOLS = [
       aramaic: {
         translit: 'ḥătam',
         hebrewLetters: 'חתם',
-        note: 'Daniel 6:18 וְחַתְמַהּ (and the king sealed it with his signet)'
+        note: 'the verb: Daniel 6:18 וְחַתְמַהּ (and the king sealed it); the noun seal itself is not attested in Biblical Aramaic'
       }
       // sumerian: deliberately empty; the seal word kishib is written with a
       // sign outside this database's verified list.
@@ -180,7 +180,7 @@ export const TOOLS = [
       hittite: {
         script: '𒌆',
         scriptNote: 'written logographically (TUG2); the native Hittite reading is not established',
-        note: 'the logogram use should be checked against CHD corpus records',
+        note: 'the logogram use should be checked against the Hittite dictionaries (HED, HW²)',
         verify: true
       },
       aramaic: {

@@ -201,7 +201,8 @@ export const AGRICULTURE = [
       aramaic: {
         translit: 'ʾinb',
         hebrewLetters: 'אנב',
-        note: 'Daniel 4:9 וְאִנְבֵּהּ (and its fruit), in the tree vision; corresponds to Akkadian inbu'
+        note: 'Daniel 4:9 וְאִנְבֵּהּ (and its fruit), in the tree vision; the BA lexica file these forms under אֵב; corresponds to Akkadian inbu',
+        verify: true
       }
       // hittite: deliberately empty; no securely attested form in this database.
       // osa: deliberately empty; no securely attested form in this database.

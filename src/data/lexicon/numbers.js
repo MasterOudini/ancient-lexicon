@@ -70,7 +70,8 @@ export const NUMBERS = [
       aramaic: {
         translit: 'tərēn',
         hebrewLetters: 'תרין',
-        note: 'the feminine form תַּרְתֵּין is attested at Daniel 6:1 (sixty-two years)'
+        note: 'Biblical Aramaic attests only the feminine תַּרְתֵּין (Daniel 6:1) and תְּרֵי־ in twelve; the masculine form shown is the dictionary form',
+        verify: true
       }
       // osa: deliberately empty; no securely attested form in this database.
     }
@@ -87,7 +88,8 @@ export const NUMBERS = [
       },
       sumerian: {
         translit: 'eš',
-        note: 'numeral; reading from the lexical tradition'
+        note: 'numeral; reading from the lexical tradition',
+        verify: true
       },
       egyptian: {
         translit: 'ḫmt',
@@ -154,7 +156,8 @@ export const NUMBERS = [
       },
       sumerian: {
         translit: 'ia',
-        note: 'numeral; reading from the lexical tradition'
+        note: 'numeral; reading from the lexical tradition',
+        verify: true
       },
       egyptian: {
         translit: 'djw',

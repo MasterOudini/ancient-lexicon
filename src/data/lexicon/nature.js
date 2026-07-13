@@ -300,7 +300,7 @@ export const NATURE = [
         script: '𒆳',
         scriptNote: 'shown as the logogram KUR, with which the word was commonly written',
         pron: 'sha-doo',
-        note: 'mountain; despite the resemblance, Hebrew שָׂדֶה field is a different word (see field)'
+        note: 'mountain; whether Hebrew שָׂדֶה field is related is debated in the dictionaries (see field)'
       },
       sumerian: {
         translit: 'kur',
@@ -557,7 +557,7 @@ export const NATURE = [
         script: '𒀀𒊮',
         scriptNote: 'shown as the logogram A.SHA3, with which the word was commonly written',
         pron: 'ek-lu',
-        note: 'field; Akkadian šadû, which sounds like sadeh, means mountain (see mountain)'
+        note: 'field; Akkadian šadû means mountain, also open country — whether שָׂדֶה is related is debated (see mountain)'
       },
       sumerian: {
         translit: 'a-ša3',

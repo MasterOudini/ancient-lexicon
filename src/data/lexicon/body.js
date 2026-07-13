@@ -23,7 +23,9 @@ export const BODY = [
         translit: 'ḏrt',
         script: '𓂧𓂋𓏏',
         scriptNote: 'linearized; monument spellings vary',
-        pron: 'djeret (modern convention)'
+        pron: 'djeret (modern convention)',
+        note: 'the ideographic spelling shown should be checked against Wb.; fuller spellings open with the ḏ sign',
+        verify: true
       },
       hittite: {
         translit: 'keššar',
@@ -33,7 +35,7 @@ export const BODY = [
       aramaic: {
         translit: 'yad',
         hebrewLetters: 'יד',
-        note: 'Daniel 2:34 בִידַיִן (not by hands)'
+        note: 'Daniel 2:34 דִּי־לָא בִידַיִן (not by hands)'
       },
       osa: {
         translit: 'yd',
@@ -60,7 +62,7 @@ export const BODY = [
         pron: 'shag'
       },
       egyptian: {
-        translit: 'ib',
+        translit: 'jb',
         script: '𓄣𓏤',
         scriptNote: 'linearized; monument spellings vary',
         pron: 'ib (modern convention)'
@@ -73,7 +75,7 @@ export const BODY = [
       aramaic: {
         translit: 'ləbab',
         hebrewLetters: 'לבב',
-        note: 'Daniel 4:13 לְבַב; Daniel 7:28 לִבִּי'
+        note: 'Daniel 4:13 לְבַב; the sister lexeme לֵב appears in Daniel 7:28 בְּלִבִּי'
       },
       osa: {
         translit: 'lb',
@@ -504,7 +506,7 @@ export const BODY = [
   {
     id: 'horn',
     english: ['horn'],
-    hebrew: { word: 'קֶרֶן', translit: 'qeren', root: 'קרנ', note: 'also a ray of light (Exodus 34:29 קָרַן)' },
+    hebrew: { word: 'קֶרֶן', translit: 'qeren', root: 'קרנ', note: 'also, as a verb, to send out rays (Exodus 34:29 קָרַן, of the face of Moses)' },
     forms: {
       akkadian: {
         translit: 'qarnu',
@@ -614,7 +616,7 @@ export const BODY = [
   {
     id: 'hair',
     english: ['hair'],
-    hebrew: { word: 'שֵׂעָר', translit: 'sear', root: 'שער', note: 'the same consonants also write שַׁעַר gate and שְׂעֹרָה barley' },
+    hebrew: { word: 'שֵׂעָר', translit: 'sear', root: 'שער', note: 'the same root also writes שַׁעַר gate and שְׂעֹרָה barley' },
     forms: {
       akkadian: {
         translit: 'šārtu',

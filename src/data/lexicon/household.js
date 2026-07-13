@@ -111,7 +111,7 @@ export const HOUSEHOLD = [
       hittite: {
         translit: 'tuppi',
         pron: 'tup-pee',
-        note: 'clay tablet, a loanword from Akkadian ṭuppu; check the syllabic attestation against CHD',
+        note: 'clay tablet, a loanword from Akkadian ṭuppu; check the syllabic attestation against the Hittite dictionaries (HEG, HW²)',
         verify: true
       }
       // egyptian: deliberately empty; the writing-board words are not
