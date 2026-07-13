@@ -12,10 +12,46 @@
   --faience: #1f6f63;    /* blue-green accent: active states, eyebrows, links */
   --clay: #9a5b2b;       /* root and cluster chips */
   --danger: #8c3b2e;
+  --chip-on-bg: #e4ded0; /* background of an active filter chip */
+  color-scheme: light;
 
   --serif: 'New York', 'Iowan Old Style', Georgia, serif;
   --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
     Arial, sans-serif;
+}
+
+/* Dark theme: the museum at night — basalt ground, limestone text, the
+   faience and clay accents lightened to keep WCAG contrast. Applied either
+   by explicit user choice (data-theme="dark", set from Settings) or by the
+   system preference when the choice is "auto". */
+:root[data-theme='dark'] {
+  --ink: #eae3d3;
+  --ink-soft: #b5a992;
+  --ground: #1c1813;
+  --card: #262019;
+  --plaque: #2c251d;
+  --line: #4a4132;
+  --faience: #56a99b;
+  --clay: #c68e5c;
+  --danger: #d77e6c;
+  --chip-on-bg: #24312c;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme='auto'] {
+    --ink: #eae3d3;
+    --ink-soft: #b5a992;
+    --ground: #1c1813;
+    --card: #262019;
+    --plaque: #2c251d;
+    --line: #4a4132;
+    --faience: #56a99b;
+    --clay: #c68e5c;
+    --danger: #d77e6c;
+    --chip-on-bg: #24312c;
+    color-scheme: dark;
+  }
 }
 
 /* Script fonts, bundled locally (never from a CDN — the app is offline).
@@ -199,7 +235,7 @@ button {
 .chip.on {
   border-color: var(--faience);
   color: var(--faience);
-  background: #e4ded0;
+  background: var(--chip-on-bg);
 }
 
 /* ---- Info boxes -------------------------------------------------------- */

@@ -23,6 +23,9 @@ const CONFIG = {
   appName: 'Ancient Lexicon',
   // Language ids (from src/data/languages.js) enabled on first launch.
   defaultEnabledLangs: LANGUAGES.map((l) => l.id),
+  // The app starts in dark. Settings offers Light and Auto (follow the
+  // system preference); the choice persists with the other settings.
+  defaultTheme: 'dark',
   strings: {
     searchPlaceholder: 'Search Hebrew or English…',
     allChip: 'All',
@@ -45,6 +48,12 @@ export default function App() {
       ? stored.enabledLangs
       : CONFIG.defaultEnabledLangs
   })
+  const [theme, setTheme] = useState(() => {
+    const stored = getJSON(SETTINGS_KEY, null)
+    return ['auto', 'light', 'dark'].includes(stored?.theme)
+      ? stored.theme
+      : CONFIG.defaultTheme
+  })
   const [customEntries, setCustomEntries] = useState(() =>
     getJSON(CUSTOM_ENTRIES_KEY, [])
   )
@@ -52,8 +61,25 @@ export default function App() {
   const [query, setQuery] = useState('')
 
   useEffect(() => {
-    setJSON(SETTINGS_KEY, { enabledLangs })
-  }, [enabledLangs])
+    setJSON(SETTINGS_KEY, { enabledLangs, theme })
+  }, [enabledLangs, theme])
+
+  // Apply the theme to the document and keep the browser-chrome color in
+  // step (the status bar around the installed app).
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    const apply = () => {
+      const dark = theme === 'dark' || (theme === 'auto' && media.matches)
+      const meta = document.querySelector(
+        'meta[name="theme-color"]:not([media])'
+      )
+      if (meta) meta.setAttribute('content', dark ? '#1C1813' : '#ECE5D5')
+    }
+    apply()
+    media.addEventListener('change', apply)
+    return () => media.removeEventListener('change', apply)
+  }, [theme])
 
   useEffect(() => {
     setJSON(CUSTOM_ENTRIES_KEY, customEntries)
@@ -96,6 +122,9 @@ export default function App() {
   function importBackup({ settings, customEntries: imported }) {
     if (Array.isArray(settings?.enabledLangs)) {
       setEnabledLangs(settings.enabledLangs)
+    }
+    if (['auto', 'light', 'dark'].includes(settings?.theme)) {
+      setTheme(settings.theme)
     }
     setCustomEntries(imported)
   }
@@ -170,6 +199,8 @@ export default function App() {
       {activeTab === 'settings' && (
         <SettingsView
           enabledLangs={enabledLangs}
+          theme={theme}
+          onSetTheme={setTheme}
           customEntries={customEntries}
           onAddEntry={addCustomEntry}
           onDeleteEntry={deleteCustomEntry}

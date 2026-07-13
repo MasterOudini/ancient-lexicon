@@ -5,8 +5,16 @@ import { foldFinals } from '../lib/scripts.js'
 
 // Settings: backup (export/import), add-a-word, and about-the-data.
 
+const THEMES = [
+  { id: 'dark', label: 'Dark' },
+  { id: 'light', label: 'Light' },
+  { id: 'auto', label: 'Auto' }
+]
+
 export default function SettingsView({
   enabledLangs,
+  theme,
+  onSetTheme,
   customEntries,
   onAddEntry,
   onImport
@@ -30,7 +38,7 @@ export default function SettingsView({
   }
 
   function handleExport() {
-    const payload = buildExport({ enabledLangs }, customEntries)
+    const payload = buildExport({ enabledLangs, theme }, customEntries)
     const blob = new Blob([JSON.stringify(payload, null, 2)], {
       type: 'application/json'
     })
@@ -126,6 +134,31 @@ export default function SettingsView({
 
   return (
     <section>
+      <div className="settings-section">
+        <h2>Appearance</h2>
+        <p>
+          The app starts in Dark. Light overrides it; Auto follows the device
+          light/dark setting.
+        </p>
+        <div
+          className="chiprow"
+          role="group"
+          aria-label="Theme"
+          style={{ padding: '2px' }}
+        >
+          {THEMES.map((t) => (
+            <button
+              key={t.id}
+              className={'chip' + (theme === t.id ? ' on' : '')}
+              aria-pressed={theme === t.id}
+              onClick={() => onSetTheme(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="settings-section">
         <h2>Backup</h2>
         <p>

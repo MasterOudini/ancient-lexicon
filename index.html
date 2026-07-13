@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -11,7 +11,17 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Lexicon" />
-    <meta name="theme-color" content="#ECE5D5" />
+    <meta name="theme-color" content="#1C1813" />
+    <script>
+      // Apply the stored theme choice before first paint to avoid a flash;
+      // dark is the default. The app keeps this in sync afterwards.
+      try {
+        var s = JSON.parse(localStorage.getItem('ancient-lexicon.settings.v1'))
+        if (s && (s.theme === 'auto' || s.theme === 'light' || s.theme === 'dark')) {
+          document.documentElement.dataset.theme = s.theme
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -22,8 +22,9 @@ export default defineConfig({
         start_url: base,
         scope: base,
         display: 'standalone',
-        background_color: '#ECE5D5',
-        theme_color: '#ECE5D5',
+        // Dark is the app's default theme, so the splash and chrome match it.
+        background_color: '#1C1813',
+        theme_color: '#1C1813',
         icons: [
           {
             src: base + 'icon-192.png',
