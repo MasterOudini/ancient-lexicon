@@ -1735,6 +1735,336 @@ export const ROOTS = [
     ],
     interpretationNote:
       'A culture word of the dye trade; the direction of any borrowing between Hebrew תְּכֵלֶת and Akkadian takiltu is debated, and any derivation is interpretation.'
+  },
+
+  // --- Nature & the heavens ---
+  {
+    id: 'he-yrch',
+    lang: 'hebrew',
+    letters: ['י', 'ר', 'ח'],
+    gloss: 'moon (noun base); month יֶרַח',
+    attested: [
+      { word: 'יָרֵחַ', gloss: 'moon' },
+      { word: 'יֶרַח', gloss: 'month (1 Kings 6:37 בְּיֶרַח זִו)' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'arḫu',
+        note: 'moon (crescent), month; Old Babylonian warḫum'
+      },
+      {
+        lang: 'aramaic',
+        form: 'ירח',
+        note: 'month; Ezra 6:15 לִירַח אֲדָר (in the month Adar)'
+      },
+      {
+        lang: 'osa',
+        form: 'wrḫ',
+        note: 'month, in Sabaic date formulas; w where Hebrew has initial y; check corpus records (DASI/CSAI)'
+      }
+    ]
+  },
+  {
+    id: 'he-kkb',
+    lang: 'hebrew',
+    letters: ['כ', 'כ', 'ב'],
+    gloss: 'star (noun base)',
+    attested: [{ word: 'כּוֹכָב', gloss: 'star' }],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'kakkabu',
+        note: 'star; the textbook cognate'
+      },
+      {
+        lang: 'aramaic',
+        form: 'כוכב',
+        note: 'the ordinary Aramaic word; not attested in Biblical Aramaic; check Imperial Aramaic attestation against TAD'
+      }
+    ]
+  },
+  {
+    id: 'he-shmym',
+    lang: 'hebrew',
+    letters: ['ש', 'מ', 'י', 'מ'],
+    gloss: 'heavens (noun base)',
+    attested: [{ word: 'שָׁמַיִם', gloss: 'heavens, sky' }],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'šamû',
+        note: 'heaven(s); plural in form, like the Hebrew word'
+      },
+      {
+        lang: 'aramaic',
+        form: 'שמיא',
+        note: 'the heavens (emphatic form); Daniel 2:28 בִּשְׁמַיָּא'
+      }
+    ]
+  },
+  {
+    id: 'he-arts',
+    lang: 'hebrew',
+    letters: ['א', 'ר', 'צ'],
+    gloss: 'earth, land (noun base)',
+    attested: [
+      { word: 'אֶרֶץ', gloss: 'earth, land' },
+      { word: 'אֲרָצוֹת', gloss: 'lands' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'erṣetu',
+        note: 'earth, land, netherworld; the textbook cognate'
+      },
+      {
+        lang: 'aramaic',
+        form: 'ארע',
+        note: 'Daniel 2:35 אַרְעָא; Hebrew ṣ answers to Aramaic ʿ here, and the older spelling אַרְקָא with q stands beside אַרְעָא in Jeremiah 10:11'
+      },
+      {
+        lang: 'osa',
+        form: 'ʾrḍ',
+        note: 'earth, land; check corpus records (DASI/CSAI)'
+      }
+    ]
+  },
+  {
+    id: 'he-ym',
+    lang: 'hebrew',
+    letters: ['י', 'מ'],
+    gloss: 'sea (noun base)',
+    attested: [
+      { word: 'יָם', gloss: 'sea' },
+      { word: 'יַמִּים', gloss: 'seas' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'ימא',
+        note: 'the sea (emphatic form); Daniel 7:2 יַמָּא רַבָּא (the great sea)'
+      }
+    ],
+    homographNote:
+      'יָם also serves for west, the seaward direction, in Hebrew orientation (לִפְאַת־יָם, on the west side, Exodus 27:12); this is the same word used directionally.'
+  },
+  {
+    id: 'he-nhr',
+    lang: 'hebrew',
+    letters: ['נ', 'ה', 'ר'],
+    gloss: 'river; flow',
+    attested: [
+      { word: 'נָהָר', gloss: 'river' },
+      { word: 'וְנָהֲרוּ', gloss: 'and they will stream (to it), Isaiah 2:2' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'nāru', note: 'river' },
+      {
+        lang: 'aramaic',
+        form: 'נהר',
+        note: 'Daniel 7:10 נְהַר דִּי־נוּר (a river of fire); the province name עֲבַר־נַהֲרָה in Ezra'
+      }
+    ],
+    homographNote:
+      'The consonants נהר also write an attested shine group: נְהָרָה daylight (Job 3:4) and וְנָהַרְתְּ you will be radiant (Isaiah 60:5); the dictionaries keep flow and shine as separate word groups.'
+  },
+  {
+    id: 'he-hr',
+    lang: 'hebrew',
+    letters: ['ה', 'ר'],
+    gloss: 'mountain (noun base)',
+    attested: [
+      { word: 'הַר', gloss: 'mountain' },
+      { word: 'הָרִים', gloss: 'mountains' }
+    ]
+  },
+  {
+    id: 'he-abn',
+    lang: 'hebrew',
+    letters: ['א', 'ב', 'נ'],
+    gloss: 'stone (noun base)',
+    attested: [
+      { word: 'אֶבֶן', gloss: 'stone' },
+      { word: 'אֲבָנִים', gloss: 'stones' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'abnu', note: 'stone; the textbook cognate' },
+      {
+        lang: 'aramaic',
+        form: 'אבן',
+        note: 'Daniel 2:34 אֶבֶן (the stone cut out not by human hands)'
+      }
+    ]
+  },
+  {
+    id: 'he-apr',
+    lang: 'hebrew',
+    letters: ['ע', 'פ', 'ר'],
+    gloss: 'dust (noun base)',
+    attested: [{ word: 'עָפָר', gloss: 'dust' }],
+    cognates: [
+      { lang: 'akkadian', form: 'eperu', note: 'dust, earth, soil' }
+    ],
+    homographNote:
+      'עֹפֶר fawn (Song of Songs 2:9) is written with the same consonants; the dictionaries treat it as a separate word.'
+  },
+  {
+    id: 'he-ash',
+    lang: 'hebrew',
+    letters: ['א', 'ש'],
+    gloss: 'fire (noun base)',
+    attested: [{ word: 'אֵשׁ', gloss: 'fire' }],
+    cognates: [
+      { lang: 'akkadian', form: 'išātu', note: 'fire' },
+      {
+        lang: 'aramaic',
+        form: 'אשא',
+        note: 'Daniel 7:11 לִיקֵדַת אֶשָּׁא (to the burning of fire); the ordinary Biblical Aramaic word for fire is נוּר'
+      }
+    ]
+  },
+  {
+    id: 'he-rwch',
+    lang: 'hebrew',
+    letters: ['ר', 'ו', 'ח'],
+    gloss: 'wind, breath, spirit',
+    attested: [
+      { word: 'רוּחַ', gloss: 'wind, breath, spirit' },
+      { word: 'הָרְוָחָה', gloss: 'the relief, respite (Exodus 8:11)' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'רוח',
+        note: 'Daniel 2:35 רוּחָא; Daniel 7:2 אַרְבַּע רוּחֵי שְׁמַיָּא (the four winds of heaven)'
+      }
+    ]
+  },
+  {
+    id: 'he-mtr',
+    lang: 'hebrew',
+    letters: ['מ', 'ט', 'ר'],
+    gloss: 'rain',
+    attested: [
+      { word: 'מָטָר', gloss: 'rain' },
+      { word: 'הִמְטִיר', gloss: 'he caused it to rain (Genesis 19:24)' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'מטר',
+        note: 'the common Aramaic word; not attested in Biblical Aramaic; check Imperial Aramaic attestation against TAD'
+      }
+    ]
+  },
+  {
+    id: 'he-ann',
+    lang: 'hebrew',
+    letters: ['ע', 'נ', 'נ'],
+    gloss: 'cloud',
+    attested: [{ word: 'עָנָן', gloss: 'cloud' }],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'ענן',
+        note: 'Daniel 7:13 עִם־עֲנָנֵי שְׁמַיָּא (with the clouds of heaven)'
+      }
+    ],
+    homographNote:
+      'A verb of soothsaying is written with the same consonants: מְעוֹנֵן soothsayer (Deuteronomy 18:10); the dictionaries keep cloud and soothsay as separate word groups.'
+  },
+  {
+    id: 'he-ats',
+    lang: 'hebrew',
+    letters: ['ע', 'צ'],
+    gloss: 'tree, wood (noun base)',
+    attested: [
+      { word: 'עֵץ', gloss: 'tree, wood' },
+      { word: 'עֵצִים', gloss: 'trees; pieces of wood' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'iṣu', note: 'tree, wood' },
+      {
+        lang: 'aramaic',
+        form: 'אע',
+        note: 'wood, timber; Daniel 5:4 אָעָא; Ezra 5:8; Hebrew ṣ answers to Aramaic ʿ here, as in אֶרֶץ beside אֲרַע'
+      }
+    ]
+  },
+  {
+    id: 'he-shdh',
+    lang: 'hebrew',
+    letters: ['ש', 'ד', 'ה'],
+    gloss: 'field (noun base)',
+    attested: [{ word: 'שָׂדֶה', gloss: 'field' }]
+  },
+  {
+    id: 'he-gnn',
+    lang: 'hebrew',
+    letters: ['ג', 'נ', 'נ'],
+    gloss: 'enclose, protect; garden',
+    attested: [
+      { word: 'גַּן', gloss: 'garden' },
+      { word: 'גִּנָּה', gloss: 'garden (Esther 7:7 גִּנַּת הַבִּיתָן)' },
+      { word: 'וְגַנּוֹתִי', gloss: 'and I will defend (this city), Isaiah 37:35' }
+    ],
+    interpretationNote:
+      'The dictionaries file גַּן garden under גנן enclose — a garden as an enclosed plot; the derivation is a conventional arrangement, an interpretation not provable from the texts alone.'
+  },
+  {
+    id: 'he-dbr',
+    lang: 'hebrew',
+    letters: ['ד', 'ב', 'ר'],
+    gloss: 'speak; word; wilderness — several attested word groups on one consonant set',
+    attested: [
+      { word: 'דָּבָר', gloss: 'word, matter' },
+      { word: 'דִּבֶּר', gloss: 'he spoke' },
+      { word: 'מִדְבָּר', gloss: 'wilderness, desert' },
+      { word: 'דֶּבֶר', gloss: 'pestilence' }
+    ],
+    homographNote:
+      'The consonants דבר write several attested word groups: the speech group דָּבָר and דִּבֶּר, the noun מִדְבָּר wilderness, and דֶּבֶר pestilence.',
+    interpretationNote:
+      'Derivational stories connecting מִדְבָּר wilderness to the speech group, or to a separate sense drive (pasture land as the place flocks are driven), are interpretations, not provable from the texts alone.'
+  },
+  {
+    id: 'he-awr-light',
+    lang: 'hebrew',
+    letters: ['א', 'ו', 'ר'],
+    gloss: 'light, shine',
+    attested: [
+      { word: 'אוֹר', gloss: 'light' },
+      { word: 'מְאֹרֹת', gloss: 'lights, luminaries (Genesis 1:14)' },
+      { word: 'אוֹרָה', gloss: 'light, gladness (Esther 8:16)' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'urru',
+        note: 'daytime, daylight; the comparison with the Hebrew group is one made in the dictionaries'
+      }
+    ],
+    homographNote:
+      'אוּר flame, fire (Isaiah 50:11 בְּאוּר) is written with the same consonants; the dictionaries treat it as a separate word.'
+  },
+  {
+    id: 'he-chshk',
+    lang: 'hebrew',
+    letters: ['ח', 'ש', 'כ'],
+    gloss: 'be dark',
+    attested: [
+      { word: 'חֹשֶׁךְ', gloss: 'darkness' },
+      { word: 'חָשַׁךְ', gloss: 'it grew dark (Isaiah 5:30)' },
+      { word: 'חֲשֵׁכָה', gloss: 'darkness (Genesis 15:12)' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'חשוך',
+        note: 'Daniel 2:22 יָדַע מָה בַחֲשׁוֹכָא (he knows what is in the darkness)'
+      }
+    ]
   }
 ]
 
