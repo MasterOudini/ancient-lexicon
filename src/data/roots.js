@@ -2551,6 +2551,288 @@ export const ROOTS = [
     ],
     interpretationNote:
       'הֵיכָל is by standard doctrine a loanword from Sumerian e2-gal (big house) transmitted through Akkadian ekallu; the four-letter filing rather than a triliteral root reflects this loan history.'
+  },
+
+  // --- Everyday verbs ---
+  {
+    id: 'he-akl',
+    lang: 'hebrew',
+    letters: ['א', 'כ', 'ל'],
+    gloss: 'eat',
+    attested: [
+      { word: 'אָכַל', gloss: 'he ate' },
+      { word: 'אֹכֶל', gloss: 'food' },
+      { word: 'מַאֲכָל', gloss: 'food (Genesis 2:9)' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'akālu', note: 'to eat; the textbook cognate' },
+      {
+        lang: 'aramaic',
+        form: 'אכל',
+        note: 'Daniel 7:7 אָכְלָה (it devoured, of the fourth beast)'
+      }
+    ]
+  },
+  {
+    id: 'he-shth',
+    lang: 'hebrew',
+    letters: ['ש', 'ת', 'ה'],
+    gloss: 'drink',
+    attested: [
+      { word: 'שָׁתָה', gloss: 'he drank' },
+      { word: 'מִשְׁתֶּה', gloss: 'feast, drinking banquet' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'šatû', note: 'to drink; the textbook cognate' },
+      {
+        lang: 'aramaic',
+        form: 'שתה',
+        note: 'Daniel 5:1 חַמְרָא שָׁתֵה (Belshazzar drinking wine)'
+      }
+    ]
+  },
+  {
+    id: 'he-hlk',
+    lang: 'hebrew',
+    letters: ['ה', 'ל', 'כ'],
+    gloss: 'go, walk',
+    attested: [
+      { word: 'הָלַךְ', gloss: 'he went' },
+      { word: 'הִתְהַלֵּךְ', gloss: 'he walked about' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'alāku',
+        note: 'to go; the standard comparison with הלך'
+      },
+      {
+        lang: 'aramaic',
+        form: 'הלך',
+        note: 'Daniel 3:25 מַהְלְכִין (walking, in the furnace); the ordinary Aramaic go-verb is אזל, a different lexeme'
+      }
+    ]
+  },
+  {
+    id: 'he-bwa',
+    lang: 'hebrew',
+    letters: ['ב', 'ו', 'א'],
+    gloss: 'come, enter',
+    attested: [
+      { word: 'בָּא', gloss: 'he came' },
+      { word: 'הֵבִיא', gloss: 'he brought (hiphil)' },
+      { word: 'מְבוֹא', gloss: 'entrance of (construct; מְבוֹא הָעִיר, Judges 1:24)' }
+    ]
+  },
+  {
+    id: 'he-rah',
+    lang: 'hebrew',
+    letters: ['ר', 'א', 'ה'],
+    gloss: 'see',
+    attested: [
+      { word: 'רָאָה', gloss: 'he saw' },
+      { word: 'מַרְאֶה', gloss: 'appearance, vision' },
+      { word: 'רֹאֶה', gloss: 'seer (1 Samuel 9:9)' }
+    ]
+  },
+  {
+    id: 'he-shma',
+    lang: 'hebrew',
+    letters: ['ש', 'מ', 'ע'],
+    gloss: 'hear, listen',
+    attested: [
+      { word: 'שָׁמַע', gloss: 'he heard' },
+      { word: 'שְׁמַע', gloss: 'hear! (the imperative that opens the Shema, Deuteronomy 6:4)' },
+      { word: 'שְׁמוּעָה', gloss: 'report, tidings' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'šemû', note: 'to hear; the textbook cognate' },
+      {
+        lang: 'aramaic',
+        form: 'שמע',
+        note: 'Daniel 5:14 שִׁמְעֵת (I have heard)'
+      }
+    ]
+  },
+  {
+    id: 'he-ntn',
+    lang: 'hebrew',
+    letters: ['נ', 'ת', 'נ'],
+    gloss: 'give',
+    attested: [
+      { word: 'נָתַן', gloss: 'he gave' },
+      { word: 'מַתָּנָה', gloss: 'gift' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'nadānu',
+        note: 'to give; the textbook cognate, with d where Hebrew has t'
+      },
+      {
+        lang: 'aramaic',
+        form: 'נתן',
+        note: 'supplies the imperfect of the Aramaic give-verb, whose perfect in use is יְהַב, a different lexeme'
+      }
+    ]
+  },
+  {
+    id: 'he-lqch',
+    lang: 'hebrew',
+    letters: ['ל', 'ק', 'ח'],
+    gloss: 'take',
+    attested: [
+      { word: 'לָקַח', gloss: 'he took' },
+      { word: 'לֶקַח', gloss: 'teaching (Proverbs 1:5)' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'leqû', note: 'to take; the textbook cognate' }
+    ]
+  },
+  {
+    id: 'he-yda',
+    lang: 'hebrew',
+    letters: ['י', 'ד', 'ע'],
+    gloss: 'know',
+    attested: [
+      { word: 'יָדַע', gloss: 'he knew' },
+      { word: 'דַּעַת', gloss: 'knowledge' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'idû',
+        note: 'to know; cited as idû or edû in the dictionaries'
+      },
+      {
+        lang: 'aramaic',
+        form: 'ידע',
+        note: 'Daniel 2:22 יָדַע מָה בַחֲשׁוֹכָא (he knows what is in the darkness)'
+      }
+    ]
+  },
+  {
+    id: 'he-ahb',
+    lang: 'hebrew',
+    letters: ['א', 'ה', 'ב'],
+    gloss: 'love',
+    attested: [
+      { word: 'אָהַב', gloss: 'he loved' },
+      { word: 'אַהֲבָה', gloss: 'love' }
+    ]
+  },
+  {
+    id: 'he-yra',
+    lang: 'hebrew',
+    letters: ['י', 'ר', 'א'],
+    gloss: 'fear',
+    attested: [
+      { word: 'יָרֵא', gloss: 'he feared; fearing' },
+      { word: 'יִרְאָה', gloss: 'fear' },
+      { word: 'נוֹרָא', gloss: 'fearsome, awesome' }
+    ]
+  },
+  {
+    id: 'he-mwt',
+    lang: 'hebrew',
+    letters: ['מ', 'ו', 'ת'],
+    gloss: 'die',
+    attested: [
+      { word: 'מֵת', gloss: 'he died' },
+      { word: 'מָוֶת', gloss: 'death' }
+    ],
+    cognates: [
+      { lang: 'akkadian', form: 'mâtu', note: 'to die; the textbook cognate' },
+      {
+        lang: 'aramaic',
+        form: 'מות',
+        note: 'Ezra 7:26 הֵן לְמוֹת (whether for death), among the penalties of the decree'
+      }
+    ]
+  },
+  {
+    id: 'he-chyh',
+    lang: 'hebrew',
+    letters: ['ח', 'י', 'ה'],
+    gloss: 'live',
+    attested: [
+      { word: 'חָיָה', gloss: 'he lived' },
+      { word: 'חַי', gloss: 'living, alive' },
+      { word: 'חַיִּים', gloss: 'life' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'חיה',
+        note: 'Daniel 2:4 מַלְכָּא לְעָלְמִין חֱיִי (O king, live forever)'
+      }
+    ]
+  },
+  {
+    id: 'he-yshb',
+    lang: 'hebrew',
+    letters: ['י', 'ש', 'ב'],
+    gloss: 'sit, dwell',
+    attested: [
+      { word: 'יָשַׁב', gloss: 'he sat, dwelt' },
+      { word: 'מוֹשָׁב', gloss: 'dwelling place, seat' },
+      { word: 'תּוֹשָׁב', gloss: 'sojourner' }
+    ],
+    cognates: [
+      {
+        lang: 'akkadian',
+        form: 'ašābu',
+        note: 'to sit, dwell; Old Babylonian wašābum'
+      },
+      {
+        lang: 'aramaic',
+        form: 'יתב',
+        note: 'with t where Hebrew has š; Daniel 7:9 יְתִב (the Ancient of Days took his seat)'
+      }
+    ]
+  },
+  {
+    id: 'he-amd',
+    lang: 'hebrew',
+    letters: ['ע', 'מ', 'ד'],
+    gloss: 'stand',
+    attested: [
+      { word: 'עָמַד', gloss: 'he stood' },
+      { word: 'עַמּוּד', gloss: 'pillar, column' }
+    ]
+  },
+  {
+    id: 'he-amr',
+    lang: 'hebrew',
+    letters: ['א', 'מ', 'ר'],
+    gloss: 'say',
+    attested: [
+      { word: 'אָמַר', gloss: 'he said' },
+      { word: 'וַיֹּאמֶר', gloss: 'and he said' },
+      { word: 'מַאֲמַר', gloss: 'command of (construct), Esther 1:15' }
+    ],
+    cognates: [
+      {
+        lang: 'aramaic',
+        form: 'אמר',
+        note: 'the answered-and-said formula (עָנֵה... וְאָמַר) throughout Daniel'
+      },
+      {
+        lang: 'akkadian',
+        form: 'amāru',
+        note: 'means to see, not to say; the dictionaries note the same consonants with a different sense'
+      }
+    ]
+  },
+  {
+    id: 'he-ashh-make',
+    lang: 'hebrew',
+    letters: ['ע', 'ש', 'ה'],
+    gloss: 'make, do',
+    attested: [
+      { word: 'עָשָׂה', gloss: 'he made, did' },
+      { word: 'מַעֲשֶׂה', gloss: 'work, deed' }
+    ]
   }
 ]
 
