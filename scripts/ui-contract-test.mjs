@@ -31,6 +31,7 @@ try {
     UniversalComparisonCard
   } = await server.ssrLoadModule('/src/components/HebrewComparative.jsx')
   const { default: AboutView } = await server.ssrLoadModule('/src/components/AboutView.jsx')
+  const { default: TabIcon } = await server.ssrLoadModule('/src/components/TabIcon.jsx')
 
   const entry = {
     sourceKey: 'strongs:H2803',
@@ -78,7 +79,14 @@ try {
   assert.match(about, new RegExp(`data-app-version="${contractVersion}">${contractVersion}<`))
   assert.match(about, new RegExp(`data-app-build="${contractBuild}"><code dir="ltr">${contractBuild}<`))
 
-  console.log('verified exact-row, six-plaque, and installed-version UI contracts')
+  for (const name of ['dictionary', 'roots', 'about', 'settings']) {
+    const icon = renderToStaticMarkup(React.createElement(TabIcon, { name }))
+    assert.match(icon, new RegExp(`^<svg[^>]*data-tab-icon="${name}"`))
+    assert.match(icon, /aria-hidden="true"/)
+    assert.match(icon, /focusable="false"/)
+  }
+
+  console.log('verified exact-row, six-plaque, installed-version, and tab-icon UI contracts')
 } finally {
   await server.close()
 }
