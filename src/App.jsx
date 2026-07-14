@@ -78,21 +78,8 @@ const CONFIG = {
     verifiedBadge: 'Verified comparative entry',
     directMatchesTitle: 'Direct Hebrew / Aramaic headword matches',
     directMatchTag: 'Direct dictionary headword match.',
-    hebrewComparativeIntro:
-      'Every Hebrew entry from Strong’s and Brown–Driver–Briggs is included here. Open an entry to compare its own English guide meanings across the other dictionaries. Automatic matches are not verified translations, equivalents, or cognates.',
-    hebrewLinkedTag:
-      'Compared through this source entry’s English meaning — automatic, not verified.',
-    hebrewSourceOnlyTag:
-      'Hebrew source entry — no distinctive English guide meaning was indexed for automatic comparison.',
-    hebrewNoEnglishBridge:
-      'This source row is included for complete Hebrew coverage, but its dictionary text does not yield a distinctive indexable English guide meaning.',
-    hebrewNoAutomaticMatches:
-      'No other dictionary entry shares an indexed English guide meaning with this source entry.',
-    hebrewComparisonSummary:
-      '{n} entries share the English guide meaning “{meaning}”. These are automatic leads, not verified equivalents.',
     hebrewSearchHint:
       'Search a Hebrew headword, English meaning, transliteration, dictionary name, or source number.',
-    showMoreMatches: 'Show {n} more matches',
     meaningMatchTag: 'Matched by English meaning “{meaning}” — not a verified equivalent.',
     egyptianCoverage:
       'Only Egyptian entries with an explicit English gloss are searched; German-only entries are omitted.',
@@ -327,7 +314,6 @@ export default function App() {
                 <HebrewComparative
                   query={query}
                   strings={CONFIG.strings}
-                  onRootClick={openRoot}
                   onClearQuery={clearQuery}
                 />
               )}

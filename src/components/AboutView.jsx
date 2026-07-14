@@ -27,10 +27,10 @@ export default function AboutView() {
         </p>
         <p>
           Comparative also has an &lsquo;All Hebrew&rsquo; layer containing every
-          Hebrew entry from Strong&rsquo;s and Brown&ndash;Driver&ndash;Briggs. Opening
-          one uses that source entry&rsquo;s own English guide meanings to gather
-          automatic cross-dictionary leads. These source rows are not added to
-          the curated database and are never presented as verified equivalents.
+          Hebrew entry from Strong&rsquo;s and Brown&ndash;Driver&ndash;Briggs. Each
+          source-distinct entry opens a sense-specific card with fixed slots for
+          the same six ancient languages as the curated cards. English is shown
+          only as explanatory bridge metadata, not as a comparison language.
         </p>
         <p>
           There is no backend, no account, and no analytics; your settings and
@@ -38,8 +38,9 @@ export default function AboutView() {
           root explorer, and Strong&rsquo;s are precached and work offline from
           the first load. The other reference dictionaries download once, the
           first time you open each, and are then available offline too.
-          The compact All Hebrew comparison index is likewise cached after its
-          first online load.
+          The compact All Hebrew catalog and each comparison shard you open are
+          likewise cached after their first online load. A complete source
+          dictionary downloads only if you expand its source details.
         </p>
       </div>
 
@@ -60,12 +61,12 @@ export default function AboutView() {
           information.
         </p>
         <p>
-          The &lsquo;All Hebrew&rsquo; layer and &lsquo;By meaning&rsquo; search automatically
-          gather entries whose English glosses share a word. Those rows are
-          leads for the reader to judge, not verified equivalents, cognates,
-          or claims of lexical relationship. Only cards explicitly marked
-          &lsquo;Verified comparative entry&rsquo; are hand-curated cross-language
-          comparisons.
+          The &lsquo;All Hebrew&rsquo; layer ranks semantic equivalents separately for
+          each dictionary sense; &lsquo;By meaning&rsquo; remains the broader shared-gloss
+          discovery tool. A result marked &lsquo;Automatically matched semantic
+          equivalent&rsquo; is a responsible semantic lead, not a cognacy claim.
+          Results marked &lsquo;Verified/curated comparison&rsquo; come from the
+          authoritative hand-curated card, including its intentional gaps.
         </p>
         <p>{HEBREW_CAVEAT}</p>
         {LANGUAGES.map((l) => (
@@ -77,16 +78,18 @@ export default function AboutView() {
         <h2>Sources &amp; method</h2>
         <p>
           Every verified comparative card is hand-curated, never bulk-imported.
-          The separate All Hebrew source rows remain visibly automatic. The
-          curated conventions follow the standard reference works, and forms
-          should be verified against them for scholarly use:
+          The separate All Hebrew cards label each populated slot as curated or
+          automatic, and state when no reliable match was found. Automatic
+          Imperial Aramaic matching is disabled: only curated forms may fill
+          that slot. The curated conventions follow the standard reference
+          works, and forms should be verified against them for scholarly use:
         </p>
         <ul className="about-sources">
           <li>Akkadian — The Chicago Assyrian Dictionary (CAD), freely published by the ISAC, University of Chicago</li>
           <li>Sumerian — The Electronic Pennsylvania Sumerian Dictionary (ePSD2)</li>
           <li>Egyptian — The Thesaurus Linguae Aegyptiae and the Berlin Wörterbuch (Wb.); Gardiner&rsquo;s sign list for the script</li>
           <li>Hittite — The Chicago Hittite Dictionary (CHD/eCHD)</li>
-          <li>Imperial Aramaic — The Comprehensive Aramaic Lexicon (CAL); Porten &amp; Yardeni, Textbook of Aramaic Documents from Ancient Egypt (TAD); the biblical Aramaic of Daniel and Ezra</li>
+          <li>Imperial Aramaic — Elephantine and other Imperial-period evidence in the Comprehensive Aramaic Lexicon (CAL), and Porten &amp; Yardeni, Textbook of Aramaic Documents from Ancient Egypt (TAD). Biblical and Jastrow Aramaic remain separately labeled reference material.</li>
           <li>Old South Arabian — The DASI / CSAI corpus and the Sabaic dictionary tradition</li>
           <li>Hebrew — Brown–Driver–Briggs and Strong&rsquo;s (public domain), against the Masoretic text</li>
         </ul>

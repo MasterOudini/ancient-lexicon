@@ -1054,6 +1054,170 @@ details.langfields summary {
   margin: 2px 0 12px;
 }
 
+.universal-card-shell {
+  padding: 2px 16px 16px;
+}
+
+.hebrew-comparative-row[open] > summary {
+  padding: 14px 16px 10px;
+}
+
+.hebrew-comparative-row[open] > summary .lex-lemma {
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
+.hebrew-comparative-row[open] > summary .lex-def {
+  display: block;
+  flex: 1 0 100%;
+  white-space: normal;
+  overflow: visible;
+  line-height: 1.5;
+  text-overflow: clip;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.sense-picker {
+  margin: 10px 0 4px;
+  padding-top: 12px;
+}
+
+.sense-picker label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+}
+
+.sense-picker select {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  color: var(--ink);
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font: inherit;
+}
+
+.sense-source-text {
+  color: var(--ink-soft);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.comparison-plaque .eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 8px;
+}
+
+.comparison-status {
+  display: inline-block;
+  padding: 1px 7px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.67rem;
+  font-variant-caps: normal;
+  letter-spacing: 0.03em;
+}
+
+.comparison-status-verified {
+  color: var(--faience);
+}
+
+.comparison-status-automatic {
+  color: var(--clay);
+}
+
+.comparison-candidate-main {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-top: 8px;
+  min-width: 0;
+}
+
+.comparison-candidate-main .plaque-glyph {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 45%;
+  overflow-wrap: anywhere;
+}
+
+.comparison-candidate-main .plaque-caption {
+  flex: 1 1 180px;
+  overflow-wrap: anywhere;
+}
+
+.comparison-word {
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+
+.comparison-word .comparison-field-label {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-style: normal;
+}
+
+.comparison-field-label {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.comparison-source-detail {
+  margin-top: 4px;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+}
+
+.lexrow .comparison-source-detail > summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 4px 0;
+  color: var(--faience);
+  cursor: pointer;
+}
+
+.comparison-source-detail > summary::before {
+  content: '＋';
+}
+
+.comparison-source-detail[open] > summary::before {
+  content: '−';
+}
+
+.comparison-source-body {
+  padding: 0 0 4px 12px;
+  border-left: 2px solid var(--line);
+}
+
+.comparison-candidates-toggle {
+  margin-top: 8px;
+}
+
+.comparison-alternatives {
+  margin-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.comparison-candidate-alt {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.comparison-candidate-alt:last-child {
+  border-bottom: 0;
+}
+
 /* ---- About ---------------------------------------------------------------- */
 
 .about-sources {
@@ -1070,6 +1234,14 @@ details.langfields summary {
 /* ---- Small screens -------------------------------------------------------- */
 
 @media (max-width: 480px) {
+  .comparison-candidate-main {
+    flex-wrap: wrap;
+  }
+
+  .comparison-candidate-main .plaque-glyph {
+    max-width: 100%;
+  }
+
   /* Egyptian signs can paint wider than their font's measured advance in
      mobile Safari. Give them a row of their own so they cannot cover the
      transliteration or note. */

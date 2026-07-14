@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "gloss:index": "node scripts/build-gloss-index.mjs",
-    "prebuild": "npm run gloss:index",
+    "data:build": "node scripts/build-hebrew-comparisons.mjs",
+    "prebuild": "npm run gloss:index && npm run data:build",
     "dev": "vite",
     "build": "vite build",
     "postbuild": "node scripts/verify-pwa-build.mjs",
     "preview": "vite preview",
-    "test": "node scripts/smoke-test.mjs"
+    "test": "node scripts/smoke-test.mjs && node scripts/validate-hebrew-comparisons.mjs && node scripts/build-hebrew-comparisons.mjs --check"
   },
   "dependencies": {
     "react": "^19.2.7",

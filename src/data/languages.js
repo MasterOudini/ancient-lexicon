@@ -55,7 +55,7 @@ export const LANGUAGES = [
     fontClass: 'script-aramaic',
     dir: 'rtl',
     caveat:
-      'Aramaic forms are as attested in the Elephantine papyri and biblical Aramaic (Daniel, Ezra); they are shown in both Hebrew square script and Imperial Aramaic letters.'
+      'Only hand-curated forms supported by Elephantine or other Imperial Aramaic evidence fill this slot. Square-script spellings may accompany the Imperial glyphs; Biblical and Jastrow Aramaic entries are never relabeled Imperial Aramaic.'
   },
   {
     id: 'osa',
