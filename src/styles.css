@@ -86,7 +86,8 @@
 .script-aramaic {
   font-family: 'Noto Sans Imperial Aramaic', var(--sans);
 }
-.script-osa {
+.script-osa,
+.lex-lemma.script-osa {
   font-family: 'Noto Sans Old South Arabian', var(--sans);
 }
 
@@ -1029,6 +1030,28 @@ details.langfields summary {
 .lex-source-note {
   border-top: 1px solid var(--line);
   padding-top: 8px;
+}
+
+.comparison-scope {
+  margin-bottom: 12px;
+}
+
+.hebrew-comparative > .note-block {
+  margin-bottom: 12px;
+}
+
+.hebrew-comparison-results {
+  border-top: 1px solid var(--line);
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+.hebrew-comparison-results .category-head {
+  margin-top: 14px;
+}
+
+.comparison-more {
+  margin: 2px 0 12px;
 }
 
 /* ---- About ---------------------------------------------------------------- */

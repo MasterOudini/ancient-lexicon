@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import DictionaryList from './components/DictionaryList.jsx'
 import ReferenceDictionaries from './components/ReferenceDictionaries.jsx'
 import MeaningSearch from './components/MeaningSearch.jsx'
+import HebrewComparative from './components/HebrewComparative.jsx'
 import RootsView from './components/RootsView.jsx'
 import SettingsView from './components/SettingsView.jsx'
 import AboutView from './components/AboutView.jsx'
@@ -46,6 +47,8 @@ const CONFIG = {
       settings: 'Settings'
     },
     modes: { concepts: 'Comparative', strongs: 'Reference dictionaries', meaning: 'By meaning' },
+    compareAllHebrew: 'All Hebrew',
+    compareCards: 'Curated & saved',
     noResults: 'No entries match this search.',
     searchHint:
       'Search by English (lion), Hebrew (אריה), transliteration (labbu), or paste glyphs from any plaque.',
@@ -75,15 +78,30 @@ const CONFIG = {
     verifiedBadge: 'Verified comparative entry',
     directMatchesTitle: 'Direct Hebrew / Aramaic headword matches',
     directMatchTag: 'Direct dictionary headword match.',
+    hebrewComparativeIntro:
+      'Every Hebrew entry from Strong’s and Brown–Driver–Briggs is included here. Open an entry to compare its own English guide meanings across the other dictionaries. Automatic matches are not verified translations, equivalents, or cognates.',
+    hebrewLinkedTag:
+      'Compared through this source entry’s English meaning — automatic, not verified.',
+    hebrewSourceOnlyTag:
+      'Hebrew source entry — no distinctive English guide meaning was indexed for automatic comparison.',
+    hebrewNoEnglishBridge:
+      'This source row is included for complete Hebrew coverage, but its dictionary text does not yield a distinctive indexable English guide meaning.',
+    hebrewNoAutomaticMatches:
+      'No other dictionary entry shares an indexed English guide meaning with this source entry.',
+    hebrewComparisonSummary:
+      '{n} entries share the English guide meaning “{meaning}”. These are automatic leads, not verified equivalents.',
+    hebrewSearchHint:
+      'Search a Hebrew headword, English meaning, transliteration, dictionary name, or source number.',
+    showMoreMatches: 'Show {n} more matches',
     meaningMatchTag: 'Matched by English meaning “{meaning}” — not a verified equivalent.',
     egyptianCoverage:
       'Only Egyptian entries with an explicit English gloss are searched; German-only entries are omitted.',
     akkadianCoverage:
       'Akkadian results come from the limited RINAP Neo-Assyrian sub-corpus, not a complete Akkadian dictionary.',
     hittiteCoverage:
-      'Open Hittite coverage combines expert IE-CoR core concepts with a small community Wiktionary lexicon. It is not the Chicago Hittite Dictionary and is not a complete Hittite lexicon.',
+      'Open Hittite coverage combines expert comparative datasets, a small basic-vocabulary list, a conservatively filtered public-domain 1936 glossary, and small community datasets. Historical and community rows are leads, not modern scholarly verification; this is not the Chicago Hittite Dictionary or a complete Hittite lexicon.',
     osaCoverage:
-      'Open Old South Arabian coverage is a small community Wiktionary layer, mainly Sabaean with tiny Minaean and Qatabanian subsets. DASI is an open inscription corpus, not a word-to-English dictionary, so it is not used to invent lexical matches.',
+      'Open Old South Arabian coverage is a small community layer from Wiktionary and Wikidata, mainly Sabaean with tiny variety subsets. DASI is an open inscription corpus, not a publicly exportable word-to-English dictionary, so inscription translations are not used to invent lexical matches.',
     curatedOnlyCoverage:
       'No automatic open-dataset match; a verified comparative form appears above.',
     notFoundInGlosses: 'not found in indexed English glosses'
@@ -111,6 +129,7 @@ export default function App() {
   )
   const [selectedRootId, setSelectedRootId] = useState(null)
   const [query, setQuery] = useState('')
+  const [comparisonScope, setComparisonScope] = useState('hebrew')
 
   // Apply the theme to the document and keep the browser-chrome color in
   // step (the status bar around the installed app).
@@ -243,45 +262,75 @@ export default function App() {
                 aria-label={CONFIG.strings.searchPlaceholder}
               />
 
-              <div className="chiprow" role="group" aria-label="Language filters">
+              <div className="chiprow comparison-scope" role="tablist" aria-label="Comparative coverage">
                 <button
-                  className={'chip' + (allOn ? ' on' : '')}
-                  onClick={() =>
-                    changeEnabledLangs(allOn ? [] : LANGUAGES.map((l) => l.id))
-                  }
+                  role="tab"
+                  aria-selected={comparisonScope === 'hebrew'}
+                  className={'chip' + (comparisonScope === 'hebrew' ? ' on' : '')}
+                  onClick={() => setComparisonScope('hebrew')}
                 >
-                  {CONFIG.strings.allChip}
+                  {CONFIG.strings.compareAllHebrew}
                 </button>
-                {LANGUAGES.map((l) => (
-                  <button
-                    key={l.id}
-                    className={'chip' + (enabledLangs.includes(l.id) ? ' on' : '')}
-                    onClick={() => toggleLang(l.id)}
-                  >
-                    {l.name}
-                  </button>
-                ))}
+                <button
+                  role="tab"
+                  aria-selected={comparisonScope === 'cards'}
+                  className={'chip' + (comparisonScope === 'cards' ? ' on' : '')}
+                  onClick={() => setComparisonScope('cards')}
+                >
+                  {CONFIG.strings.compareCards}
+                </button>
               </div>
 
-              <details className="infobox">
-                <summary>{CONFIG.strings.scriptsCaveatsTitle}</summary>
-                <ul>
-                  <li>{HEBREW_CAVEAT}</li>
-                  {LANGUAGES.map((l) => (
-                    <li key={l.id}>{l.caveat}</li>
-                  ))}
-                </ul>
-              </details>
+              {comparisonScope === 'cards' ? (
+                <>
+                  <div className="chiprow" role="group" aria-label="Language filters">
+                    <button
+                      className={'chip' + (allOn ? ' on' : '')}
+                      onClick={() =>
+                        changeEnabledLangs(allOn ? [] : LANGUAGES.map((l) => l.id))
+                      }
+                    >
+                      {CONFIG.strings.allChip}
+                    </button>
+                    {LANGUAGES.map((l) => (
+                      <button
+                        key={l.id}
+                        className={'chip' + (enabledLangs.includes(l.id) ? ' on' : '')}
+                        onClick={() => toggleLang(l.id)}
+                      >
+                        {l.name}
+                      </button>
+                    ))}
+                  </div>
 
-              <DictionaryList
-                results={results}
-                query={query}
-                languages={enabledLanguages}
-                onRootClick={openRoot}
-                onDelete={deleteCustomEntry}
-                strings={CONFIG.strings}
-                onClearQuery={clearQuery}
-              />
+                  <details className="infobox">
+                    <summary>{CONFIG.strings.scriptsCaveatsTitle}</summary>
+                    <ul>
+                      <li>{HEBREW_CAVEAT}</li>
+                      {LANGUAGES.map((l) => (
+                        <li key={l.id}>{l.caveat}</li>
+                      ))}
+                    </ul>
+                  </details>
+
+                  <DictionaryList
+                    results={results}
+                    query={query}
+                    languages={enabledLanguages}
+                    onRootClick={openRoot}
+                    onDelete={deleteCustomEntry}
+                    strings={CONFIG.strings}
+                    onClearQuery={clearQuery}
+                  />
+                </>
+              ) : (
+                <HebrewComparative
+                  query={query}
+                  strings={CONFIG.strings}
+                  onRootClick={openRoot}
+                  onClearQuery={clearQuery}
+                />
+              )}
             </>
           )}
 

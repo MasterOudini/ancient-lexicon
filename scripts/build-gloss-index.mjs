@@ -26,6 +26,19 @@ import { normalize } from '../src/lib/search.js'
 
 const POSTING_CAP_PER_LANGUAGE = 40
 const MAX_DISPLAY_GLOSS = 96
+const MAX_STRONGS_EXACT_FALLBACK = 48
+const HEBREW_CATALOG_SOURCES = new Set(['strongs', 'bdb'])
+const STRONGS_GENERIC_FALLBACK_WORDS = new Set([
+  'a', 'an', 'the', 'and', 'or', 'of', 'to', 'in', 'on', 'at', 'by', 'for',
+  'from', 'as', 'with', 'without', 'into', 'onto', 'out', 'up', 'down', 'over',
+  'under', 'above', 'below', 'off', 'about', 'against', 'between', 'among',
+  'through', 'during', 'before', 'after', 'per', 'via', 'upon', 'etc'
+])
+// KJV's bracketed idiom renderings are contextual by default. Keep only
+// individually reviewed cases that still name the entry's lexical concept.
+const STRONGS_AUDITED_IDIOM_GUIDES = new Map([
+  ['H1', new Set(['patrimony'])]
+])
 const POS_PARENTHETICAL = /\s*\((?:[A-Z][A-Z/.-]{0,10}|adj|adv|n|v|vb|subst|pron|prep|conj)\.?\)/g
 const HEBREW = /[\u0590-\u05ff]+/g
 const SOURCE_QUALIFIERS = /\b(?:properly|literally|figuratively|specifically|concretely|causatively|collectively|by implication|by extension|especially|usually|perhaps|compare)\b[,:]?/gi
@@ -104,9 +117,60 @@ function shortGloss(text) {
   return (boundary > 72 ? cut.slice(0, boundary) : cut.slice(0, MAX_DISPLAY_GLOSS)).trim() + '\u2026'
 }
 
+function shortRawGloss(value) {
+  return shortGloss(String(value || '').replace(/\s+/g, ' ').trim())
+}
+
+function strongsFallbackSense(entry, text) {
+  const words = normalize(text).match(/[a-z]+(?:-[a-z]+)*/g) || []
+  const contentWords = [...new Set(words.flatMap((word) => word.split('-')))]
+    .filter((word) => !STRONGS_GENERIC_FALLBACK_WORDS.has(word))
+  const keywords = text.length <= MAX_STRONGS_EXACT_FALLBACK &&
+      !UNKNOWN.test(text) &&
+      contentWords.length === 1 &&
+      contentWords[0].length >= 2
+    ? contentWords
+    : []
+  return {
+    display: shortGloss(text || shortRawGloss(entry.def)),
+    keywords,
+    guide: new Set(keywords),
+    exact: new Set(keywords)
+  }
+}
+
+function strongsKjvSenses(entry) {
+  const beforeCompare = String(entry.kjv || '').split(/\bCompare\b/i)[0]
+  const senses = []
+  for (const rawSegment of beforeCompare.split(/[,;]/)) {
+    const idiom = /^\s*\[idiom\]\s*/i.test(rawSegment)
+    const segment = rawSegment
+      .trim()
+      .replace(/^\[idiom\]\s*/i, '')
+      .replace(/\.\s*$/, '')
+      .trim()
+    if (idiom && !STRONGS_AUDITED_IDIOM_GUIDES.get(String(entry.id))?.has(normalize(segment))) {
+      continue
+    }
+    // Other bracketed phrase renderings are contextual English, not senses.
+    if (!segment || /[\[\]()\d]/.test(segment)) continue
+    if (!/^[A-Za-z]+(?:[ '-][A-Za-z]+)*$/.test(segment)) continue
+    const keywords = englishKeywords(segment)
+      .filter((word) => !STRONGS_GENERIC_FALLBACK_WORDS.has(word))
+    if (keywords.length === 0) continue
+    senses.push({
+      display: shortGloss(segment),
+      keywords,
+      guide: new Set(keywords),
+      exact: new Set(keywords.length === 1 ? keywords : [])
+    })
+  }
+  return senses
+}
+
 function sensesFor(dictId, entry) {
   const text = cleanSenseText(dictId, entry)
-  if (!text || UNKNOWN.test(text)) return null
+  if (dictId !== 'strongs' && (!text || UNKNOWN.test(text))) return null
   if ((dictId === 'bdb' || dictId === 'jastrow') && LEGACY_CROSS_REFERENCE.test(text)) return null
 
   const senses = []
@@ -123,7 +187,10 @@ function sensesFor(dictId, entry) {
       (word) => (dictId !== 'bdb' && dictId !== 'jastrow') || !LEGACY_NOISE.has(word)
     )
     if (words.length === 0) continue
-    const guide = new Set(properName ? [] : [words[0]])
+    const strongsProperName = dictId === 'strongs' && /\bname of\b/i.test(segment)
+    const guide = new Set(
+      properName ? [] : dictId === 'strongs' && !strongsProperName ? words : [words[0]]
+    )
     const exact = new Set(!properName && words.length === 1 ? [words[0]] : [])
     senses.push({
       display: shortGloss(segment),
@@ -131,6 +198,17 @@ function sensesFor(dictId, entry) {
       guide,
       exact
     })
+  }
+  if (dictId === 'strongs') {
+    if (senses.length === 0) senses.push(strongsFallbackSense(entry, text))
+    const seenDisplays = new Set(senses.map((sense) => normalize(sense.display)))
+    for (const sense of strongsKjvSenses(entry)) {
+      const display = normalize(sense.display)
+      if (!seenDisplays.has(display)) {
+        senses.push(sense)
+        seenDisplays.add(display)
+      }
+    }
   }
   return senses.length > 0 ? senses : null
 }
@@ -173,6 +251,7 @@ const sourceCode = new Map(sourceIds.map((id, i) => [id, i]))
 const languageCode = new Map(languageNames.map((name, i) => [name, i]))
 const candidates = []
 const headKeysByCandidate = []
+const hebrewUnindexed = []
 const coverage = {}
 
 function addCandidate({ dictId, id, lemma, language, langCode, translit, script, variety, senses, heads }) {
@@ -213,6 +292,7 @@ for (const dict of REFERENCE_DICTIONARIES) {
   let skippedMeta = 0
   let indexedEntries = 0
   for (const entry of data.entries) {
+    const language = entryLanguage(dict, entry)
     // In the Egyptian import, `def` is English only when `de` is also
     // present; otherwise `def` contains the German fallback. German-only
     // records are deliberately skipped rather than mislabeled as English.
@@ -229,9 +309,20 @@ for (const dict of REFERENCE_DICTIONARIES) {
       continue
     }
     const senses = sensesFor(dict.id, entry)
-    if (!senses) continue
+    if (!senses) {
+      if (HEBREW_CATALOG_SOURCES.has(dict.id) && language === 'Hebrew') {
+        const unindexed = [
+          sourceCode.get(dict.id),
+          entry.id,
+          entry.lemma,
+          shortRawGloss(entry.def)
+        ]
+        if (entry.xlit) unindexed[4] = entry.xlit
+        hebrewUnindexed.push(unindexed)
+      }
+      continue
+    }
     indexedEntries++
-    const language = entryLanguage(dict, entry)
     const heads = language === 'Hebrew' || language === 'Aramaic'
       ? [entry.lemma, entry.xlit]
       : []
@@ -300,6 +391,11 @@ const records = candidates.map((candidate, recordId) => {
   if (candidate.langCode) record[9] = candidate.langCode
   return record
 })
+const hebrewRecordIds = candidates.flatMap((candidate, recordId) =>
+  HEBREW_CATALOG_SOURCES.has(candidate.dictId) && candidate.language === 'Hebrew'
+    ? [recordId]
+    : []
+)
 
 const keywords = {}
 const truncated = {}
@@ -324,7 +420,9 @@ for (const keyword of allKeywords) {
       a.glossLength - b.glossLength ||
       a.recordId - b.recordId
     )
-    const kept = language === 'Comparative' ? list : list.slice(0, POSTING_CAP_PER_LANGUAGE)
+    const kept = language === 'Comparative' || language === 'Hebrew'
+      ? list
+      : list.slice(0, POSTING_CAP_PER_LANGUAGE)
     encoded.push(...kept.map((item) => item.senseId * 3 + item.rank))
     const dropped = list.length - kept.length
     if (dropped > 0) {
@@ -355,13 +453,22 @@ const output = {
   senses,
   keywords,
   heads,
+  hebrew: {
+    recordIds: hebrewRecordIds,
+    unindexed: hebrewUnindexed
+  },
   truncated,
   coverage
 }
 
-const destination = join(projectRoot, 'public', 'dicts', 'gloss-index.json')
+// Do not overwrite the established gloss-index.json URL in this release.
+// Older installed iOS bundles can remain alive while a new service worker
+// activates, so the expanded source table ships at a versioned URL that only
+// the matching application bundle requests.
+const outputFilename = 'gloss-index-2026-07.json'
+const destination = join(projectRoot, 'public', 'dicts', outputFilename)
 const json = JSON.stringify(output)
 writeFileSync(destination, json)
 const mib = Buffer.byteLength(json) / (1024 * 1024)
 console.log(`wrote ${destination}: ${records.length} records, ${senses.length} senses, ${allKeywords.length} keywords, ${mib.toFixed(2)} MiB`)
-console.log(`posting cap dropped ${droppedTotal} candidate match(es); counts are recorded in gloss-index.json`)
+console.log(`posting cap dropped ${droppedTotal} candidate match(es); counts are recorded in ${outputFilename}`)

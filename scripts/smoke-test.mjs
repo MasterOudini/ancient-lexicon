@@ -32,6 +32,7 @@ import {
   expandGlossSense,
   searchGlossIndex
 } from '../src/lib/glossSearch.js'
+import { buildHebrewCatalog } from '../src/lib/hebrewCatalog.js'
 import {
   monitorServiceWorkerUpdates,
   UPDATE_CHECK_INTERVAL_MS
@@ -443,6 +444,11 @@ const urlDicts = [...registryText.matchAll(/url:\s*'dicts\/([^']+)'/g)].map(
   (m) => m[1]
 )
 const referenceData = new Map([['strongs', strongs]])
+const reviewedSmallDictionaryMinimums = new Map([
+  ['hittite-asjp.json', 30],
+  ['hittite-wikidata.json', 39],
+  ['osa-wikidata.json', 8]
+])
 check('reference registry declares on-demand dictionaries', urlDicts.length >= 1)
 for (const file of urlDicts) {
   let dict
@@ -455,7 +461,7 @@ for (const file of urlDicts) {
   check(
     `${file}: has entries and a matching count`,
     Array.isArray(dict.entries) &&
-      dict.entries.length > 100 &&
+      dict.entries.length >= (reviewedSmallDictionaryMinimums.get(file) || 101) &&
       dict.count === dict.entries.length
   )
   check(
@@ -582,15 +588,183 @@ check(
     .every((entry) => !/\b(?:xsa|hit)-.* form of/i.test(entry.def))
 )
 
+const hittiteAsjp = referenceData.get('hittite-asjp')
+const hittiteDiacl = referenceData.get('hittite-diacl')
+check(
+  'DIACL v3.0 Hittite subset retains its open release and honest coverage',
+  hittiteDiacl?.count === 146 &&
+    new Set(hittiteDiacl.entries.map((entry) => entry.conceptId)).size === 121 &&
+    hittiteDiacl?.doi === '10.5281/zenodo.5121561' &&
+    hittiteDiacl?.license === 'CC BY 4.0' &&
+    hittiteDiacl?.releaseCommit === '393db4ab0a4b84891b96bbf619c7a94663e44d5e' &&
+    hittiteDiacl?.excludedReconstructed === 0
+)
+check(
+  'DIACL inconsistent duplicate assignments are reported and absent',
+  hittiteDiacl?.excludedInconsistent === 3 &&
+    ['35500-33_dog-2', '35500-50_silver-1', '35500-71_spear-1'].every((id) =>
+      hittiteDiacl.excludedInconsistentEntries.some((entry) => entry.id === id && entry.reason) &&
+      !hittiteDiacl.entries.some((entry) => entry.id === id)
+    ) &&
+    hittiteDiacl.entries.every((entry) => !entry.lemma.includes('*'))
+)
+const hittiteSturtevant = referenceData.get('hittite-sturtevant')
+check(
+  'Sturtevant historical glossary retains exact public-domain scan provenance',
+  hittiteSturtevant?.count === 633 &&
+    hittiteSturtevant?.rights === 'Copyright review: Public domain according to HathiTrust rights database' &&
+    hittiteSturtevant?.sourceIdentifier === 'hittiteglossary00stur' &&
+    hittiteSturtevant?.sourceFile?.name === 'hittiteglossary00stur_djvu.xml' &&
+    hittiteSturtevant?.sourceFile?.md5 === 'f83008a69cd53cab9d5048f53ce7b9e7' &&
+    hittiteSturtevant?.sourceFile?.sha1 === '013de555c3856ac89f5c25e070601398a6feb6ce' &&
+    hittiteSturtevant?.sourceFile?.verifiedAgainstMetadata === true
+)
+check(
+  'Sturtevant OCR subset keeps strict exclusions and accounts for every row',
+  hittiteSturtevant?.entries.every((entry) =>
+    entry.ocrConfidence >= 90 &&
+    !entry.lemma.startsWith('*') &&
+    !/[?\p{Lu}]/u.test(entry.lemma) &&
+    entry.source === `https://archive.org/details/hittiteglossary00stur/page/n${entry.iaLeaf}/mode/1up`
+  ) &&
+    Object.values(hittiteSturtevant?.extraction?.dropped || {})
+      .reduce((sum, count) => sum + count, 0) + hittiteSturtevant.count === 4234
+)
+check(
+  'Sturtevant Latin-only and Latin-contaminated glosses are reported and excluded',
+  hittiteSturtevant?.extraction?.dropped?.latinOnlyGloss === 11 &&
+    hittiteSturtevant?.extraction?.dropped?.latinContaminatedGloss === 8 &&
+    [
+      'kwis', '-nas', 'netta', 'nutta', '-ta', '-du-', 'tuk', 'ukel', 'ukus',
+      'ehu', 'enessan', 'gimras', 'kinun', 'lalu', 'warss-', 'weheske/a-'
+    ]
+      .every((lemma) => !hittiteSturtevant.entries.some((entry) => entry.lemma === lemma))
+)
+check(
+  'Sturtevant known high-confidence entries survive while uncertain and reconstructed rows do not',
+  [
+    ['ais', 'mouth'],
+    ['annas', 'mother'],
+    ['antuhsas', 'human being, man'],
+    ['attas', 'father'],
+    ['hassus', 'king']
+  ].every(([lemma, def]) =>
+    hittiteSturtevant?.entries.some((entry) => entry.lemma === lemma && entry.def === def)
+  ) &&
+    !hittiteSturtevant.entries.some((entry) =>
+      (entry.lemma === 'aki' && entry.def === 'death') || entry.lemma === 'akkantes'
+    )
+)
+check(
+  'ASJP Hittite snapshot is the attributed 30-item basic-vocabulary list',
+  hittiteAsjp?.count === 30 &&
+    hittiteAsjp?.license === 'CC BY 4.0' &&
+    hittiteAsjp?.compiler === 'Viveka Velupillai' &&
+    hittiteAsjp?.iso === 'hit' &&
+    hittiteAsjp?.glottocode === 'hitt1242' &&
+    hittiteAsjp.entries.find((entry) => entry.id === 'asjp-hittite-86')?.lemma === 'kalmara'
+)
+check(
+  'ASJP transcription is preserved and no reconstructed form is introduced',
+  hittiteAsjp?.entries.find((entry) => entry.id === 'asjp-hittite-54')?.lemma === 'ekw~, akw~' &&
+    hittiteAsjp.entries.every((entry) => !entry.lemma.startsWith('*'))
+)
+
+const hittiteWikidata = referenceData.get('hittite-wikidata')
+const osaWikidata = referenceData.get('osa-wikidata')
+const osaWikidataRegistry = REFERENCE_DICTIONARIES.find(
+  (dictionary) => dictionary.id === 'osa-wikidata'
+)
+const validWikidataRevision = (entry) =>
+  /^L\d+$/.test(entry.id) &&
+  entry.source === `https://www.wikidata.org/wiki/${entry.id}` &&
+  Number.isInteger(entry.revision) &&
+  /^\d{4}-\d{2}-\d{2}T/.test(entry.timestamp) &&
+  Array.isArray(entry.senses) &&
+  entry.senses.length > 0
+check(
+  'Wikidata Lexeme snapshots are CC0 community data with exact revisions',
+  [hittiteWikidata, osaWikidata].every((data) =>
+    data?.license === 'CC0 1.0' &&
+    data?.licenseUrl === 'https://creativecommons.org/publicdomain/zero/1.0/' &&
+    data.entries.every(validWikidataRevision)
+  )
+)
+check(
+  'Wikidata snapshot sizes and language varieties remain explicit',
+  hittiteWikidata?.count === 39 &&
+    hittiteWikidata.entries.every((entry) => entry.languageId === 'Q35668' && entry.lang === 'hit') &&
+    osaWikidata?.count === 8 &&
+    new Set(osaWikidata.entries.map((entry) => entry.variety)).size === 4 &&
+    osaWikidata.entries.some((entry) => entry.variety === 'Hadramautic') &&
+    ![...hittiteWikidata.entries, ...osaWikidata.entries]
+      .some((entry) => entry.lemma.trim().startsWith('*'))
+)
+check(
+  'OSA Wikidata rows and browser metadata treat each lemma as native Musnad',
+  osaWikidata?.entries.every((entry) =>
+    [...entry.lemma].every((char) => char === ' ' || (
+      char.codePointAt(0) >= 0x10a60 && char.codePointAt(0) <= 0x10a7f
+    ))
+  ) &&
+    osaWikidataRegistry?.index === 'none' &&
+    osaWikidataRegistry?.dir === 'rtl' &&
+    osaWikidataRegistry?.fields.headClass === 'script-osa' &&
+    osaWikidataRegistry?.fields.headDir === 'rtl'
+)
+
 // --- Cross-dictionary English gloss index ---------------------------------
 // The artifact is generated at build time. Its compact integer references
 // expand to {d,i,l,g,lang} postings without loading a full dictionary in the
 // browser. Validate every reference against the source data here.
 
+const expandedSourceIds = [
+  'hittite-diacl',
+  'hittite-asjp',
+  'hittite-sturtevant',
+  'hittite-wikidata',
+  'osa-wikidata'
+]
+let legacyGlossIndex
+try {
+  legacyGlossIndex = JSON.parse(
+    readFileSync(join(dictsDir, 'gloss-index.json'), 'utf8')
+  )
+} catch {
+  legacyGlossIndex = null
+}
+check(
+  'legacy gloss-index URL remains compatible with already-open installed bundles',
+  legacyGlossIndex?.version === 2 &&
+    expandedSourceIds.every((id) => !legacyGlossIndex.sources.includes(id))
+)
+const meaningSearchText = readFileSync(
+  join(projectRoot, 'src', 'components', 'MeaningSearch.jsx'),
+  'utf8'
+)
+const appText = readFileSync(join(projectRoot, 'src', 'App.jsx'), 'utf8')
+const glossIndexLoaderText = readFileSync(
+  join(projectRoot, 'src', 'lib', 'glossIndexLoader.js'),
+  'utf8'
+)
+check(
+  'meaning search uses the matching versioned index and guards unknown sources',
+  glossIndexLoaderText.includes("export const GLOSS_INDEX_PATH = 'dicts/gloss-index-2026-07.json'") &&
+    meaningSearchText.includes("import { loadGlossIndex } from '../lib/glossIndexLoader.js'") &&
+    meaningSearchText.includes('loadGlossIndex()') &&
+    meaningSearchText.includes('resolution.direct.filter((result) => getDictionary(result.d))') &&
+    meaningSearchText.includes('resolution.groups[language].filter((result) => getDictionary(result.d))')
+)
+check(
+  'comparative scope distinguishes curated and locally saved cards from verified matches',
+  appText.includes("compareCards: 'Curated & saved'") &&
+    !appText.includes('compareVerified')
+)
+
 let glossIndex
 try {
   glossIndex = JSON.parse(
-    readFileSync(join(dictsDir, 'gloss-index.json'), 'utf8')
+    readFileSync(join(dictsDir, 'gloss-index-2026-07.json'), 'utf8')
   )
   check('gloss index is present and valid JSON', true)
 } catch {
@@ -604,9 +778,17 @@ if (glossIndex) {
   check('gloss index has records', Array.isArray(glossIndex.records) && glossIndex.records.length > 0)
   check('gloss index has English keyword postings', keywordEntries.length > 0)
   check('gloss index has Hebrew/transliteration headwords', Object.keys(glossIndex.heads || {}).length > 0)
+  const retainedStopwordEntries = keywordEntries.filter(([word]) => GLOSS_STOP_WORDS.has(word))
   check(
-    'English stop words are absent from gloss index keys',
-    [...GLOSS_STOP_WORDS].every((word) => !(word in glossIndex.keywords))
+    'only exact Strong’s fallback senses retain stop words as index keys',
+    retainedStopwordEntries.length > 0 &&
+      retainedStopwordEntries.every(([, encodedPostings]) => encodedPostings.every((encoded) => {
+        const recordId = glossIndex.senses[Math.floor(encoded / 3)]?.[0]
+        const record = glossIndex.records[recordId]
+        return encoded % 3 === 2 && glossIndex.sources[record?.[0]] === 'strongs'
+      })) &&
+      ['a', 'an', 'the', 'of', 'to', 'in', 'on', 'at', 'by', 'for', 'from', 'with']
+        .every((word) => !(word in glossIndex.keywords))
   )
 
   const sourceIds = new Set(['curated', ...REFERENCE_DICTIONARIES.map((dict) => dict.id)])
@@ -620,10 +802,81 @@ if (glossIndex) {
       new Map(data.entries.map((entry) => [String(entry.id), entry]))
     ])
   )
+  const hebrewCatalogSources = ['strongs', 'bdb']
+  const hebrewCatalogKey = (sourceId, entryId) => `${sourceId}:${entryId}`
+  const expectedHebrewEntries = new Map()
+  for (const sourceId of hebrewCatalogSources) {
+    for (const entry of referenceData.get(sourceId)?.entries || []) {
+      const aramaic = sourceId === 'strongs'
+        ? /\(Aramaic\)/i.test(entry.deriv || '')
+        : String(entry.id).startsWith('x')
+      if (!aramaic) expectedHebrewEntries.set(hebrewCatalogKey(sourceId, entry.id), entry)
+    }
+  }
+
+  const hebrewRecordIds = glossIndex.hebrew?.recordIds
+  const unindexedHebrew = glossIndex.hebrew?.unindexed
+  const catalogKeys = []
+  let hebrewCatalogResolves = Array.isArray(hebrewRecordIds) && Array.isArray(unindexedHebrew)
+  if (hebrewCatalogResolves) {
+    for (const recordId of hebrewRecordIds) {
+      const record = glossIndex.records?.[recordId]
+      const sourceId = glossIndex.sources?.[record?.[0]]
+      const key = hebrewCatalogKey(sourceId, record?.[1])
+      const sourceEntry = expectedHebrewEntries.get(key)
+      if (
+        !Number.isInteger(recordId) ||
+        !sourceEntry ||
+        glossIndex.languages?.[record?.[4]] !== 'Hebrew' ||
+        record?.[2] !== sourceEntry.lemma
+      ) hebrewCatalogResolves = false
+      catalogKeys.push(key)
+    }
+    for (const row of unindexedHebrew) {
+      const sourceId = glossIndex.sources?.[row?.[0]]
+      const key = hebrewCatalogKey(sourceId, row?.[1])
+      const sourceEntry = expectedHebrewEntries.get(key)
+      const rawGloss = String(sourceEntry?.def || '').replace(/\s+/g, ' ').trim()
+      const storedGloss = row?.[3]
+      const rawGlossMatches = rawGloss.length <= 96
+        ? storedGloss === rawGloss
+        : typeof storedGloss === 'string' &&
+          storedGloss.endsWith('\u2026') &&
+          storedGloss.length <= 97 &&
+          rawGloss.startsWith(storedGloss.slice(0, -1))
+      if (
+        !Array.isArray(row) ||
+        (row.length !== 4 && row.length !== 5) ||
+        !Number.isInteger(row[0]) ||
+        !sourceEntry ||
+        row[2] !== sourceEntry.lemma ||
+        !rawGlossMatches ||
+        (sourceEntry.xlit ? row[4] !== sourceEntry.xlit : row.length !== 4)
+      ) hebrewCatalogResolves = false
+      catalogKeys.push(key)
+    }
+  }
+  const uniqueCatalogKeys = new Set(catalogKeys)
+  const hebrewCatalogComplete =
+    catalogKeys.length === expectedHebrewEntries.size &&
+    uniqueCatalogKeys.size === expectedHebrewEntries.size &&
+    [...expectedHebrewEntries.keys()].every((key) => uniqueCatalogKeys.has(key))
+  const strongsRecordEntries = glossIndex.records
+    .map((record, recordId) => [record, recordId])
+    .filter(([record]) => glossIndex.sources[record[0]] === 'strongs')
+  const strongsRecordById = new Map(
+    strongsRecordEntries.map(([record, recordId]) => [String(record[1]), { record, recordId }])
+  )
+  const everyStrongsIdIndexed =
+    strongsRecordEntries.length === strongs.entries.length &&
+    strongsRecordById.size === strongs.entries.length &&
+    strongs.entries.every((entry) => strongsRecordById.has(String(entry.id))) &&
+    glossIndex.coverage?.strongs?.indexedEntries === strongs.entries.length
 
   let postingsValid = true
   let postingsResolve = true
   let postingCapsHold = true
+  let hebrewExceedsPostingCap = false
   let duplicateFree = true
   let egyptianEnglishOnly = true
   const usedSources = new Set()
@@ -661,9 +914,15 @@ if (glossIndex) {
       }
     }
     for (const [language, count] of languageCounts) {
-      if (language !== 'Comparative' && count > glossIndex.capPerLanguage) postingCapsHold = false
+      if (language === 'Hebrew' && count > glossIndex.capPerLanguage) hebrewExceedsPostingCap = true
+      if (language !== 'Comparative' && language !== 'Hebrew' && count > glossIndex.capPerLanguage) {
+        postingCapsHold = false
+      }
     }
   }
+  const noHebrewTruncation = Object.values(glossIndex.truncated || {}).every(
+    (counts) => !Object.prototype.hasOwnProperty.call(counts, 'Hebrew')
+  )
 
   let headsValid = true
   for (const [head, recordIds] of Object.entries(glossIndex.heads || {})) {
@@ -687,15 +946,66 @@ if (glossIndex) {
     !Array.isArray(sense) || !glossIndex.records[sense[0]] || !sense[1]
   )) sensesValid = false
 
+  const hebrewGuideTermsReachable = Array.isArray(hebrewRecordIds) && hebrewRecordIds.every(
+    (recordId) => {
+      const guideTerms = glossIndex.records?.[recordId]?.[5]
+      return Array.isArray(guideTerms) && guideTerms.every((termId) => {
+        const keyword = keywordEntries[termId]?.[0]
+        return (glossIndex.keywords[keyword] || []).some((encoded) =>
+          glossIndex.senses[Math.floor(encoded / 3)]?.[0] === recordId
+        )
+      })
+    }
+  )
+  const hebrewCatalog = buildHebrewCatalog(glossIndex)
+  const linkedHebrewRecordIds = new Set((hebrewRecordIds || []).filter(
+    (recordId) => (glossIndex.records?.[recordId]?.[5] || []).length > 0
+  ))
+  const hebrewCatalogLinksHonest =
+    hebrewCatalog.length === expectedHebrewEntries.size &&
+    hebrewCatalog.some((entry) => entry.linked) &&
+    hebrewCatalog.some((entry) => !entry.linked) &&
+    hebrewCatalog.every((entry) =>
+      entry.linked === (
+        Number.isInteger(entry.recordId) && linkedHebrewRecordIds.has(entry.recordId)
+      )
+    )
+
   check('every gloss posting has a valid compact shape', postingsValid)
   check('every gloss posting resolves to its named source entry', postingsResolve)
   check('gloss postings are de-duplicated by source and entry', duplicateFree)
-  check('gloss posting caps hold per keyword and language', postingCapsHold)
+  check('gloss posting caps hold for capped languages', postingCapsHold)
+  check(
+    'Hebrew postings exceed the general cap without recorded truncation',
+    hebrewExceedsPostingCap && noHebrewTruncation
+  )
   check('every registered source contributes gloss postings', [...sourceIds].every((id) => usedSources.has(id)))
   check('Egyptian postings use explicit English glosses only', egyptianEnglishOnly)
   check('every gloss headword reference resolves to a record', headsValid)
   check('every gloss sense resolves to its source record', sensesValid)
   check('every record sense-key reference resolves to a keyword', recordTermsValid)
+  check('Hebrew catalog rows resolve to raw Strong’s and BDB entries', hebrewCatalogResolves)
+  check(
+    'indexed and unindexed Hebrew catalog rows exactly cover raw Hebrew records',
+    hebrewCatalogComplete
+  )
+  check(
+    'every indexed Hebrew record is reachable through each guide term',
+    hebrewGuideTermsReachable
+  )
+  check(
+    'All Hebrew labels only records with guide terms as automatically linked',
+    hebrewCatalogLinksHonest
+  )
+  check(
+    'All Hebrew reuses its derived catalog across remounts',
+    buildHebrewCatalog(glossIndex) === hebrewCatalog
+  )
+  check('every Strong’s ID resolves to one compact index record', everyStrongsIdIndexed)
+  check(
+    'generic preposition-only Strong’s records stay display-only',
+    ['H1119', 'H3926'].every((id) => strongsRecordById.get(id)?.record[5].length === 0)
+  )
 
   const languageCount = (result) =>
     Object.values(result.groups).filter((entries) => entries.length > 0).length
@@ -709,6 +1019,39 @@ if (glossIndex) {
   const waterAcrossSources = searchGlossIndex(glossIndex, 'water')
   const kingAcrossSources = searchGlossIndex(glossIndex, 'king')
   const legAcrossSources = searchGlossIndex(glossIndex, 'leg')
+  const hasStrongsResult = (query, id) =>
+    searchGlossIndex(glossIndex, query).groups.Hebrew.some(
+      (posting) => posting.d === 'strongs' && posting.i === id
+    )
+  check(
+    'exact Strong’s fallbacks connect where, loan, and we',
+    hasStrongsResult('where', 'H165') &&
+      hasStrongsResult('loan', 'H4859') &&
+      hasStrongsResult('we', 'H5168')
+  )
+  check(
+    'plain KJV rendering guides connect H1 to chief, patrimony, and principal',
+    ['chief', 'patrimony', 'principal'].every((query) => hasStrongsResult(query, 'H1'))
+  )
+  const h1RecordId = strongsRecordById.get('H1')?.recordId
+  const h1Comparison = searchGlossIndex(glossIndex, '', { recordId: h1RecordId })
+  check(
+    'an exact Hebrew source record compares through its own English guides',
+    h1Comparison.direct.some((posting) => posting.d === 'strongs' && posting.i === 'H1') &&
+      h1Comparison.curatedIds.includes('father') &&
+      ['father', 'chief', 'patrimony', 'principal'].every((word) =>
+        h1Comparison.matchedKeywords.includes(word)
+      ) &&
+      h1Comparison.groups.Hittite.length > 0
+  )
+  check(
+    'Strong’s KJV notation, citations, and Compare tails are not indexed',
+    hasStrongsResult('perish', 'H6') &&
+      !hasStrongsResult('surely', 'H6') &&
+      !hasStrongsResult('utterly', 'H6') &&
+      !hasStrongsResult('hosea', 'H165') &&
+      !hasStrongsResult('names', 'H1')
+  )
   check(
     'father reaches open Hittite and Sabaean Wiktionary records',
     fatherAcrossSources.groups.Hittite.some(
@@ -725,6 +1068,32 @@ if (glossIndex) {
       (posting) => posting.d === 'hittite-wiktionary' && posting.i === 'wiktionary-hittite-hit-855375-noun-1'
     ) && waterAcrossSources.groups['Old South Arabian'].some(
       (posting) => posting.i === 'wiktionary-osa-xsa-3397501-noun-1' && posting.v === 'Sabaean'
+    )
+  )
+  check(
+    'new Hittite sources are connected to known meaning searches',
+    fatherAcrossSources.groups.Hittite.some(
+      (posting) => posting.d === 'hittite-sturtevant' && posting.l === 'attas'
+    ) &&
+      waterAcrossSources.groups.Hittite.some(
+        (posting) => posting.d === 'hittite-diacl' && posting.i === '35500-45_watern-1'
+      ) &&
+      waterAcrossSources.groups.Hittite.some(
+        (posting) => posting.d === 'hittite-asjp' && posting.i === 'asjp-hittite-75'
+      ) &&
+      kingAcrossSources.groups.Hittite.some(
+        (posting) => posting.d === 'hittite-wikidata'
+      ) &&
+      kingAcrossSources.groups.Hittite.some(
+        (posting) => posting.d === 'hittite-sturtevant' && posting.l === 'hassus'
+      )
+  )
+  check(
+    'audited Sturtevant Latin gloss markers never become English meaning matches',
+    ['agedum', 'ita', 'rus', 'demum', 'erectus', 'mulcere', 'versari'].every((query) =>
+      !searchGlossIndex(glossIndex, query).groups.Hittite.some(
+        (posting) => posting.d === 'hittite-sturtevant'
+      )
     )
   )
   const kingVarieties = new Set(

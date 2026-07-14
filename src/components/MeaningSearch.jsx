@@ -4,6 +4,7 @@ import { LANGUAGES } from '../data/languages.js'
 import { LEXICON } from '../data/lexicon.js'
 import { getDictionary } from '../data/referenceDictionaries.js'
 import { MEANING_LANGUAGE_ORDER, searchGlossIndex } from '../lib/glossSearch.js'
+import { loadGlossIndex } from '../lib/glossIndexLoader.js'
 import { loadReferenceEntry } from '../lib/referenceDictionaryLoader.js'
 
 const PAGE = 60
@@ -14,12 +15,18 @@ const LANGUAGE_TAGS = {
   Hittite: 'hit'
 }
 
-function MeaningResultRow({ result, direct, strings }) {
+export function MeaningResultRow({ result, direct, strings }) {
   const dict = getDictionary(result.d)
   const [detail, setDetail] = useState(null)
   const [status, setStatus] = useState('idle')
-  const rtl = result.lang === 'Hebrew' || result.lang === 'Aramaic'
   const languageTag = result.lc || LANGUAGE_TAGS[result.lang]
+
+  // The versioned URL prevents this during the current rollout. Keep the
+  // guard so any future app/data skew omits an unknown source instead of
+  // crashing the whole meaning-results screen.
+  if (!dict) return null
+
+  const fields = dict.fields
 
   function loadDetail(event) {
     if (!event.currentTarget.open || status !== 'idle') return
@@ -32,7 +39,6 @@ function MeaningResultRow({ result, direct, strings }) {
       .catch(() => setStatus('failed'))
   }
 
-  const fields = dict.fields
   return (
     <details
       className="lexrow meaning-row"
@@ -42,7 +48,11 @@ function MeaningResultRow({ result, direct, strings }) {
       onToggle={loadDetail}
     >
       <summary>
-        <span className="lex-lemma" dir={rtl ? 'rtl' : 'ltr'} lang={languageTag}>
+        <span
+          className={'lex-lemma ' + (fields.headClass || '')}
+          dir={fields.headDir || dict.dir}
+          lang={languageTag}
+        >
           {result.l}
         </span>
         {result.s && (
@@ -100,12 +110,7 @@ export default function MeaningSearch({ strings, onRootClick }) {
 
   useEffect(() => {
     let alive = true
-    const base = import.meta.env.BASE_URL || '/'
-    fetch(base + 'dicts/gloss-index.json', { cache: 'no-cache' })
-      .then((response) => {
-        if (!response.ok) throw new Error('fetch failed: ' + response.status)
-        return response.json()
-      })
+    loadGlossIndex()
       .then((data) => {
         if (!alive) return
         setIndex(data)
@@ -129,12 +134,13 @@ export default function MeaningSearch({ strings, onRootClick }) {
   const rows = useMemo(() => {
     if (!query.trim()) return []
     const output = []
-    if (resolution.direct.length > 0) {
-      output.push({ type: 'head', id: 'direct', title: strings.directMatchesTitle, count: resolution.direct.length })
-      for (const result of resolution.direct) output.push({ type: 'result', result, direct: true })
+    const directResults = resolution.direct.filter((result) => getDictionary(result.d))
+    if (directResults.length > 0) {
+      output.push({ type: 'head', id: 'direct', title: strings.directMatchesTitle, count: directResults.length })
+      for (const result of directResults) output.push({ type: 'result', result, direct: true })
     }
     for (const language of MEANING_LANGUAGE_ORDER) {
-      const results = resolution.groups[language]
+      const results = resolution.groups[language].filter((result) => getDictionary(result.d))
       output.push({ type: 'head', id: language.toLowerCase(), title: language, count: results.length })
       if (language === 'Egyptian') output.push({ type: 'note', text: strings.egyptianCoverage })
       if (language === 'Akkadian') output.push({ type: 'note', text: strings.akkadianCoverage })
@@ -154,7 +160,9 @@ export default function MeaningSearch({ strings, onRootClick }) {
     return output
   }, [curated, query, resolution, strings])
 
-  useEffect(() => setVisible(PAGE), [query, resolution.total])
+  const supportedTotal = curated.length + rows.filter((row) => row.type === 'result').length
+
+  useEffect(() => setVisible(PAGE), [query, supportedTotal])
 
   useEffect(() => {
     const element = sentinelRef.current
@@ -200,13 +208,13 @@ export default function MeaningSearch({ strings, onRootClick }) {
       {status === 'ready' && searched && (
         <>
           <p className="result-count" aria-live="polite">
-            {resolution.total === 1
+            {supportedTotal === 1
               ? strings.oneMatch
-              : strings.matchCount.replace('{n}', String(resolution.total))}
+              : strings.matchCount.replace('{n}', String(supportedTotal))}
             {resolution.truncated > 0 && ' ' + strings.meaningCapped}
           </p>
 
-          {resolution.total === 0 && (
+          {supportedTotal === 0 && (
             <div className="empty-state">
               <p className="empty-title">{strings.noMeaningResults}</p>
               <p className="empty-hint">{strings.noMeaningHint}</p>
@@ -262,7 +270,7 @@ export default function MeaningSearch({ strings, onRootClick }) {
             <p className="list-footer">
               {strings.showingOf
                 .replace('{shown}', String(shownResults))
-                .replace('{total}', String(resolution.total))}
+                .replace('{total}', String(supportedTotal))}
             </p>
           )}
         </>

@@ -26,11 +26,20 @@ export default function AboutView() {
           offline.
         </p>
         <p>
+          Comparative also has an &lsquo;All Hebrew&rsquo; layer containing every
+          Hebrew entry from Strong&rsquo;s and Brown&ndash;Driver&ndash;Briggs. Opening
+          one uses that source entry&rsquo;s own English guide meanings to gather
+          automatic cross-dictionary leads. These source rows are not added to
+          the curated database and are never presented as verified equivalents.
+        </p>
+        <p>
           There is no backend, no account, and no analytics; your settings and
           custom entries never leave this device. The curated dictionary, the
           root explorer, and Strong&rsquo;s are precached and work offline from
           the first load. The other reference dictionaries download once, the
           first time you open each, and are then available offline too.
+          The compact All Hebrew comparison index is likewise cached after its
+          first online load.
         </p>
       </div>
 
@@ -51,11 +60,12 @@ export default function AboutView() {
           information.
         </p>
         <p>
-          The &lsquo;By meaning&rsquo; search automatically gathers entries whose
-          English glosses share a word. Those rows are leads for the reader
-          to judge, not verified equivalents, cognates, or claims of lexical
-          relationship. Only cards explicitly marked &lsquo;Verified comparative
-          entry&rsquo; are hand-curated cross-language comparisons.
+          The &lsquo;All Hebrew&rsquo; layer and &lsquo;By meaning&rsquo; search automatically
+          gather entries whose English glosses share a word. Those rows are
+          leads for the reader to judge, not verified equivalents, cognates,
+          or claims of lexical relationship. Only cards explicitly marked
+          &lsquo;Verified comparative entry&rsquo; are hand-curated cross-language
+          comparisons.
         </p>
         <p>{HEBREW_CAVEAT}</p>
         {LANGUAGES.map((l) => (
@@ -66,9 +76,10 @@ export default function AboutView() {
       <div className="settings-section">
         <h2>Sources &amp; method</h2>
         <p>
-          Every comparative entry is hand-curated, never bulk-imported. The
-          conventions follow the standard reference works, and forms should be
-          verified against them for scholarly use:
+          Every verified comparative card is hand-curated, never bulk-imported.
+          The separate All Hebrew source rows remain visibly automatic. The
+          curated conventions follow the standard reference works, and forms
+          should be verified against them for scholarly use:
         </p>
         <ul className="about-sources">
           <li>Akkadian — The Chicago Assyrian Dictionary (CAD), freely published by the ISAC, University of Chicago</li>
@@ -95,11 +106,12 @@ export default function AboutView() {
           lexical datasets. Every source is public domain or openly licensed,
           and its label states its real scope. The older works are historical
           references: read them as documents of their time, not as current
-          scholarship. Open Hittite coverage currently combines IE-CoR core
-          vocabulary with community Wiktionary entries. Open Old South Arabian
-          coverage is a small community snapshot, principally Sabaean with
-          small Minaean and Qatabanian subsets. Neither is presented as a full
-          scholarly dictionary.
+          scholarship. Open Hittite coverage combines modern comparative
+          datasets, a small basic-vocabulary list, a conservatively filtered
+          public-domain 1936 glossary, and small community datasets. Open Old
+          South Arabian coverage remains a small community layer, principally
+          Sabaean with small Minaean and Qatabanian subsets. Neither is
+          presented as a full scholarly dictionary.
         </p>
         <p>
           The Chicago Hittite Dictionary and SabaWeb are not bundled because

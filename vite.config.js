@@ -60,7 +60,7 @@ export default defineConfig({
         // Workbox falls back to the shared cache while offline.
         runtimeCaching: [
           {
-            urlPattern: /\/dicts\/gloss-index\.json$/,
+            urlPattern: /\/dicts\/gloss-index(?:-[^/]+)?\.json$/,
             handler: 'NetworkFirst',
             options: {
               // Keep the established cache name so this upgrade can still

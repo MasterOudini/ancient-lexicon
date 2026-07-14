@@ -88,8 +88,11 @@ function postingKey(posting) {
 // public posting shape { d, i, l, g, lang, x?, s?, v?, lc? }. `heads` makes Hebrew or
 // transliterated input a two-hop lookup: headword -> English sense keywords
 // -> postings in every covered language. No full dictionary is loaded here.
-export function searchGlossIndex(index, query) {
+export function searchGlossIndex(index, query, { recordId = null } = {}) {
   const normalizedQuery = normalize(query || '')
+  const forcedRecordId = Number.isInteger(recordId) && index?.records?.[recordId]
+    ? recordId
+    : null
   const empty = {
     mode: 'english',
     curatedIds: [],
@@ -99,11 +102,27 @@ export function searchGlossIndex(index, query) {
     truncated: 0,
     total: 0
   }
-  if (!normalizedQuery || !index?.records?.length || !index?.keywords) return empty
+  if ((!normalizedQuery && forcedRecordId == null) || !index?.records?.length || !index?.keywords) {
+    return empty
+  }
 
   const vocabulary = Object.keys(index.keywords)
-  const headRecordIds = index.heads?.[normalizedQuery] || []
-  const queryWords = englishKeywords(query)
+  const headRecordIds = forcedRecordId == null
+    ? index.heads?.[normalizedQuery] || []
+    : [forcedRecordId]
+  const queryWords = forcedRecordId == null ? englishKeywords(query) : []
+  // A few genuine Strong's glosses are lexical function words (for example
+  // "where" and "we") that the general prose-noise filter normally removes.
+  // The builder admits only a conservative exact-gloss allowlist, so honor
+  // one of those keys when the whole user query matches it exactly.
+  if (
+    forcedRecordId == null &&
+    /^[a-z]+$/.test(normalizedQuery) &&
+    index.keywords[normalizedQuery] &&
+    !queryWords.includes(normalizedQuery)
+  ) {
+    queryWords.push(normalizedQuery)
+  }
   const exactEnglish = queryWords.filter((word) => index.keywords[word])
   const hasHebrew = /[\u0590-\u05ff]/.test(query)
   const exactCuratedEnglish = exactEnglish.some((word) =>
@@ -113,18 +132,25 @@ export function searchGlossIndex(index, query) {
       return index.sources[rec?.[0]] === 'curated'
     })
   )
-  const pivot = hasHebrew || (headRecordIds.length > 0 && !exactCuratedEnglish)
+  const pivot = forcedRecordId != null || hasHebrew ||
+    (headRecordIds.length > 0 && !exactCuratedEnglish)
 
   let termMatches
   if (pivot) {
     // A direct curated headword is the gold-standard disambiguator. When one
     // exists, pivot through its meanings only; otherwise fall back to every
     // matching Hebrew/Aramaic dictionary homograph.
-    const curatedHeadRecords = headRecordIds.filter((recordId) => {
-      const rec = index.records[recordId]
-      return index.sources[rec?.[0]] === 'curated'
-    })
-    const pivotRecords = curatedHeadRecords.length > 0 ? curatedHeadRecords : headRecordIds
+    const curatedHeadRecords = forcedRecordId == null
+      ? headRecordIds.filter((headRecordId) => {
+          const rec = index.records[headRecordId]
+          return index.sources[rec?.[0]] === 'curated'
+        })
+      : []
+    const pivotRecords = forcedRecordId != null
+      ? headRecordIds
+      : curatedHeadRecords.length > 0
+        ? curatedHeadRecords
+        : headRecordIds
     const termIds = new Set()
     for (const recordId of pivotRecords) {
       for (const termId of index.records[recordId]?.[5] || []) termIds.add(termId)

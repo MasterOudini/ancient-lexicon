@@ -22,21 +22,35 @@ offline:
 - **Egyptian** — the Thesaurus Linguae Aegyptiae word list (CC BY-SA 4.0), ~35,000 entries.
 - **Sumerian** — ePSD2 / ORACC (CC BY-SA 3.0), ~9,800 entries with cuneiform.
 - **Akkadian** — the RINAP glossary / ORACC (CC BY-SA 3.0).
-- **Hittite** — 133 forms across 130 expert core concepts from IE-CoR v1.2
-  (CC BY 4.0), plus a dated English Wiktionary community snapshot
-  (redistributed under CC BY-SA 4.0).
-- **Old South Arabian** — a dated English Wiktionary community snapshot
-  (redistributed under CC BY-SA 4.0), principally Sabaean with very small Minaean and
-  Qatabanian subsets.
+- **Hittite** — 133 forms across 130 IE-CoR expert core concepts; 146 retained
+  DIACL rows across 121 concepts; the 30-item ASJP basic list (all CC BY 4.0);
+  633 strictly filtered entries from Sturtevant's public-domain 1936 historical
+  glossary; 39 Wikidata Lexemes (CC0); and a dated 294-entry English
+  Wiktionary community snapshot (CC BY-SA 4.0). These sources overlap.
+- **Old South Arabian** — a dated 292-entry English Wiktionary community
+  snapshot (CC BY-SA 4.0) plus eight Wikidata Lexemes (CC0), principally
+  Sabaean with very small variety subsets.
 
 These open Hittite and Old South Arabian sources are useful but are not full
-scholarly dictionaries. The Chicago Hittite Dictionary and SabaWeb cannot be
-redistributed under their published terms; DASI is openly licensed record data
-but is an inscription corpus, not a consistent word-to-English dictionary.
+modern scholarly dictionaries. The Sturtevant rows are explicitly historical
+OCR and retain scan-page provenance. The Chicago Hittite Dictionary and
+SabaWeb cannot be redistributed under their published terms; DASI is openly
+licensed record data but exposes no reproducible public word-to-English lexical
+layer, so inscription translations are never converted into invented entries.
 The source-by-source decision record and copy-ready permission requests live in
 [`docs/dictionary-source-audit.md`](docs/dictionary-source-audit.md). Generated
 data live in `public/dicts/`; their `scripts/import-*.mjs` importers document
 source, version, transformation, and license.
+
+The **Comparative** mode has two deliberately separate layers. **All Hebrew**
+contains all 18,992 strictly Hebrew source records from Strong's and
+Brown-Driver-Briggs, including source-only cross-reference rows that do not
+yield a distinctive indexable English guide term. Opening an indexed row pivots
+through that specific entry's English definition and conservative Strong's
+renderings to gather entries from the other dictionaries. Those rows remain
+source-labeled automatic leads. **Curated & saved** retains the 252 hand-curated
+cards plus any cards added locally by the user; only the built-in curated cards
+make a verified cross-language comparison.
 
 The third Dictionary mode, **By meaning**, searches every registered source
 together through shared English glosses. English input
@@ -49,13 +63,19 @@ gathered for the reader to judge, never claims of cognacy or scholarly
 equivalence.
 
 `scripts/build-gloss-index.mjs` generates
-`public/dicts/gloss-index.json` without changing any source dictionary. It
-indexes conservative leading English senses, skips Egyptian records that
-have only the German fallback, caps very common postings at 40 per language,
-and records every truncation count in the artifact. The current compact
-record-and-sense-table encoding is about 8 MiB, above the 4–5 MiB app-shell target, so
-it is not precached; the existing `/dicts/*.json` service-worker rule caches
-it after first use, like the full reference dictionaries.
+`public/dicts/gloss-index-2026-07.json` without changing any source dictionary.
+The earlier `gloss-index.json` remains immutable for rollout compatibility:
+an already-open iPhone Home Screen app can keep its previous JavaScript alive
+briefly after a new service worker activates, so it must not receive source IDs
+that its older dictionary registry cannot render. The indexer indexes
+conservative English senses and source renderings, skips Egyptian records that
+have only the German fallback, and caps very common postings at 40 in the
+non-Hebrew automatic language groups. Hebrew and curated comparative postings
+remain complete; every other truncation count is recorded in the artifact. The
+current compact record-and-sense-table encoding is about 9 MiB, above the
+4–5 MiB app-shell target, so it is not precached; the existing `/dicts/*.json`
+service-worker rule caches it after first use, like the full reference
+dictionaries.
 
 ## Run
 
@@ -124,10 +144,14 @@ device.
 - `src/data/languages.js` — the language registry and per-language caveats.
 - `scripts/build-gloss-index.mjs` — the deterministic cross-dictionary
   English-gloss indexer. Run `npm run gloss:index` after changing an importer
-  or dictionary source, then commit `public/dicts/gloss-index.json`.
-- `scripts/import-iecor.mjs` and `scripts/import-wiktionary-ancient.mjs` —
-  reproducible importers for the open Hittite and Old South Arabian lexical
-  datasets. Edit the importer, not its generated JSON.
+  or dictionary source, then commit the generated versioned gloss index. Do not
+  overwrite the legacy `public/dicts/gloss-index.json` during this rollout.
+- `scripts/import-iecor.mjs`, `scripts/import-diacl-hittite.mjs`,
+  `scripts/import-asjp-hittite.mjs`, `scripts/import-sturtevant-hittite.mjs`,
+  `scripts/import-wikidata-ancient.mjs`, and
+  `scripts/import-wiktionary-ancient.mjs` — reproducible importers for the open
+  Hittite and Old South Arabian lexical datasets. Edit the importer, not its
+  generated JSON.
 - `src/App.jsx` — the CONFIG block at the top holds the app name, default
   enabled languages, and UI strings.
 - `src/styles.css` — colors (CSS custom properties at the top) and all
@@ -163,16 +187,17 @@ is interpretation:
   database was generated from an independently verified Unicode codepoint.
   Imported datasets preserve upstream Unicode spellings; smoke tests pin them
   to the declared script block without claiming independent sign verification.
-- The comparative entries are hand-curated, never bulk-imported; the About
-  tab names the reference works the conventions follow (CAD, ePSD2, eCHD,
-  TLA/Wb., CAL/TAD, DASI/CSAI, BDB/Strong's). Imported datasets are kept
-  separate from those verified comparisons and carry source, version,
-  transformation, license, and real coverage labels. Community wordlists are
-  never described as comprehensive scholarly dictionaries.
-- The By meaning mode is deliberately weaker evidence: it links records only
-  because their published English glosses share a keyword. Its automatic rows
-  are never described as equivalents or cognates, and are visually distinct
-  from the verified comparative cards.
+- The verified comparative cards are hand-curated, never bulk-imported; the
+  About tab names the reference works the conventions follow (CAD, ePSD2,
+  eCHD, TLA/Wb., CAL/TAD, DASI/CSAI, BDB/Strong's). All Hebrew and other
+  imported rows stay source-labeled and separate from those verified
+  comparisons. Every source carries version, transformation, license, and
+  real coverage labels. Community wordlists are never described as
+  comprehensive scholarly dictionaries.
+- The All Hebrew and By meaning layers are deliberately weaker evidence: they
+  link records only because their published English glosses share a keyword.
+  Their automatic rows are never described as equivalents or cognates, and
+  are visually distinct from the verified comparative cards.
 
 ## Fonts
 
