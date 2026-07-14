@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { normalize } from '../lib/search.js'
+import { loadReferenceDictionary } from '../lib/referenceDictionaryLoader.js'
 import { REFERENCE_DICTIONARIES, getDictionary } from '../data/referenceDictionaries.js'
 
 // Browser for the full reference dictionaries. A dictionary picker selects a
@@ -11,25 +12,6 @@ import { REFERENCE_DICTIONARIES, getDictionary } from '../data/referenceDictiona
 const PAGE = 80
 const HEBREW_ALPHABET = 'אבגדהוזחטיכלמנסעפצקרשת'
 const LATIN_ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
-
-// Module-level cache so switching dictionaries and back is instant.
-const CACHE = new Map()
-
-async function loadDictionary(dict) {
-  if (CACHE.has(dict.id)) return CACHE.get(dict.id)
-  let data
-  if (dict.source.kind === 'strongs') {
-    const mod = await import('../data/strongs.json')
-    data = mod.default
-  } else {
-    const base = import.meta.env.BASE_URL || '/'
-    const res = await fetch(base + dict.source.url)
-    if (!res.ok) throw new Error('fetch failed: ' + res.status)
-    data = await res.json()
-  }
-  CACHE.set(dict.id, data)
-  return data
-}
 
 export default function ReferenceDictionaries({ strings }) {
   const [dictId, setDictId] = useState(REFERENCE_DICTIONARIES[0].id)
@@ -48,7 +30,7 @@ export default function ReferenceDictionaries({ strings }) {
     setData(null)
     setQuery('')
     setLetter(null)
-    loadDictionary(dict)
+    loadReferenceDictionary(dict)
       .then((d) => {
         if (!alive) return
         setData(d)
