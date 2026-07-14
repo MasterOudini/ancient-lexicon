@@ -1082,10 +1082,6 @@ details.langfields summary {
   margin-bottom: 12px;
 }
 
-.hebrew-comparative > .note-block {
-  margin-bottom: 12px;
-}
-
 .hebrew-comparison-results {
   border-top: 1px solid var(--line);
   margin-top: 10px;
