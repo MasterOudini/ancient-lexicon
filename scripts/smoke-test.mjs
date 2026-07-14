@@ -443,6 +443,11 @@ const urlDicts = [...registryText.matchAll(/url:\s*'dicts\/([^']+)'/g)].map(
   (m) => m[1]
 )
 const referenceData = new Map([['strongs', strongs]])
+const reviewedSmallDictionaryMinimums = new Map([
+  ['hittite-asjp.json', 30],
+  ['hittite-wikidata.json', 39],
+  ['osa-wikidata.json', 8]
+])
 check('reference registry declares on-demand dictionaries', urlDicts.length >= 1)
 for (const file of urlDicts) {
   let dict
@@ -455,7 +460,7 @@ for (const file of urlDicts) {
   check(
     `${file}: has entries and a matching count`,
     Array.isArray(dict.entries) &&
-      dict.entries.length > 100 &&
+      dict.entries.length >= (reviewedSmallDictionaryMinimums.get(file) || 101) &&
       dict.count === dict.entries.length
   )
   check(
@@ -582,15 +587,171 @@ check(
     .every((entry) => !/\b(?:xsa|hit)-.* form of/i.test(entry.def))
 )
 
+const hittiteAsjp = referenceData.get('hittite-asjp')
+const hittiteDiacl = referenceData.get('hittite-diacl')
+check(
+  'DIACL v3.0 Hittite subset retains its open release and honest coverage',
+  hittiteDiacl?.count === 146 &&
+    new Set(hittiteDiacl.entries.map((entry) => entry.conceptId)).size === 121 &&
+    hittiteDiacl?.doi === '10.5281/zenodo.5121561' &&
+    hittiteDiacl?.license === 'CC BY 4.0' &&
+    hittiteDiacl?.releaseCommit === '393db4ab0a4b84891b96bbf619c7a94663e44d5e' &&
+    hittiteDiacl?.excludedReconstructed === 0
+)
+check(
+  'DIACL inconsistent duplicate assignments are reported and absent',
+  hittiteDiacl?.excludedInconsistent === 3 &&
+    ['35500-33_dog-2', '35500-50_silver-1', '35500-71_spear-1'].every((id) =>
+      hittiteDiacl.excludedInconsistentEntries.some((entry) => entry.id === id && entry.reason) &&
+      !hittiteDiacl.entries.some((entry) => entry.id === id)
+    ) &&
+    hittiteDiacl.entries.every((entry) => !entry.lemma.includes('*'))
+)
+const hittiteSturtevant = referenceData.get('hittite-sturtevant')
+check(
+  'Sturtevant historical glossary retains exact public-domain scan provenance',
+  hittiteSturtevant?.count === 633 &&
+    hittiteSturtevant?.rights === 'Copyright review: Public domain according to HathiTrust rights database' &&
+    hittiteSturtevant?.sourceIdentifier === 'hittiteglossary00stur' &&
+    hittiteSturtevant?.sourceFile?.name === 'hittiteglossary00stur_djvu.xml' &&
+    hittiteSturtevant?.sourceFile?.md5 === 'f83008a69cd53cab9d5048f53ce7b9e7' &&
+    hittiteSturtevant?.sourceFile?.sha1 === '013de555c3856ac89f5c25e070601398a6feb6ce' &&
+    hittiteSturtevant?.sourceFile?.verifiedAgainstMetadata === true
+)
+check(
+  'Sturtevant OCR subset keeps strict exclusions and accounts for every row',
+  hittiteSturtevant?.entries.every((entry) =>
+    entry.ocrConfidence >= 90 &&
+    !entry.lemma.startsWith('*') &&
+    !/[?\p{Lu}]/u.test(entry.lemma) &&
+    entry.source === `https://archive.org/details/hittiteglossary00stur/page/n${entry.iaLeaf}/mode/1up`
+  ) &&
+    Object.values(hittiteSturtevant?.extraction?.dropped || {})
+      .reduce((sum, count) => sum + count, 0) + hittiteSturtevant.count === 4234
+)
+check(
+  'Sturtevant Latin-only and Latin-contaminated glosses are reported and excluded',
+  hittiteSturtevant?.extraction?.dropped?.latinOnlyGloss === 11 &&
+    hittiteSturtevant?.extraction?.dropped?.latinContaminatedGloss === 8 &&
+    [
+      'kwis', '-nas', 'netta', 'nutta', '-ta', '-du-', 'tuk', 'ukel', 'ukus',
+      'ehu', 'enessan', 'gimras', 'kinun', 'lalu', 'warss-', 'weheske/a-'
+    ]
+      .every((lemma) => !hittiteSturtevant.entries.some((entry) => entry.lemma === lemma))
+)
+check(
+  'Sturtevant known high-confidence entries survive while uncertain and reconstructed rows do not',
+  [
+    ['ais', 'mouth'],
+    ['annas', 'mother'],
+    ['antuhsas', 'human being, man'],
+    ['attas', 'father'],
+    ['hassus', 'king']
+  ].every(([lemma, def]) =>
+    hittiteSturtevant?.entries.some((entry) => entry.lemma === lemma && entry.def === def)
+  ) &&
+    !hittiteSturtevant.entries.some((entry) =>
+      (entry.lemma === 'aki' && entry.def === 'death') || entry.lemma === 'akkantes'
+    )
+)
+check(
+  'ASJP Hittite snapshot is the attributed 30-item basic-vocabulary list',
+  hittiteAsjp?.count === 30 &&
+    hittiteAsjp?.license === 'CC BY 4.0' &&
+    hittiteAsjp?.compiler === 'Viveka Velupillai' &&
+    hittiteAsjp?.iso === 'hit' &&
+    hittiteAsjp?.glottocode === 'hitt1242' &&
+    hittiteAsjp.entries.find((entry) => entry.id === 'asjp-hittite-86')?.lemma === 'kalmara'
+)
+check(
+  'ASJP transcription is preserved and no reconstructed form is introduced',
+  hittiteAsjp?.entries.find((entry) => entry.id === 'asjp-hittite-54')?.lemma === 'ekw~, akw~' &&
+    hittiteAsjp.entries.every((entry) => !entry.lemma.startsWith('*'))
+)
+
+const hittiteWikidata = referenceData.get('hittite-wikidata')
+const osaWikidata = referenceData.get('osa-wikidata')
+const osaWikidataRegistry = REFERENCE_DICTIONARIES.find(
+  (dictionary) => dictionary.id === 'osa-wikidata'
+)
+const validWikidataRevision = (entry) =>
+  /^L\d+$/.test(entry.id) &&
+  entry.source === `https://www.wikidata.org/wiki/${entry.id}` &&
+  Number.isInteger(entry.revision) &&
+  /^\d{4}-\d{2}-\d{2}T/.test(entry.timestamp) &&
+  Array.isArray(entry.senses) &&
+  entry.senses.length > 0
+check(
+  'Wikidata Lexeme snapshots are CC0 community data with exact revisions',
+  [hittiteWikidata, osaWikidata].every((data) =>
+    data?.license === 'CC0 1.0' &&
+    data?.licenseUrl === 'https://creativecommons.org/publicdomain/zero/1.0/' &&
+    data.entries.every(validWikidataRevision)
+  )
+)
+check(
+  'Wikidata snapshot sizes and language varieties remain explicit',
+  hittiteWikidata?.count === 39 &&
+    hittiteWikidata.entries.every((entry) => entry.languageId === 'Q35668' && entry.lang === 'hit') &&
+    osaWikidata?.count === 8 &&
+    new Set(osaWikidata.entries.map((entry) => entry.variety)).size === 4 &&
+    osaWikidata.entries.some((entry) => entry.variety === 'Hadramautic') &&
+    ![...hittiteWikidata.entries, ...osaWikidata.entries]
+      .some((entry) => entry.lemma.trim().startsWith('*'))
+)
+check(
+  'OSA Wikidata rows and browser metadata treat each lemma as native Musnad',
+  osaWikidata?.entries.every((entry) =>
+    [...entry.lemma].every((char) => char === ' ' || (
+      char.codePointAt(0) >= 0x10a60 && char.codePointAt(0) <= 0x10a7f
+    ))
+  ) &&
+    osaWikidataRegistry?.index === 'none' &&
+    osaWikidataRegistry?.dir === 'rtl' &&
+    osaWikidataRegistry?.fields.headClass === 'script-osa' &&
+    osaWikidataRegistry?.fields.headDir === 'rtl'
+)
+
 // --- Cross-dictionary English gloss index ---------------------------------
 // The artifact is generated at build time. Its compact integer references
 // expand to {d,i,l,g,lang} postings without loading a full dictionary in the
 // browser. Validate every reference against the source data here.
 
+const expandedSourceIds = [
+  'hittite-diacl',
+  'hittite-asjp',
+  'hittite-sturtevant',
+  'hittite-wikidata',
+  'osa-wikidata'
+]
+let legacyGlossIndex
+try {
+  legacyGlossIndex = JSON.parse(
+    readFileSync(join(dictsDir, 'gloss-index.json'), 'utf8')
+  )
+} catch {
+  legacyGlossIndex = null
+}
+check(
+  'legacy gloss-index URL remains compatible with already-open installed bundles',
+  legacyGlossIndex?.version === 2 &&
+    expandedSourceIds.every((id) => !legacyGlossIndex.sources.includes(id))
+)
+const meaningSearchText = readFileSync(
+  join(projectRoot, 'src', 'components', 'MeaningSearch.jsx'),
+  'utf8'
+)
+check(
+  'meaning search uses the matching versioned index and guards unknown sources',
+  meaningSearchText.includes("const GLOSS_INDEX_PATH = 'dicts/gloss-index-2026-07.json'") &&
+    meaningSearchText.includes('if (!dict) return null') &&
+    meaningSearchText.includes('resolution.direct.filter((result) => getDictionary(result.d))')
+)
+
 let glossIndex
 try {
   glossIndex = JSON.parse(
-    readFileSync(join(dictsDir, 'gloss-index.json'), 'utf8')
+    readFileSync(join(dictsDir, 'gloss-index-2026-07.json'), 'utf8')
   )
   check('gloss index is present and valid JSON', true)
 } catch {
@@ -725,6 +886,32 @@ if (glossIndex) {
       (posting) => posting.d === 'hittite-wiktionary' && posting.i === 'wiktionary-hittite-hit-855375-noun-1'
     ) && waterAcrossSources.groups['Old South Arabian'].some(
       (posting) => posting.i === 'wiktionary-osa-xsa-3397501-noun-1' && posting.v === 'Sabaean'
+    )
+  )
+  check(
+    'new Hittite sources are connected to known meaning searches',
+    fatherAcrossSources.groups.Hittite.some(
+      (posting) => posting.d === 'hittite-sturtevant' && posting.l === 'attas'
+    ) &&
+      waterAcrossSources.groups.Hittite.some(
+        (posting) => posting.d === 'hittite-diacl' && posting.i === '35500-45_watern-1'
+      ) &&
+      waterAcrossSources.groups.Hittite.some(
+        (posting) => posting.d === 'hittite-asjp' && posting.i === 'asjp-hittite-75'
+      ) &&
+      kingAcrossSources.groups.Hittite.some(
+        (posting) => posting.d === 'hittite-wikidata'
+      ) &&
+      kingAcrossSources.groups.Hittite.some(
+        (posting) => posting.d === 'hittite-sturtevant' && posting.l === 'hassus'
+      )
+  )
+  check(
+    'audited Sturtevant Latin gloss markers never become English meaning matches',
+    ['agedum', 'ita', 'rus', 'demum', 'erectus', 'mulcere', 'versari'].every((query) =>
+      !searchGlossIndex(glossIndex, query).groups.Hittite.some(
+        (posting) => posting.d === 'hittite-sturtevant'
+      )
     )
   )
   const kingVarieties = new Set(
