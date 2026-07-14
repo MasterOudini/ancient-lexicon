@@ -8,9 +8,10 @@
 // Large sets live in public/dicts/ and load on demand (fetched at runtime and
 // cached by the service worker after first open); Strong's ships in the app
 // bundle. `fields` maps a record's keys onto the display slots the browser
-// renders: head (headword), sub (a secondary line, e.g. transliteration or
-// part of speech), ref (a small badge, e.g. a Strong's number or page), def
-// (the definition), and extra (labeled follow-on lines shown when expanded).
+// renders: head (headword), optional headClass/headDir for native-script
+// headwords, sub (a secondary line, e.g. transliteration or part of speech),
+// ref (a small badge, e.g. a Strong's number or page), def (the definition),
+// and extra (labeled follow-on lines shown when expanded).
 
 export const REFERENCE_DICTIONARIES = [
   {
@@ -142,6 +143,99 @@ export const REFERENCE_DICTIONARIES = [
       'IE-CoR release v1.2 (DOI 10.5281/zenodo.13304537), Heggarty, Anderson, Scarborough et al.; Hittite data by Matilde Serangeli and Matthew Scarborough. IE-CoR has a 170-concept frame; this attested-form subset retains 133 Hittite forms across 130 concepts, not a comprehensive dictionary.'
   },
   {
+    id: 'hittite-diacl',
+    label: 'Hittite (DIACL)',
+    language: 'Hittite',
+    lang: 'hit',
+    dir: 'ltr',
+    index: 'latin',
+    source: { kind: 'url', url: 'dicts/hittite-diacl.json' },
+    fields: {
+      head: 'lemma',
+      sub: null,
+      ref: 'conceptId',
+      refPrefix: 'concept ',
+      def: 'def',
+      extra: [
+        { key: 'sourceSpelling', label: 'Original source spelling' },
+        { key: 'sourceNote', label: 'DIACL source note' },
+        { key: 'concepticonGloss', label: 'Concepticon gloss' },
+        { key: 'ref', label: 'DIACL bibliography source ID' },
+        { key: 'diaclFormId', label: 'DIACL form ID' }
+      ]
+    },
+    license: 'CC BY 4.0',
+    attribution:
+      'DIACL v3.0 (DOI 10.5281/zenodo.5121561), an openly licensed comparative lexical dataset. This subset retains 146 attested Hittite rows across 121 concepts after three source-inconsistent duplicate assignments were explicitly excluded; it is not a comprehensive dictionary.'
+  },
+  {
+    id: 'hittite-asjp',
+    label: 'Hittite (ASJP)',
+    language: 'Hittite',
+    lang: 'hit',
+    dir: 'ltr',
+    index: 'latin',
+    source: { kind: 'url', url: 'dicts/hittite-asjp.json' },
+    fields: {
+      head: 'lemma',
+      sub: null,
+      ref: 'meaningNumber',
+      refPrefix: 'ASJP ',
+      def: 'def',
+      extra: []
+    },
+    license: 'CC BY 4.0',
+    attribution:
+      'The ASJP Database Hittite wordlist, compiled by Viveka Velupillai. Thirty basic-vocabulary concepts in ASJP transcription, preserved unchanged; a small wordlist, not a Hittite dictionary.'
+  },
+  {
+    id: 'hittite-sturtevant',
+    label: 'Hittite (Sturtevant 1936)',
+    language: 'Hittite',
+    lang: 'hit',
+    dir: 'ltr',
+    index: 'latin',
+    source: { kind: 'url', url: 'dicts/hittite-sturtevant.json' },
+    fields: {
+      head: 'lemma',
+      sub: null,
+      ref: 'page',
+      refPrefix: 'p. ',
+      def: 'def',
+      extra: [
+        { key: 'sourceHead', label: 'Source head/form line' },
+        { key: 'ocrConfidence', label: 'Headword OCR confidence' },
+        { key: 'source', label: 'Scanned source page', href: true, linkLabel: 'Open scanned page' }
+      ]
+    },
+    license: 'Public domain (HathiTrust rights review)',
+    attribution:
+      'Edgar H. Sturtevant, A Hittite Glossary, second edition (1936), from an Internet Archive scan marked public domain after HathiTrust rights review. This is a conservatively filtered 633-entry OCR subset of a historical glossary: readings and meanings reflect 1936 scholarship, not modern verification.'
+  },
+  {
+    id: 'hittite-wikidata',
+    label: 'Hittite (Wikidata)',
+    language: 'Hittite',
+    lang: 'hit',
+    dir: 'ltr',
+    index: 'latin',
+    source: { kind: 'url', url: 'dicts/hittite-wikidata.json' },
+    fields: {
+      head: 'lemma',
+      sub: 'lexicalCategoryLabel',
+      ref: 'id',
+      def: 'def',
+      extra: [
+        { key: 'source', label: 'Wikidata lexeme', href: true, linkLabel: 'Open live lexeme' },
+        { key: 'revision', label: 'Snapshot revision ID' },
+        { key: 'timestamp', label: 'Snapshot revision timestamp' }
+      ]
+    },
+    license: 'CC0 1.0',
+    attribution:
+      'A dated snapshot of the small, community-edited Wikidata Hittite Lexeme set with English sense glosses. Structured Wikidata data are CC0; cited dictionary items are retained only as provenance and do not make these rows independently verified scholarship.'
+  },
+  {
     id: 'hittite-wiktionary',
     label: 'Hittite (Wiktionary)',
     language: 'Hittite',
@@ -167,6 +261,30 @@ export const REFERENCE_DICTIONARIES = [
     license: 'CC BY-SA 4.0',
     attribution:
       'A dated, transformed snapshot of English Wiktionary Hittite lemma pages with page and revision attribution. Community-authored coverage, not a comprehensive scholarly Hittite dictionary.'
+  },
+  {
+    id: 'osa-wikidata',
+    label: 'OSA varieties (Wikidata)',
+    language: 'Old South Arabian',
+    dir: 'rtl',
+    index: 'none',
+    source: { kind: 'url', url: 'dicts/osa-wikidata.json' },
+    fields: {
+      head: 'lemma',
+      headClass: 'script-osa',
+      headDir: 'rtl',
+      sub: 'lexicalCategoryLabel',
+      ref: 'variety',
+      def: 'def',
+      extra: [
+        { key: 'source', label: 'Wikidata lexeme', href: true, linkLabel: 'Open live lexeme' },
+        { key: 'revision', label: 'Snapshot revision ID' },
+        { key: 'timestamp', label: 'Snapshot revision timestamp' }
+      ]
+    },
+    license: 'CC0 1.0',
+    attribution:
+      'A dated snapshot of eight community-edited Wikidata Lexemes: one Old South Arabian, four Qatabanian, two Sabaean, and one Hadramautic; no Minaean row was present. Structured Wikidata data are CC0; the variety is shown on every row and the set is not a scholarly or comprehensive dictionary.'
   },
   {
     id: 'osa-wiktionary',

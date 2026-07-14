@@ -81,9 +81,9 @@ const CONFIG = {
     akkadianCoverage:
       'Akkadian results come from the limited RINAP Neo-Assyrian sub-corpus, not a complete Akkadian dictionary.',
     hittiteCoverage:
-      'Open Hittite coverage combines expert IE-CoR core concepts with a small community Wiktionary lexicon. It is not the Chicago Hittite Dictionary and is not a complete Hittite lexicon.',
+      'Open Hittite coverage combines expert comparative datasets, a small basic-vocabulary list, a conservatively filtered public-domain 1936 glossary, and small community datasets. Historical and community rows are leads, not modern scholarly verification; this is not the Chicago Hittite Dictionary or a complete Hittite lexicon.',
     osaCoverage:
-      'Open Old South Arabian coverage is a small community Wiktionary layer, mainly Sabaean with tiny Minaean and Qatabanian subsets. DASI is an open inscription corpus, not a word-to-English dictionary, so it is not used to invent lexical matches.',
+      'Open Old South Arabian coverage is a small community layer from Wiktionary and Wikidata, mainly Sabaean with tiny variety subsets. DASI is an open inscription corpus, not a publicly exportable word-to-English dictionary, so inscription translations are not used to invent lexical matches.',
     curatedOnlyCoverage:
       'No automatic open-dataset match; a verified comparative form appears above.',
     notFoundInGlosses: 'not found in indexed English glosses'

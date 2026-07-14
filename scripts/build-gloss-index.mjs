@@ -359,9 +359,14 @@ const output = {
   coverage
 }
 
-const destination = join(projectRoot, 'public', 'dicts', 'gloss-index.json')
+// Do not overwrite the established gloss-index.json URL in this release.
+// Older installed iOS bundles can remain alive while a new service worker
+// activates, so the expanded source table ships at a versioned URL that only
+// the matching application bundle requests.
+const outputFilename = 'gloss-index-2026-07.json'
+const destination = join(projectRoot, 'public', 'dicts', outputFilename)
 const json = JSON.stringify(output)
 writeFileSync(destination, json)
 const mib = Buffer.byteLength(json) / (1024 * 1024)
 console.log(`wrote ${destination}: ${records.length} records, ${senses.length} senses, ${allKeywords.length} keywords, ${mib.toFixed(2)} MiB`)
-console.log(`posting cap dropped ${droppedTotal} candidate match(es); counts are recorded in gloss-index.json`)
+console.log(`posting cap dropped ${droppedTotal} candidate match(es); counts are recorded in ${outputFilename}`)

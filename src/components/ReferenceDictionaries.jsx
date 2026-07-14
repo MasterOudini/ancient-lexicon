@@ -102,7 +102,11 @@ export default function ReferenceDictionaries({ strings }) {
     return () => io.disconnect()
   }, [results.length])
 
-  const alphabet = dict.index === 'hebrew' ? HEBREW_ALPHABET : LATIN_ALPHABET
+  const alphabet = dict.index === 'hebrew'
+    ? HEBREW_ALPHABET
+    : dict.index === 'latin'
+      ? LATIN_ALPHABET
+      : ''
   const f = dict.fields
 
   function renderPicker() {
@@ -193,7 +197,7 @@ export default function ReferenceDictionaries({ strings }) {
             onChange={(e) => setQuery(e.target.value)}
             aria-label={strings.refSearchPlaceholder.replace('{name}', dict.label)}
           />
-          {!query.trim() && (
+          {!query.trim() && alphabet && (
             <div
               className="chiprow alefbet"
               role="group"
@@ -238,7 +242,11 @@ export default function ReferenceDictionaries({ strings }) {
             return (
               <details className="lexrow" key={rec.id}>
                 <summary>
-                  <span className="lex-lemma" dir={dict.dir} lang={rec.lang || dict.lang || (dict.index === 'hebrew' ? 'he' : undefined)}>
+                  <span
+                    className={'lex-lemma ' + (f.headClass || '')}
+                    dir={f.headDir || dict.dir}
+                    lang={rec.lang || dict.lang || (dict.index === 'hebrew' ? 'he' : undefined)}
+                  >
                     {rec[f.head]}
                   </span>
                   {f.script && rec[f.script] && (

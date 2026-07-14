@@ -86,7 +86,8 @@
 .script-aramaic {
   font-family: 'Noto Sans Imperial Aramaic', var(--sans);
 }
-.script-osa {
+.script-osa,
+.lex-lemma.script-osa {
   font-family: 'Noto Sans Old South Arabian', var(--sans);
 }
 

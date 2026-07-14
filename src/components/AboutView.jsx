@@ -95,11 +95,12 @@ export default function AboutView() {
           lexical datasets. Every source is public domain or openly licensed,
           and its label states its real scope. The older works are historical
           references: read them as documents of their time, not as current
-          scholarship. Open Hittite coverage currently combines IE-CoR core
-          vocabulary with community Wiktionary entries. Open Old South Arabian
-          coverage is a small community snapshot, principally Sabaean with
-          small Minaean and Qatabanian subsets. Neither is presented as a full
-          scholarly dictionary.
+          scholarship. Open Hittite coverage combines modern comparative
+          datasets, a small basic-vocabulary list, a conservatively filtered
+          public-domain 1936 glossary, and small community datasets. Open Old
+          South Arabian coverage remains a small community layer, principally
+          Sabaean with small Minaean and Qatabanian subsets. Neither is
+          presented as a full scholarly dictionary.
         </p>
         <p>
           The Chicago Hittite Dictionary and SabaWeb are not bundled because
