@@ -4,14 +4,10 @@ import { LANGUAGES } from '../data/languages.js'
 import { LEXICON } from '../data/lexicon.js'
 import { getDictionary } from '../data/referenceDictionaries.js'
 import { MEANING_LANGUAGE_ORDER, searchGlossIndex } from '../lib/glossSearch.js'
+import { loadGlossIndex } from '../lib/glossIndexLoader.js'
 import { loadReferenceEntry } from '../lib/referenceDictionaryLoader.js'
 
 const PAGE = 60
-// Keep the previous URL immutable during this rollout. An already-open iOS
-// Home Screen app can continue running its old JavaScript after a new service
-// worker takes control; serving new source IDs at the old URL would make that
-// client try to render dictionaries its registry does not know yet.
-const GLOSS_INDEX_PATH = 'dicts/gloss-index-2026-07.json'
 const CURATED_BY_ID = new Map(LEXICON.map((entry) => [entry.id, entry]))
 const LANGUAGE_TAGS = {
   Hebrew: 'he',
@@ -19,7 +15,7 @@ const LANGUAGE_TAGS = {
   Hittite: 'hit'
 }
 
-function MeaningResultRow({ result, direct, strings }) {
+export function MeaningResultRow({ result, direct, strings }) {
   const dict = getDictionary(result.d)
   const [detail, setDetail] = useState(null)
   const [status, setStatus] = useState('idle')
@@ -114,12 +110,7 @@ export default function MeaningSearch({ strings, onRootClick }) {
 
   useEffect(() => {
     let alive = true
-    const base = import.meta.env.BASE_URL || '/'
-    fetch(base + GLOSS_INDEX_PATH, { cache: 'no-cache' })
-      .then((response) => {
-        if (!response.ok) throw new Error('fetch failed: ' + response.status)
-        return response.json()
-      })
+    loadGlossIndex()
       .then((data) => {
         if (!alive) return
         setIndex(data)

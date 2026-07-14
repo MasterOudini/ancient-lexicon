@@ -42,6 +42,16 @@ The source-by-source decision record and copy-ready permission requests live in
 data live in `public/dicts/`; their `scripts/import-*.mjs` importers document
 source, version, transformation, and license.
 
+The **Comparative** mode has two deliberately separate layers. **All Hebrew**
+contains all 18,992 strictly Hebrew source records from Strong's and
+Brown-Driver-Briggs, including source-only cross-reference rows that do not
+yield a distinctive indexable English guide term. Opening an indexed row pivots
+through that specific entry's English definition and conservative Strong's
+renderings to gather entries from the other dictionaries. Those rows remain
+source-labeled automatic leads. **Curated & saved** retains the 252 hand-curated
+cards plus any cards added locally by the user; only the built-in curated cards
+make a verified cross-language comparison.
+
 The third Dictionary mode, **By meaning**, searches every registered source
 together through shared English glosses. English input
 goes directly to a build-time inverted index; Hebrew or a Hebrew/Aramaic
@@ -58,12 +68,14 @@ The earlier `gloss-index.json` remains immutable for rollout compatibility:
 an already-open iPhone Home Screen app can keep its previous JavaScript alive
 briefly after a new service worker activates, so it must not receive source IDs
 that its older dictionary registry cannot render. The indexer indexes
-conservative leading English senses, skips Egyptian records that
-have only the German fallback, caps very common postings at 40 per language,
-and records every truncation count in the artifact. The current compact
-record-and-sense-table encoding is about 8 MiB, above the 4–5 MiB app-shell target, so
-it is not precached; the existing `/dicts/*.json` service-worker rule caches
-it after first use, like the full reference dictionaries.
+conservative English senses and source renderings, skips Egyptian records that
+have only the German fallback, and caps very common postings at 40 in the
+non-Hebrew automatic language groups. Hebrew and curated comparative postings
+remain complete; every other truncation count is recorded in the artifact. The
+current compact record-and-sense-table encoding is about 9 MiB, above the
+4–5 MiB app-shell target, so it is not precached; the existing `/dicts/*.json`
+service-worker rule caches it after first use, like the full reference
+dictionaries.
 
 ## Run
 
@@ -175,16 +187,17 @@ is interpretation:
   database was generated from an independently verified Unicode codepoint.
   Imported datasets preserve upstream Unicode spellings; smoke tests pin them
   to the declared script block without claiming independent sign verification.
-- The comparative entries are hand-curated, never bulk-imported; the About
-  tab names the reference works the conventions follow (CAD, ePSD2, eCHD,
-  TLA/Wb., CAL/TAD, DASI/CSAI, BDB/Strong's). Imported datasets are kept
-  separate from those verified comparisons and carry source, version,
-  transformation, license, and real coverage labels. Community wordlists are
-  never described as comprehensive scholarly dictionaries.
-- The By meaning mode is deliberately weaker evidence: it links records only
-  because their published English glosses share a keyword. Its automatic rows
-  are never described as equivalents or cognates, and are visually distinct
-  from the verified comparative cards.
+- The verified comparative cards are hand-curated, never bulk-imported; the
+  About tab names the reference works the conventions follow (CAD, ePSD2,
+  eCHD, TLA/Wb., CAL/TAD, DASI/CSAI, BDB/Strong's). All Hebrew and other
+  imported rows stay source-labeled and separate from those verified
+  comparisons. Every source carries version, transformation, license, and
+  real coverage labels. Community wordlists are never described as
+  comprehensive scholarly dictionaries.
+- The All Hebrew and By meaning layers are deliberately weaker evidence: they
+  link records only because their published English glosses share a keyword.
+  Their automatic rows are never described as equivalents or cognates, and
+  are visually distinct from the verified comparative cards.
 
 ## Fonts
 
