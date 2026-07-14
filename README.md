@@ -45,12 +45,14 @@ source, version, transformation, and license.
 The **Comparative** mode has two deliberately separate layers. **All Hebrew**
 contains all 18,992 strictly Hebrew source records from Strong's and
 Brown-Driver-Briggs, including source-only cross-reference rows that do not
-yield a distinctive indexable English guide term. Opening an indexed row pivots
-through that specific entry's English definition and conservative Strong's
-renderings to gather entries from the other dictionaries. Those rows remain
-source-labeled automatic leads. **Curated & saved** retains the 252 hand-curated
-cards plus any cards added locally by the user; only the built-in curated cards
-make a verified cross-language comparison.
+yield a responsible semantic match. Opening any row shows its exact source
+definition and individual senses, then one fixed plaque each for Akkadian,
+Sumerian, Egyptian, Hittite, Imperial Aramaic, and Old South Arabian. English
+is internal bridge metadata, never a seventh comparison language. Each plaque
+is labeled curated, automatic, or explicitly empty; curated matches control all
+six slots, including intentional gaps. Automatic Imperial Aramaic matching is
+disabled. **Curated & saved** retains the 252 hand-curated cards plus any cards
+added locally by the user.
 
 The third Dictionary mode, **By meaning**, searches every registered source
 together through shared English glosses. English input
@@ -77,13 +79,21 @@ current compact record-and-sense-table encoding is about 9 MiB, above the
 service-worker rule caches it after first use, like the full reference
 dictionaries.
 
+`scripts/build-hebrew-comparisons.mjs` separately generates the compact
+`hebrew-catalog-2026-07-v1.json` and 64 deterministic comparison shards. The
+catalog plus the one shard named by an opened row is sufficient to render its
+card. Full reference dictionaries remain lazy and load only when source details
+are expanded. The two gloss-index files remain byte-for-byte immutable for
+installed-client compatibility.
+
 ## Run
 
     npm install
     npm run dev        # development server
-    npm run build      # regenerate the gloss index, then build into dist/
+    npm run data:build # regenerate the Hebrew catalog and 64 comparison shards
+    npm run build      # regenerate both indexes, then build into dist/
     npm run preview    # serve the production build locally
-    npm test           # data-layer smoke test (node scripts/smoke-test.mjs)
+    npm test           # smoke, full universal-card audit, and deterministic artifact check
 
 ## Deploy
 
@@ -191,15 +201,15 @@ is interpretation:
   to the declared script block without claiming independent sign verification.
 - The verified comparative cards are hand-curated, never bulk-imported; the
   About tab names the reference works the conventions follow (CAD, ePSD2,
-  eCHD, TLA/Wb., CAL/TAD, DASI/CSAI, BDB/Strong's). All Hebrew and other
-  imported rows stay source-labeled and separate from those verified
-  comparisons. Every source carries version, transformation, license, and
+  eCHD, TLA/Wb., CAL/TAD, DASI/CSAI, BDB/Strong's). Universal Hebrew cards keep
+  verified and automatic results visibly labeled and preserve authoritative
+  curated gaps. Every source carries version, transformation, license, and
   real coverage labels. Community wordlists are never described as
   comprehensive scholarly dictionaries.
-- The All Hebrew and By meaning layers are deliberately weaker evidence: they
-  link records only because their published English glosses share a keyword.
-  Their automatic rows are never described as equivalents or cognates, and
-  are visually distinct from the verified comparative cards.
+- All Hebrew automatic matches require a sense-specific concept link or
+  multiple distinctive guide terms, rank semantic and part-of-speech fit before
+  source prestige, and never imply cognacy. **By meaning** remains the broader
+  shared-gloss discovery layer.
 
 ## Fonts
 

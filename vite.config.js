@@ -60,12 +60,31 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
         // The default 2 MiB limit would silently skip larger assets.
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
-        // The large reference dictionaries and the ~8 MiB generated gloss
-        // index in public/dicts/ are not precached (they would bloat the
-        // install). The index and dictionaries both check the network first
-        // so one release cannot mix a new index with stale dictionary rows;
-        // Workbox falls back to the shared cache while offline.
+        // Large reference dictionaries, the legacy meaning index, and the
+        // universal Hebrew catalog/shards are not precached (that would bloat
+        // installation). They check the network first and fall back to their
+        // runtime caches while offline.
         runtimeCaching: [
+          {
+            urlPattern: /\/dicts\/hebrew-catalog-2026-07-v1\.json$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'hebrew-comparison-catalog',
+              expiration: { maxEntries: 1, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          },
+          {
+            urlPattern: /\/dicts\/hebrew-comparisons-2026-07-v1\/[0-9a-f]{2}\.json$/,
+            handler: 'NetworkFirst',
+            options: {
+              // Every shard that an installed client opens remains available
+              // offline; no full reference dictionary is pulled in with it.
+              cacheName: 'hebrew-comparison-shards',
+              expiration: { maxEntries: 64, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          },
           {
             urlPattern: /\/dicts\/gloss-index(?:-[^/]+)?\.json$/,
             handler: 'NetworkFirst',

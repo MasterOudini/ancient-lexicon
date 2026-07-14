@@ -1,197 +1,253 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import ConceptCard from './ConceptCard.jsx'
-import { MeaningResultRow } from './MeaningSearch.jsx'
 import { LANGUAGES } from '../data/languages.js'
-import { LEXICON } from '../data/lexicon.js'
 import { getDictionary } from '../data/referenceDictionaries.js'
 import {
-  MEANING_LANGUAGE_ORDER,
-  searchGlossIndex
-} from '../lib/glossSearch.js'
-import { buildHebrewCatalog } from '../lib/hebrewCatalog.js'
-import { loadGlossIndex } from '../lib/glossIndexLoader.js'
+  loadHebrewCatalog,
+  loadHebrewComparison,
+  searchHebrewCatalog
+} from '../lib/hebrewComparisonLoader.js'
 import { loadReferenceEntry } from '../lib/referenceDictionaryLoader.js'
-import { normalize } from '../lib/search.js'
 
 const PAGE = 60
-const GROUP_PAGE = 8
-const CURATED_BY_ID = new Map(LEXICON.map((entry) => [entry.id, entry]))
+const EMPTY_SLOT = 'No reliable match found in the current dictionaries.'
+const VERIFIED_LABEL = 'Verified/curated comparison'
+const AUTOMATIC_LABEL = 'Automatically matched semantic equivalent'
 
-function ReferenceDetail({ detail, dict }) {
+function ReferenceDetail({ candidate, dict }) {
+  const [detail, setDetail] = useState(null)
+  const [status, setStatus] = useState('idle')
   const fields = dict.fields
-  return (
-    <>
-      <p>{detail[fields.def]}</p>
-      {(fields.extra || []).map(
-        (extra) => detail[extra.key] && (
-          <p className="lex-kjv" key={extra.key}>
-            {extra.label}:{' '}
-            {extra.href ? (
-              <a href={detail[extra.key]} target="_blank" rel="noreferrer">
-                {extra.linkLabel || detail[extra.key]}
-              </a>
-            ) : detail[extra.key]}
-          </p>
-        )
-      )}
-      <p className="lex-source-note">{dict.attribution}</p>
-    </>
-  )
-}
 
-function AutomaticComparison({ resolution, strings, onRootClick }) {
-  const [shownByLanguage, setShownByLanguage] = useState({})
-  const curated = resolution.curatedIds
-    .map((id) => CURATED_BY_ID.get(id))
-    .filter(Boolean)
-  const groups = MEANING_LANGUAGE_ORDER.map((language) => [
-    language,
-    resolution.groups[language].filter((result) => getDictionary(result.d))
-  ]).filter(([, results]) => results.length > 0)
-  const automaticTotal = groups.reduce((sum, [, results]) => sum + results.length, 0)
-
-  if (curated.length === 0 && automaticTotal === 0) {
-    return <p className="meaning-coverage-note">{strings.hebrewNoAutomaticMatches}</p>
+  function openDetail(event) {
+    if (!event.currentTarget.open || status !== 'idle') return
+    setStatus('loading')
+    loadReferenceEntry(dict, candidate.entryId)
+      .then((entry) => {
+        setDetail(entry)
+        setStatus(entry ? 'ready' : 'failed')
+      })
+      .catch(() => setStatus('failed'))
   }
 
   return (
-    <section className="hebrew-comparison-results">
-      <p className="meaning-coverage-note">
-        {strings.hebrewComparisonSummary
-          .replace('{n}', String(curated.length + automaticTotal))
-          .replace('{meaning}', resolution.matchedKeywords.join(', '))}
-        {resolution.truncated > 0 && ' ' + strings.meaningCapped}
-      </p>
-
-      {curated.length > 0 && (
-        <section data-section="verified">
-          <h3 className="category-head">
-            {strings.verifiedMatchesTitle}{' '}
-            <span className="category-count">{curated.length}</span>
-          </h3>
-          {curated.map((entry) => (
-            <ConceptCard
-              key={entry.id}
-              entry={entry}
-              languages={LANGUAGES}
-              onRootClick={onRootClick}
-              onDelete={null}
-              strings={strings}
-              verifiedLabel={strings.verifiedBadge}
-            />
-          ))}
-        </section>
+    <details className="comparison-source-detail" onToggle={openDetail}>
+      <summary>Open dictionary source details</summary>
+      {status === 'loading' && <p>Loading source entry…</p>}
+      {status === 'failed' && <p>The source entry could not be loaded.</p>}
+      {status === 'ready' && detail && (
+        <div className="comparison-source-body">
+          <p>{detail[fields.def]}</p>
+          {(fields.extra || []).map(
+            (extra) => detail[extra.key] && (
+              <p className="lex-kjv" key={extra.key}>
+                {extra.label}:{' '}
+                {extra.href ? (
+                  <a href={detail[extra.key]} target="_blank" rel="noreferrer">
+                    {extra.linkLabel || detail[extra.key]}
+                  </a>
+                ) : detail[extra.key]}
+              </p>
+            )
+          )}
+          <p className="lex-source-note">{dict.attribution}</p>
+        </div>
       )}
+    </details>
+  )
+}
 
-      {groups.map(([language, results]) => {
-        const shown = Math.min(shownByLanguage[language] || GROUP_PAGE, results.length)
-        return (
-          <section data-language={language.toLowerCase()} key={language}>
-            <h3 className="category-head meaning-language-head">
-              {language} <span className="category-count">{results.length}</span>
-            </h3>
-            {results.slice(0, shown).map((result) => (
-              <MeaningResultRow
-                key={`${result.d}:${result.i}`}
-                result={result}
-                direct={false}
-                strings={strings}
-              />
-            ))}
-            {shown < results.length && (
+function ComparisonCandidate({ candidate, language, compact = false }) {
+  const dict = getDictionary(candidate.dictionaryId)
+  const sourceLabel = candidate.dictionaryId === 'curated'
+    ? 'Curated comparative card'
+    : dict?.label || candidate.dictionaryId
+  const displayWord = candidate.transliteration ||
+    (candidate.word !== candidate.script ? candidate.word : null)
+
+  return (
+    <div
+      className={compact ? 'comparison-candidate comparison-candidate-alt' : 'comparison-candidate'}
+      data-dictionary={candidate.dictionaryId}
+      data-entry-id={candidate.entryId}
+    >
+      <div className={`comparison-candidate-main${language.id === 'egyptian' ? ' plaque-body-egyptian' : ''}`}>
+        {candidate.script && (
+          <bdi
+            className={`plaque-glyph ${language.fontClass}`}
+            dir={language.dir}
+            aria-label={`${language.name} original script`}
+          >
+            {candidate.script}
+          </bdi>
+        )}
+        <div className="plaque-caption">
+          {displayWord && (
+            <div className="comparison-word" dir="auto">
+              {candidate.transliteration && (
+                <span className="comparison-field-label">Transliteration:</span>
+              )}{' '}
+              {displayWord}
+            </div>
+          )}
+          <div><span className="comparison-field-label">Meaning:</span> {candidate.meaning}</div>
+          <div>
+            <span className="comparison-field-label">Dictionary source:</span>{' '}
+            {sourceLabel} · {candidate.entryId}
+          </div>
+          <div><span className="comparison-field-label">English bridge:</span> {candidate.bridge}</div>
+          {candidate.evidence && (
+            <div><span className="comparison-field-label">Evidence:</span> {candidate.evidence}</div>
+          )}
+        </div>
+      </div>
+      {dict && <ReferenceDetail candidate={candidate} dict={dict} />}
+    </div>
+  )
+}
+
+function ComparisonPlaque({ language, slot }) {
+  const [showAlternatives, setShowAlternatives] = useState(false)
+  const statusLabel = slot.status === 'verified' ? VERIFIED_LABEL : AUTOMATIC_LABEL
+
+  return (
+    <section
+      className="plaque comparison-plaque"
+      data-language={language.id}
+      data-comparison-status={slot.status}
+    >
+      <div className="eyebrow">
+        {language.name} · {language.scriptName}
+        {slot.status !== 'none' && (
+          <span className={`comparison-status comparison-status-${slot.status}`}>{statusLabel}</span>
+        )}
+      </div>
+      {slot.status === 'none' || !slot.primary ? (
+        <div className="plaque-empty">{EMPTY_SLOT}</div>
+      ) : (
+        <>
+          <ComparisonCandidate candidate={slot.primary} language={language} />
+          {slot.alternatives.length > 0 && (
+            <>
               <button
-                className="btn comparison-more"
-                onClick={() => setShownByLanguage((current) => ({
-                  ...current,
-                  [language]: Math.min(shown + 40, results.length)
-                }))}
+                className="btn comparison-candidates-toggle"
+                type="button"
+                aria-expanded={showAlternatives}
+                onClick={() => setShowAlternatives((shown) => !shown)}
               >
-                {strings.showMoreMatches.replace(
-                  '{n}',
-                  String(Math.min(40, results.length - shown))
-                )}
+                {showAlternatives ? 'Hide additional candidates' : 'Show more candidates'}
               </button>
-            )}
-          </section>
-        )
-      })}
+              {showAlternatives && (
+                <div className="comparison-alternatives">
+                  {slot.alternatives.slice(0, 4).map((candidate) => (
+                    <ComparisonCandidate
+                      candidate={candidate}
+                      compact
+                      key={`${candidate.dictionaryId}:${candidate.entryId}:${candidate.bridge}`}
+                      language={language}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </>
+      )}
     </section>
   )
 }
 
-function HebrewEntryRow({ entry, index, strings, onRootClick }) {
-  const dict = getDictionary(entry.d)
-  const [detail, setDetail] = useState(null)
-  const [detailStatus, setDetailStatus] = useState('idle')
-  const [resolution, setResolution] = useState(null)
+function UniversalComparisonCard({ entry, senses }) {
+  const [selectedIndex, setSelectedIndex] = useState(0)
+  const selectedSense = senses[selectedIndex] || senses[0]
 
-  if (!dict) return null
+  return (
+    <div className="universal-comparison-card" data-source-key={entry.sourceKey}>
+      <div className="sense-picker">
+        <label htmlFor={`sense-${entry.sourceKey}`}>Individual sense</label>
+        <select
+          id={`sense-${entry.sourceKey}`}
+          value={selectedIndex}
+          onChange={(event) => setSelectedIndex(Number(event.target.value))}
+        >
+          {senses.map((sense, index) => (
+            <option value={index} key={sense.key}>{sense.label}</option>
+          ))}
+        </select>
+        {selectedSense?.sourceText && (
+          <p className="sense-source-text">{selectedSense.sourceText}</p>
+        )}
+      </div>
+
+      <div className="universal-plaques" data-sense-key={selectedSense?.key}>
+        {LANGUAGES.map((language) => {
+          const slot = selectedSense?.slots.find((candidateSlot) => candidateSlot.languageId === language.id)
+          return (
+            <ComparisonPlaque
+              key={`${selectedSense?.key}:${language.id}`}
+              language={language}
+              slot={slot || { languageId: language.id, status: 'none', primary: null, alternatives: [] }}
+            />
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function HebrewEntryRow({ entry }) {
+  const [senses, setSenses] = useState(null)
+  const [status, setStatus] = useState('idle')
 
   function openEntry(event) {
-    if (!event.currentTarget.open) return
-    if (entry.linked && !resolution) {
-      setResolution(searchGlossIndex(index, '', { recordId: entry.recordId }))
-    }
-    if (detailStatus !== 'idle') return
-    setDetailStatus('loading')
-    loadReferenceEntry(dict, entry.i)
-      .then((sourceEntry) => {
-        setDetail(sourceEntry)
-        setDetailStatus(sourceEntry ? 'ready' : 'failed')
+    if (!event.currentTarget.open || status !== 'idle') return
+    setStatus('loading')
+    loadHebrewComparison(entry)
+      .then((resolvedSenses) => {
+        setSenses(resolvedSenses)
+        setStatus('ready')
       })
-      .catch(() => setDetailStatus('failed'))
+      .catch(() => setStatus('failed'))
   }
 
   return (
     <details
       className="lexrow hebrew-comparative-row"
-      data-dictionary={dict.id}
-      data-indexed={entry.recordId != null ? 'true' : 'false'}
-      data-linked={entry.linked ? 'true' : 'false'}
+      data-dictionary={entry.source}
+      data-source-key={entry.sourceKey}
+      data-shard={entry.shard}
       onToggle={openEntry}
     >
       <summary>
-        <span className="lex-lemma" dir="rtl" lang="he">{entry.l}</span>
-        {entry.x && <span className="lex-xlit">{entry.x}</span>}
-        <span className="lex-id">{entry.i}</span>
-        <span className="lex-id">{dict.label}</span>
-        <span className="lex-def">{entry.g}</span>
-        <span className="meaning-tag">
-          {entry.linked
-            ? strings.hebrewLinkedTag
-            : strings.hebrewSourceOnlyTag}
-        </span>
+        <span className="lex-lemma" dir="rtl" lang="he">{entry.headword}</span>
+        {entry.transliteration && <span className="lex-xlit">{entry.transliteration}</span>}
+        <span className="lex-id">{entry.id}</span>
+        <span className="lex-id">{entry.sourceLabel}</span>
+        {entry.partOfSpeech && <span className="lex-id">{entry.partOfSpeech}</span>}
+        <span className="lex-def">{entry.definition}</span>
       </summary>
-      <div className="lex-body">
-        {detailStatus === 'loading' && <p>{strings.strongsLoading}</p>}
-        {detailStatus === 'failed' && <p>{strings.strongsLoadFailed}</p>}
-        {detailStatus === 'ready' && detail && <ReferenceDetail detail={detail} dict={dict} />}
-        {!entry.linked ? (
-          <p className="meaning-coverage-note">{strings.hebrewNoEnglishBridge}</p>
-        ) : resolution && (
-          <AutomaticComparison
-            resolution={resolution}
-            strings={strings}
-            onRootClick={onRootClick}
-          />
+      <div className="lex-body universal-card-shell">
+        {status === 'loading' && <p>Loading sense-specific comparisons…</p>}
+        {status === 'failed' && (
+          <p>Comparison data could not be loaded. Open this entry once while online so it can be cached.</p>
         )}
+        {status === 'ready' && senses && <UniversalComparisonCard entry={entry} senses={senses} />}
       </div>
     </details>
   )
 }
 
-export default function HebrewComparative({ query, strings, onRootClick, onClearQuery }) {
-  const [index, setIndex] = useState(null)
+export default function HebrewComparative({ query, strings, onClearQuery }) {
+  const [catalog, setCatalog] = useState(null)
   const [status, setStatus] = useState('loading')
   const [visible, setVisible] = useState(PAGE)
   const sentinelRef = useRef(null)
 
   useEffect(() => {
     let alive = true
-    loadGlossIndex()
+    loadHebrewCatalog()
       .then((data) => {
         if (!alive) return
-        setIndex(data)
+        setCatalog(data)
         setStatus('ready')
       })
       .catch(() => alive && setStatus('failed'))
@@ -200,16 +256,9 @@ export default function HebrewComparative({ query, strings, onRootClick, onClear
     }
   }, [])
 
-  const entries = useMemo(() => index ? buildHebrewCatalog(index) : [], [index])
-  const normalizedQuery = normalize(query)
-  const results = useMemo(
-    () => normalizedQuery
-      ? entries.filter((entry) => entry.searchText.includes(normalizedQuery))
-      : entries,
-    [entries, normalizedQuery]
-  )
+  const results = useMemo(() => searchHebrewCatalog(catalog, query), [catalog, query])
 
-  useEffect(() => setVisible(PAGE), [normalizedQuery])
+  useEffect(() => setVisible(PAGE), [query])
 
   useEffect(() => {
     const element = sentinelRef.current
@@ -226,8 +275,10 @@ export default function HebrewComparative({ query, strings, onRootClick, onClear
     return () => observer.disconnect()
   }, [results.length])
 
-  if (status === 'loading') return <p className="result-count">{strings.meaningIndexLoading}</p>
-  if (status === 'failed') return <p className="result-count">{strings.meaningIndexFailed}</p>
+  if (status === 'loading') return <p className="result-count">Loading the Hebrew comparison catalog…</p>
+  if (status === 'failed') {
+    return <p className="result-count">The Hebrew comparison catalog could not be loaded.</p>
+  }
 
   if (results.length === 0) {
     return (
@@ -241,19 +292,15 @@ export default function HebrewComparative({ query, strings, onRootClick, onClear
 
   return (
     <section className="hebrew-comparative">
-      <div className="note-block">{strings.hebrewComparativeIntro}</div>
+      <div className="note-block">
+        Each Hebrew source entry opens a sense-specific semantic comparison. English explains the bridge; it is not a comparison language.
+      </div>
       <p className="result-count" aria-live="polite">
-        {(normalizedQuery ? strings.matchCount : strings.entryCount)
+        {(query.trim() ? strings.matchCount : strings.entryCount)
           .replace('{n}', String(results.length))}
       </p>
       {results.slice(0, visible).map((entry) => (
-        <HebrewEntryRow
-          key={`${entry.d}:${entry.i}`}
-          entry={entry}
-          index={index}
-          strings={strings}
-          onRootClick={onRootClick}
-        />
+        <HebrewEntryRow key={entry.sourceKey} entry={entry} />
       ))}
       <div ref={sentinelRef} aria-hidden="true" />
       {visible < results.length && (

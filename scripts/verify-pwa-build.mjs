@@ -35,6 +35,11 @@ verify(
   'the generated worker does not activate and claim clients immediately'
 )
 verify(
+  worker.includes('hebrew-comparison-catalog') &&
+    worker.includes('hebrew-comparison-shards'),
+  'the generated worker does not keep separate offline caches for the Hebrew catalog and shards'
+)
+verify(
   manifest.start_url === expectedBase && manifest.scope === expectedBase,
   `manifest scope does not match ${expectedBase}`
 )
