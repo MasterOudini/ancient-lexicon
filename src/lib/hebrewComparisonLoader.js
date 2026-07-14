@@ -14,6 +14,59 @@ export const HEBREW_COMPARISON_LANGUAGES = [
 
 const hebrewCollator = new Intl.Collator('he')
 
+// Exact source IDs and exact headwords must outrank words that merely contain
+// the query. Higher values sort first; only exact headword and source-ID tiers
+// automatically open a comparison card.
+export const HEBREW_CATALOG_MATCH_TIER = Object.freeze({
+  none: 0,
+  metadata: 1,
+  headwordSubstring: 2,
+  prefix: 3,
+  transliterationExactDisplayOnly: 4,
+  transliterationExact: 5,
+  normalizedHeadwordDisplayOnly: 6,
+  normalizedHeadword: 7,
+  pointedHeadwordDisplayOnly: 8,
+  pointedHeadword: 9,
+  sourceId: 10
+})
+
+const AUTO_OPEN_MINIMUM_TIER = HEBREW_CATALOG_MATCH_TIER.normalizedHeadwordDisplayOnly
+const HEBREW_POINTING = /[\u05B0-\u05BD\u05BF-\u05C2\u05C4-\u05C7]/u
+const CANTILLATION_AND_EDITORIAL_MARKS = /[\u0591-\u05AF\u05BD\u05BF\u05C4-\u05C6]/gu
+
+// These source records have explicit reviewed overrides in the comparison
+// builder. H1 additionally owns the authoritative curated father card.
+const REVIEWED_SOURCE_PRIORITY = new Map([
+  ['strongs:H1', 3],
+  ['strongs:H2803', 2],
+  ['strongs:H2805', 1]
+])
+
+function reviewedPriority(entry, tier) {
+  return tier >= HEBREW_CATALOG_MATCH_TIER.normalizedHeadwordDisplayOnly &&
+    tier <= HEBREW_CATALOG_MATCH_TIER.pointedHeadword
+    ? REVIEWED_SOURCE_PRIORITY.get(entry.sourceKey) || 0
+    : 0
+}
+
+function canonicalPointedHeadword(value) {
+  return String(value || '')
+    .trim()
+    .normalize('NFD')
+    .replace(CANTILLATION_AND_EDITORIAL_MARKS, '')
+    .normalize('NFC')
+}
+
+function createQueryContext(query) {
+  const raw = String(query || '')
+  return {
+    normalized: normalize(raw),
+    hasPointing: HEBREW_POINTING.test(raw),
+    pointed: canonicalPointedHeadword(raw)
+  }
+}
+
 let cacheGeneration = 0
 let catalogPending = null
 let catalogCache = null
@@ -77,7 +130,12 @@ export function decodeHebrewCatalog(payload) {
       shard: tuple[6],
       senses,
       searchText,
-      sortKey: normalize(tuple[2])
+      sortKey: normalize(tuple[2]),
+      pointedKey: canonicalPointedHeadword(tuple[2]),
+      idSearch: normalize(tuple[1]),
+      sourceKeySearch: normalize(sourceKey),
+      transliterationSearch: normalize(tuple[3]),
+      hasMatchableSense: senses.some((sense) => sense.matchable)
     }
   }).sort((a, b) =>
     hebrewCollator.compare(a.sortKey, b.sortKey) ||
@@ -93,12 +151,104 @@ export function decodeHebrewCatalog(payload) {
   }
 }
 
+function matchTier(entry, queryContext, searchTextMatched) {
+  const normalizedQuery = queryContext.normalized
+  if (!normalizedQuery || !entry) return HEBREW_CATALOG_MATCH_TIER.none
+
+  if (
+    entry.idSearch === normalizedQuery ||
+    entry.sourceKeySearch === normalizedQuery
+  ) {
+    return HEBREW_CATALOG_MATCH_TIER.sourceId
+  }
+
+  if (
+    queryContext.hasPointing &&
+    entry.pointedKey === queryContext.pointed
+  ) {
+    return entry.hasMatchableSense
+      ? HEBREW_CATALOG_MATCH_TIER.pointedHeadword
+      : HEBREW_CATALOG_MATCH_TIER.pointedHeadwordDisplayOnly
+  }
+
+  if (entry.sortKey === normalizedQuery) {
+    return entry.hasMatchableSense
+      ? HEBREW_CATALOG_MATCH_TIER.normalizedHeadword
+      : HEBREW_CATALOG_MATCH_TIER.normalizedHeadwordDisplayOnly
+  }
+
+  if (entry.transliterationSearch === normalizedQuery) {
+    return entry.hasMatchableSense
+      ? HEBREW_CATALOG_MATCH_TIER.transliterationExact
+      : HEBREW_CATALOG_MATCH_TIER.transliterationExactDisplayOnly
+  }
+
+  if (
+    entry.sortKey.startsWith(normalizedQuery) ||
+    entry.idSearch.startsWith(normalizedQuery) ||
+    entry.transliterationSearch.startsWith(normalizedQuery)
+  ) {
+    return HEBREW_CATALOG_MATCH_TIER.prefix
+  }
+
+  if (
+    entry.sortKey.includes(normalizedQuery) ||
+    entry.transliterationSearch.includes(normalizedQuery)
+  ) {
+    return HEBREW_CATALOG_MATCH_TIER.headwordSubstring
+  }
+
+  return (searchTextMatched ?? entry.searchText.includes(normalizedQuery))
+    ? HEBREW_CATALOG_MATCH_TIER.metadata
+    : HEBREW_CATALOG_MATCH_TIER.none
+}
+
+export function getHebrewCatalogMatchTier(entry, query) {
+  return matchTier(entry, createQueryContext(query))
+}
+
 export function searchHebrewCatalog(catalog, query) {
-  const normalizedQuery = normalize(query)
+  const queryContext = createQueryContext(query)
   const entries = catalog?.entries || []
-  return normalizedQuery
-    ? entries.filter((entry) => entry.searchText.includes(normalizedQuery))
-    : entries
+  if (!queryContext.normalized) return entries
+
+  // Fixed tiers let us retain the catalog's deterministic order without an
+  // O(matches log matches) sort for very broad phone-keyboard queries.
+  const buckets = Array.from(
+    { length: HEBREW_CATALOG_MATCH_TIER.sourceId + 1 },
+    () => []
+  )
+  for (let index = 0; index < entries.length; index++) {
+    const entry = entries[index]
+    const searchTextMatched = entry.searchText.includes(queryContext.normalized)
+    if (!searchTextMatched && entry.sourceKeySearch !== queryContext.normalized) continue
+    const tier = matchTier(entry, queryContext, searchTextMatched)
+    if (tier > HEBREW_CATALOG_MATCH_TIER.none) buckets[tier].push(entry)
+  }
+
+  const results = []
+  for (let tier = buckets.length - 1; tier > HEBREW_CATALOG_MATCH_TIER.none; tier--) {
+    const bucket = buckets[tier]
+    if (bucket.length === 0) continue
+
+    const reviewed = bucket
+      .filter((entry) => reviewedPriority(entry, tier) > 0)
+      .sort((left, right) => reviewedPriority(right, tier) - reviewedPriority(left, tier))
+    if (reviewed.length === 0) results.push(...bucket)
+    else {
+      const reviewedKeys = new Set(reviewed.map((entry) => entry.sourceKey))
+      results.push(...reviewed, ...bucket.filter((entry) => !reviewedKeys.has(entry.sourceKey)))
+    }
+  }
+  return results
+}
+
+export function selectAutoOpenSourceKey(results, query) {
+  const first = results?.[0]
+  if (!first) return null
+  return matchTier(first, createQueryContext(query)) >= AUTO_OPEN_MINIMUM_TIER
+    ? first.sourceKey
+    : null
 }
 
 function decodeCandidate(tuple) {

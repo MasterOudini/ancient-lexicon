@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { readFileSync } from 'node:fs'
 
 // The default base '/' works for Cloudflare Pages, Netlify, Vercel, and a
 // GitHub Pages user/organization site, with no environment variables.
@@ -13,11 +14,15 @@ const base = process.env.VITE_BASE || '/'
 // gives an installed service worker nothing new to detect. GitHub supplies a
 // stable SHA for each deployment; local builds get a unique diagnostic id.
 const buildId = (process.env.GITHUB_SHA || `local-${Date.now().toString(36)}`).slice(0, 18)
+const appVersion = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url), 'utf8')
+).version
 
 export default defineConfig({
   base,
   define: {
-    __APP_BUILD_ID__: JSON.stringify(buildId)
+    __APP_BUILD_ID__: JSON.stringify(buildId),
+    __APP_VERSION__: JSON.stringify(appVersion)
   },
   plugins: [
     react(),

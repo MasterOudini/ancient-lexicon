@@ -4,7 +4,8 @@ import { getDictionary } from '../data/referenceDictionaries.js'
 import {
   loadHebrewCatalog,
   loadHebrewComparison,
-  searchHebrewCatalog
+  searchHebrewCatalog,
+  selectAutoOpenSourceKey
 } from '../lib/hebrewComparisonLoader.js'
 import { loadReferenceEntry } from '../lib/referenceDictionaryLoader.js'
 
@@ -156,7 +157,7 @@ function ComparisonPlaque({ language, slot }) {
   )
 }
 
-function UniversalComparisonCard({ entry, senses }) {
+export function UniversalComparisonCard({ entry, senses }) {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const selectedSense = senses[selectedIndex] || senses[0]
 
@@ -194,12 +195,15 @@ function UniversalComparisonCard({ entry, senses }) {
   )
 }
 
-function HebrewEntryRow({ entry }) {
+export function HebrewEntryRow({ entry, initiallyOpen = false, promotionKey = '' }) {
   const [senses, setSenses] = useState(null)
   const [status, setStatus] = useState('idle')
+  const [open, setOpen] = useState(initiallyOpen)
+  const loadPendingRef = useRef(false)
 
-  function openEntry(event) {
-    if (!event.currentTarget.open || status === 'loading' || status === 'ready') return
+  function loadEntry() {
+    if (loadPendingRef.current || status === 'loading' || status === 'ready') return
+    loadPendingRef.current = true
     setStatus('loading')
     loadHebrewComparison(entry)
       .then((resolvedSenses) => {
@@ -207,6 +211,20 @@ function HebrewEntryRow({ entry }) {
         setStatus('ready')
       })
       .catch(() => setStatus('failed'))
+      .finally(() => {
+        loadPendingRef.current = false
+      })
+  }
+
+  useEffect(() => {
+    setOpen(initiallyOpen)
+    if (initiallyOpen) loadEntry()
+  }, [initiallyOpen, promotionKey])
+
+  function toggleEntry(event) {
+    const nextOpen = event.currentTarget.open
+    setOpen(nextOpen)
+    if (nextOpen) loadEntry()
   }
 
   return (
@@ -215,7 +233,8 @@ function HebrewEntryRow({ entry }) {
       data-dictionary={entry.source}
       data-source-key={entry.sourceKey}
       data-shard={entry.shard}
-      onToggle={openEntry}
+      open={open}
+      onToggle={toggleEntry}
     >
       <summary>
         <span className="lex-lemma" dir="rtl" lang="he">{entry.headword}</span>
@@ -262,6 +281,10 @@ export default function HebrewComparative({ query, strings, onClearQuery }) {
   }, [])
 
   const results = useMemo(() => searchHebrewCatalog(catalog, query), [catalog, query])
+  const promotedSourceKey = useMemo(
+    () => selectAutoOpenSourceKey(results, query),
+    [results, query]
+  )
 
   useEffect(() => setVisible(PAGE), [query])
 
@@ -298,14 +321,19 @@ export default function HebrewComparative({ query, strings, onClearQuery }) {
   return (
     <section className="hebrew-comparative">
       <div className="note-block">
-        Every Hebrew source entry has a six-language, sense-specific comparison card. Tap Open comparison on any entry. English explains the bridge; it is not a comparison language.
+        Every Hebrew source entry has a six-language, sense-specific comparison card. The best exact headword or source-ID match opens first; source-distinct homographs remain separate. English explains the bridge; it is not a comparison language.
       </div>
       <p className="result-count" aria-live="polite">
         {(query.trim() ? strings.matchCount : strings.entryCount)
           .replace('{n}', String(results.length))}
       </p>
       {results.slice(0, visible).map((entry) => (
-        <HebrewEntryRow key={entry.sourceKey} entry={entry} />
+        <HebrewEntryRow
+          key={entry.sourceKey}
+          entry={entry}
+          initiallyOpen={entry.sourceKey === promotedSourceKey}
+          promotionKey={entry.sourceKey === promotedSourceKey ? `${query}:${promotedSourceKey}` : ''}
+        />
       ))}
       <div ref={sentinelRef} aria-hidden="true" />
       {visible < results.length && (

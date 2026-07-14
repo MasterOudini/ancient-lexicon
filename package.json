@@ -11,7 +11,7 @@
     "build": "vite build",
     "postbuild": "node scripts/verify-pwa-build.mjs",
     "preview": "vite preview",
-    "test": "node scripts/smoke-test.mjs && node scripts/validate-hebrew-comparisons.mjs && node scripts/build-hebrew-comparisons.mjs --check"
+    "test": "node scripts/smoke-test.mjs && node scripts/validate-hebrew-comparisons.mjs && node scripts/ui-contract-test.mjs && node scripts/build-hebrew-comparisons.mjs --check"
   },
   "dependencies": {
     "react": "^19.2.7",
