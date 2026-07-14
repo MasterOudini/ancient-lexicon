@@ -8,6 +8,8 @@ import {
   selectAutoOpenSourceKey
 } from '../lib/hebrewComparisonLoader.js'
 import { loadReferenceEntry } from '../lib/referenceDictionaryLoader.js'
+import PronunciationGuide from './PronunciationGuide.jsx'
+import { guideForCandidate, guideForHebrewEntry } from '../lib/pronunciation.js'
 
 const PAGE = 60
 const EMPTY_SLOT = 'No reliable match found in the current dictionaries.'
@@ -57,7 +59,7 @@ function ReferenceDetail({ candidate, dict }) {
   )
 }
 
-function ComparisonCandidate({ candidate, language, compact = false }) {
+function ComparisonCandidate({ candidate, language, compact = false, guideLanguage, onGuideLanguageChange }) {
   const dict = getDictionary(candidate.dictionaryId)
   const sourceLabel = candidate.dictionaryId === 'curated'
     ? 'Curated comparative card'
@@ -101,12 +103,17 @@ function ComparisonCandidate({ candidate, language, compact = false }) {
           )}
         </div>
       </div>
+      <PronunciationGuide
+        guide={guideForCandidate(candidate, language.id, guideLanguage)}
+        guideLanguage={guideLanguage}
+        onGuideLanguageChange={onGuideLanguageChange}
+      />
       {dict && <ReferenceDetail candidate={candidate} dict={dict} />}
     </div>
   )
 }
 
-function ComparisonPlaque({ language, slot }) {
+function ComparisonPlaque({ language, slot, guideLanguage, onGuideLanguageChange }) {
   const [showAlternatives, setShowAlternatives] = useState(false)
   const statusLabel = slot.status === 'verified' ? VERIFIED_LABEL : AUTOMATIC_LABEL
 
@@ -126,7 +133,12 @@ function ComparisonPlaque({ language, slot }) {
         <div className="plaque-empty">{EMPTY_SLOT}</div>
       ) : (
         <>
-          <ComparisonCandidate candidate={slot.primary} language={language} />
+          <ComparisonCandidate
+            candidate={slot.primary}
+            language={language}
+            guideLanguage={guideLanguage}
+            onGuideLanguageChange={onGuideLanguageChange}
+          />
           {slot.alternatives.length > 0 && (
             <>
               <button
@@ -145,6 +157,8 @@ function ComparisonPlaque({ language, slot }) {
                       compact
                       key={`${candidate.dictionaryId}:${candidate.entryId}:${candidate.bridge}`}
                       language={language}
+                      guideLanguage={guideLanguage}
+                      onGuideLanguageChange={onGuideLanguageChange}
                     />
                   ))}
                 </div>
@@ -157,7 +171,7 @@ function ComparisonPlaque({ language, slot }) {
   )
 }
 
-export function UniversalComparisonCard({ entry, senses }) {
+export function UniversalComparisonCard({ entry, senses, guideLanguage, onGuideLanguageChange }) {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const selectedSense = senses[selectedIndex] || senses[0]
 
@@ -187,6 +201,8 @@ export function UniversalComparisonCard({ entry, senses }) {
               key={`${selectedSense?.key}:${language.id}`}
               language={language}
               slot={slot || { languageId: language.id, status: 'none', primary: null, alternatives: [] }}
+              guideLanguage={guideLanguage}
+              onGuideLanguageChange={onGuideLanguageChange}
             />
           )
         })}
@@ -195,7 +211,7 @@ export function UniversalComparisonCard({ entry, senses }) {
   )
 }
 
-export function HebrewEntryRow({ entry, initiallyOpen = false, promotionKey = '' }) {
+export function HebrewEntryRow({ entry, initiallyOpen = false, promotionKey = '', guideLanguage, onGuideLanguageChange }) {
   const [senses, setSenses] = useState(null)
   const [status, setStatus] = useState('idle')
   const [open, setOpen] = useState(initiallyOpen)
@@ -250,17 +266,29 @@ export function HebrewEntryRow({ entry, initiallyOpen = false, promotionKey = ''
         </span>
       </summary>
       <div className="lex-body universal-card-shell">
+        <PronunciationGuide
+          guide={guideForHebrewEntry(entry, guideLanguage)}
+          guideLanguage={guideLanguage}
+          onGuideLanguageChange={onGuideLanguageChange}
+        />
         {status === 'loading' && <p>Loading sense-specific comparisons…</p>}
         {status === 'failed' && (
           <p>Comparison data could not be loaded. Go online, then close and reopen this entry to retry.</p>
         )}
-        {status === 'ready' && senses && <UniversalComparisonCard entry={entry} senses={senses} />}
+        {status === 'ready' && senses && (
+          <UniversalComparisonCard
+            entry={entry}
+            senses={senses}
+            guideLanguage={guideLanguage}
+            onGuideLanguageChange={onGuideLanguageChange}
+          />
+        )}
       </div>
     </details>
   )
 }
 
-export default function HebrewComparative({ query, strings, onClearQuery }) {
+export default function HebrewComparative({ query, strings, onClearQuery, guideLanguage, onGuideLanguageChange }) {
   const [catalog, setCatalog] = useState(null)
   const [status, setStatus] = useState('loading')
   const [visible, setVisible] = useState(PAGE)
@@ -335,6 +363,8 @@ export default function HebrewComparative({ query, strings, onClearQuery }) {
           entry={entry}
           initiallyOpen={entry.sourceKey === promotedSourceKey}
           promotionKey={entry.sourceKey === promotedSourceKey ? `${query}:${promotedSourceKey}` : ''}
+          guideLanguage={guideLanguage}
+          onGuideLanguageChange={onGuideLanguageChange}
         />
       ))}
       <div ref={sentinelRef} aria-hidden="true" />

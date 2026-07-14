@@ -2,11 +2,12 @@ import { LANGUAGES, HEBREW_CAVEAT } from '../data/languages.js'
 import { LEXICON } from '../data/lexicon.js'
 import { ROOTS } from '../data/roots.js'
 import { REFERENCE_DICTIONARIES } from '../data/referenceDictionaries.js'
+import { ReadingExplainer } from './PronunciationGuide.jsx'
 
 // The About screen: what the app is, how to read an entry (the data-honesty
 // statement), the reference works the conventions follow, and font licenses.
 
-export default function AboutView() {
+export default function AboutView({ guideLanguage, onGuideLanguageChange }) {
   return (
     <section>
       <div className="settings-section">
@@ -85,6 +86,10 @@ export default function AboutView() {
         {LANGUAGES.map((l) => (
           <p key={l.id}>{l.caveat}</p>
         ))}
+        <ReadingExplainer
+          guideLanguage={guideLanguage}
+          onGuideLanguageChange={onGuideLanguageChange}
+        />
       </div>
 
       <div className="settings-section">

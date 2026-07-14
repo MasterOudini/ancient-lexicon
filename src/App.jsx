@@ -112,6 +112,10 @@ export default function App() {
       ? stored.theme
       : CONFIG.defaultTheme
   })
+  const [guideLanguage, setGuideLanguage] = useState(() => {
+    const stored = getJSON(SETTINGS_KEY, null)
+    return stored?.pronunciationGuideLanguage === 'en' ? 'en' : 'he'
+  })
   const [customEntries, setCustomEntries] = useState(() =>
     getJSON(CUSTOM_ENTRIES_KEY, [])
   )
@@ -152,12 +156,14 @@ export default function App() {
   )
   const allOn = enabledLangs.length === LANGUAGES.length
 
-  function updateSettings(nextEnabledLangs, nextTheme) {
+  function updateSettings(nextEnabledLangs, nextTheme, nextGuideLanguage = guideLanguage) {
     setEnabledLangs(nextEnabledLangs)
     setTheme(nextTheme)
+    setGuideLanguage(nextGuideLanguage)
     setJSON(SETTINGS_KEY, {
       enabledLangs: nextEnabledLangs,
-      theme: nextTheme
+      theme: nextTheme,
+      pronunciationGuideLanguage: nextGuideLanguage
     })
   }
 
@@ -174,6 +180,10 @@ export default function App() {
 
   function changeEnabledLangs(nextEnabledLangs) {
     updateSettings(nextEnabledLangs, theme)
+  }
+
+  function changeGuideLanguage(nextGuideLanguage) {
+    updateSettings(enabledLangs, theme, nextGuideLanguage)
   }
 
   // A root chip on a dictionary card navigates to that root's detail view.
@@ -206,7 +216,8 @@ export default function App() {
     const nextTheme = ['auto', 'light', 'dark'].includes(settings?.theme)
       ? settings.theme
       : theme
-    updateSettings(nextEnabledLangs, nextTheme)
+    const nextGuideLanguage = settings?.pronunciationGuideLanguage === 'en' ? 'en' : guideLanguage
+    updateSettings(nextEnabledLangs, nextTheme, nextGuideLanguage)
     setCustomEntries(imported)
     setJSON(CUSTOM_ENTRIES_KEY, imported)
   }
@@ -316,6 +327,8 @@ export default function App() {
                   query={query}
                   strings={CONFIG.strings}
                   onClearQuery={clearQuery}
+                  guideLanguage={guideLanguage}
+                  onGuideLanguageChange={changeGuideLanguage}
                 />
               )}
             </>
@@ -338,7 +351,12 @@ export default function App() {
         />
       )}
 
-      {activeTab === 'about' && <AboutView />}
+      {activeTab === 'about' && (
+        <AboutView
+          guideLanguage={guideLanguage}
+          onGuideLanguageChange={changeGuideLanguage}
+        />
+      )}
 
       {activeTab === 'settings' && (
         <SettingsView
