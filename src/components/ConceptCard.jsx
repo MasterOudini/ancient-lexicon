@@ -70,7 +70,7 @@ function Plaque({ language, form, strings }) {
 
 // Memoized: with stable languages/handler props from App, typing in the
 // search box re-renders only cards entering or leaving the result list.
-function ConceptCard({ entry, languages, onRootClick, onDelete, strings }) {
+function ConceptCard({ entry, languages, onRootClick, onDelete, strings, verifiedLabel }) {
   return (
     <article className="card">
       <div className="card-head">
@@ -79,6 +79,7 @@ function ConceptCard({ entry, languages, onRootClick, onDelete, strings }) {
         </span>
         <span className="headword-translit">{entry.hebrew.translit}</span>
         <span className="glosses">{entry.english.join(', ')}</span>
+        {verifiedLabel && <span className="badge-verified">{verifiedLabel}</span>}
         {entry.hebrew.root && (
           <button
             className="rootchip"
