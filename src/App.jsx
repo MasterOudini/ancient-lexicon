@@ -6,6 +6,7 @@ import HebrewComparative from './components/HebrewComparative.jsx'
 import RootsView from './components/RootsView.jsx'
 import SettingsView from './components/SettingsView.jsx'
 import AboutView from './components/AboutView.jsx'
+import TabIcon from './components/TabIcon.jsx'
 import { LANGUAGES, HEBREW_CAVEAT } from './data/languages.js'
 import { LEXICON } from './data/lexicon.js'
 import { findRoot } from './data/roots.js'
@@ -357,9 +358,7 @@ export default function App() {
           onClick={() => setActiveTab('dictionary')}
           aria-current={activeTab === 'dictionary'}
         >
-          <span className="tab-glyph script-cuneiform" aria-hidden="true">
-            𒁾
-          </span>
+          <TabIcon name="dictionary" />
           {CONFIG.strings.tabs.dictionary}
         </button>
         <button
@@ -367,9 +366,7 @@ export default function App() {
           onClick={() => setActiveTab('roots')}
           aria-current={activeTab === 'roots'}
         >
-          <span className="tab-glyph" aria-hidden="true">
-            √
-          </span>
+          <TabIcon name="roots" />
           {CONFIG.strings.tabs.roots}
         </button>
         <button
@@ -377,9 +374,7 @@ export default function App() {
           onClick={() => setActiveTab('about')}
           aria-current={activeTab === 'about'}
         >
-          <span className="tab-glyph script-egyptian" aria-hidden="true">
-            𓏞
-          </span>
+          <TabIcon name="about" />
           {CONFIG.strings.tabs.about}
         </button>
         <button
@@ -387,9 +382,7 @@ export default function App() {
           onClick={() => setActiveTab('settings')}
           aria-current={activeTab === 'settings'}
         >
-          <span className="tab-glyph" aria-hidden="true">
-            ⋯
-          </span>
+          <TabIcon name="settings" />
           {CONFIG.strings.tabs.settings}
         </button>
       </nav>
