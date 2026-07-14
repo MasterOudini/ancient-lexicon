@@ -280,7 +280,11 @@ export default function HebrewComparative({ query, strings, onClearQuery }) {
     }
   }, [])
 
-  const results = useMemo(() => searchHebrewCatalog(catalog, query), [catalog, query])
+  const hasQuery = query.trim().length > 0
+  const results = useMemo(
+    () => (hasQuery ? searchHebrewCatalog(catalog, query) : []),
+    [catalog, hasQuery, query]
+  )
   const promotedSourceKey = useMemo(
     () => selectAutoOpenSourceKey(results, query),
     [results, query]
@@ -303,6 +307,8 @@ export default function HebrewComparative({ query, strings, onClearQuery }) {
     return () => observer.disconnect()
   }, [results.length])
 
+  if (!hasQuery) return null
+
   if (status === 'loading') return <p className="result-count">Loading the Hebrew comparison catalog…</p>
   if (status === 'failed') {
     return <p className="result-count">The Hebrew comparison catalog could not be loaded.</p>
@@ -320,12 +326,8 @@ export default function HebrewComparative({ query, strings, onClearQuery }) {
 
   return (
     <section className="hebrew-comparative">
-      <div className="note-block">
-        Every Hebrew source entry has a six-language, sense-specific comparison card. The best exact headword or source-ID match opens first; source-distinct homographs remain separate. English explains the bridge; it is not a comparison language.
-      </div>
       <p className="result-count" aria-live="polite">
-        {(query.trim() ? strings.matchCount : strings.entryCount)
-          .replace('{n}', String(results.length))}
+        {strings.matchCount.replace('{n}', String(results.length))}
       </p>
       {results.slice(0, visible).map((entry) => (
         <HebrewEntryRow

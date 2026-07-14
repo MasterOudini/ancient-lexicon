@@ -27,6 +27,7 @@ const server = await createServer({
 
 try {
   const {
+    default: HebrewComparative,
     HebrewEntryRow,
     UniversalComparisonCard
   } = await server.ssrLoadModule('/src/components/HebrewComparative.jsx')
@@ -74,6 +75,20 @@ try {
   for (const language of languages) assert.match(card, new RegExp(`data-language="${language}"`))
   assert.doesNotMatch(card, /data-language="(?:hebrew|english)"/)
 
+  const idleComparative = renderToStaticMarkup(
+    React.createElement(HebrewComparative, {
+      query: '   ',
+      strings: {
+        noResults: 'No entries',
+        hebrewSearchHint: 'Try another spelling.',
+        clearSearch: 'Clear',
+        matchCount: '{n} matches'
+      },
+      onClearQuery: () => {}
+    })
+  )
+  assert.equal(idleComparative, '')
+
   const about = renderToStaticMarkup(React.createElement(AboutView))
   assert.match(about, /aria-label="Installed app version"/)
   assert.match(about, new RegExp(`data-app-version="${contractVersion}">${contractVersion}<`))
@@ -86,7 +101,7 @@ try {
     assert.match(icon, /focusable="false"/)
   }
 
-  console.log('verified exact-row, six-plaque, installed-version, and tab-icon UI contracts')
+  console.log('verified search-gated, exact-row, six-plaque, installed-version, and tab-icon UI contracts')
 } finally {
   await server.close()
 }
