@@ -11,9 +11,13 @@ import { foldFinals, toImperialAramaic, toMusnad } from './scripts.js'
 
 const HEBREW_POINTING = /[֑-ׇ]/g
 const COMBINING_MARKS = /\p{M}/gu
-// U+02BE ʾ, U+02BF ʿ, U+0027 ', U+2019 right quote, U+2018 left quote,
-// U+0060 grave accent
-const TRANSLIT_MARKS = /[ʾʿ'’‘`]/g
+// U+02BE ʾ, U+02BF ʿ, U+02BC ʼ (used by Strong's), U+0027 ',
+// U+2019 right quote, U+2018 left quote, U+0060 grave accent.
+const TRANSLIT_MARKS = /[ʾʿʼ'’‘`]/g
+// Egyptological aleph/ayin are spacing letters rather than combining marks,
+// so NFD does not simplify them. Folding both to a lets a plain keyboard
+// query find a headword that uses either scholarly sign.
+const EGYPTOLOGICAL_MARKS = /[ꜣꜥ]/g
 
 export function normalize(str) {
   if (!str) return ''
@@ -24,6 +28,7 @@ export function normalize(str) {
       .normalize('NFD')
       .replace(COMBINING_MARKS, '')
       .replace(TRANSLIT_MARKS, '')
+      .replace(EGYPTOLOGICAL_MARKS, 'a')
   ).trim()
 }
 

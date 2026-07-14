@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import DictionaryList from './components/DictionaryList.jsx'
 import ReferenceDictionaries from './components/ReferenceDictionaries.jsx'
+import MeaningSearch from './components/MeaningSearch.jsx'
 import RootsView from './components/RootsView.jsx'
 import SettingsView from './components/SettingsView.jsx'
 import AboutView from './components/AboutView.jsx'
@@ -44,7 +45,7 @@ const CONFIG = {
       about: 'About',
       settings: 'Settings'
     },
-    modes: { concepts: 'Comparative', strongs: 'Reference dictionaries' },
+    modes: { concepts: 'Comparative', strongs: 'Reference dictionaries', meaning: 'By meaning' },
     noResults: 'No entries match this search.',
     searchHint:
       'Search by English (lion), Hebrew (אריה), transliteration (labbu), or paste glyphs from any plaque.',
@@ -57,7 +58,34 @@ const CONFIG = {
     strongsLoading: 'Loading dictionary…',
     strongsLoadFailed:
       'This dictionary could not be loaded. Check your connection and try again.',
-    strongsPresentedNote: 'Presented as published.'
+    strongsPresentedNote: 'Presented as published.',
+    meaningSearchPlaceholder: 'Search by English or Hebrew meaning…',
+    meaningIntro:
+      'Automatic results share an English gloss. They are gathered for comparison, not verified as equivalents or cognates. Only the curated comparative cards are verified cross-language matches.',
+    meaningIndexLoading: 'Loading the compact meaning index…',
+    meaningIndexFailed:
+      'The meaning index could not be loaded. Open this mode once while online so it can be cached for offline use.',
+    meaningPromptTitle: 'Search one meaning across every dictionary',
+    meaningPromptHint:
+      'Try father, water, king, אָב, מַיִם, or a Hebrew transliteration such as ab or melek.',
+    meaningCapped: 'Very common glosses are capped per language.',
+    noMeaningResults: 'No indexed English meaning matches this search.',
+    noMeaningHint:
+      'Modern vocabulary may have little ancient coverage. Try a core word or a Hebrew headword.',
+    verifiedMatchesTitle: 'Verified comparative entries',
+    verifiedBadge: 'Verified comparative entry',
+    directMatchesTitle: 'Direct Hebrew / Aramaic headword matches',
+    directMatchTag: 'Direct dictionary headword match.',
+    meaningMatchTag: 'Matched by English meaning “{meaning}” — not a verified equivalent.',
+    egyptianCoverage:
+      'Only Egyptian entries with an explicit English gloss are searched; German-only entries are omitted.',
+    akkadianCoverage:
+      'Akkadian results come from the limited RINAP Neo-Assyrian sub-corpus, not a complete Akkadian dictionary.',
+    curatedOnlyCoverage:
+      'No reference dictionary is bundled; a verified comparative form appears above.',
+    noCuratedCoverage:
+      'No reference dictionary is bundled; not in database for this search.',
+    notFoundInGlosses: 'not found in indexed English glosses'
   }
 }
 // ---------------------------------------------------------------------------
@@ -173,7 +201,7 @@ export default function App() {
       {activeTab === 'dictionary' && (
         <main>
           <div className="segmented" role="tablist" aria-label="Dictionary mode">
-            {['concepts', 'strongs'].map((mode) => (
+            {['concepts', 'strongs', 'meaning'].map((mode) => (
               <button
                 key={mode}
                 role="tab"
@@ -242,6 +270,10 @@ export default function App() {
 
           {dictMode === 'strongs' && (
             <ReferenceDictionaries strings={CONFIG.strings} />
+          )}
+
+          {dictMode === 'meaning' && (
+            <MeaningSearch strings={CONFIG.strings} onRootClick={openRoot} />
           )}
         </main>
       )}

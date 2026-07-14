@@ -4,6 +4,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "gloss:index": "node scripts/build-gloss-index.mjs",
+    "prebuild": "npm run gloss:index",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",

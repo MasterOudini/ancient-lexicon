@@ -46,9 +46,10 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
         // The default 2 MiB limit would silently skip larger assets.
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
-        // The large reference dictionaries in public/dicts/ are not precached
-        // (they would bloat the install); they load on demand and are cached
-        // here after first open, so each is available offline once viewed.
+        // The large reference dictionaries and the ~8 MiB generated gloss
+        // index in public/dicts/ are not precached (they would bloat the
+        // install); they load on demand and are cached here after first open,
+        // so each is available offline once viewed.
         runtimeCaching: [
           {
             urlPattern: /\/dicts\/.*\.json$/,
