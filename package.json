@@ -8,6 +8,7 @@
     "prebuild": "npm run gloss:index",
     "dev": "vite",
     "build": "vite build",
+    "postbuild": "node scripts/verify-pwa-build.mjs",
     "preview": "vite preview",
     "test": "node scripts/smoke-test.mjs"
   },
