@@ -35,6 +35,7 @@ import {
 import { buildHebrewCatalog } from '../src/lib/hebrewCatalog.js'
 import {
   monitorServiceWorkerUpdates,
+  registerServiceWorkerUpdates,
   UPDATE_CHECK_INTERVAL_MS
 } from '../src/lib/pwaUpdates.js'
 
@@ -111,6 +112,53 @@ updateClock = 8000
 intervalCallback()
 await Promise.resolve()
 check('PWA periodically checks while it remains open', updateCalls === 5)
+
+const registrationWindow = new EventTarget()
+const registrationDocument = new EventTarget()
+const serviceWorker = new EventTarget()
+let registeredWorker
+let reloadCalls = 0
+registrationDocument.visibilityState = 'visible'
+registrationWindow.location = { reload: () => reloadCalls++ }
+registrationWindow.navigator = { onLine: true, serviceWorker }
+registrationWindow.setInterval = () => 1
+serviceWorker.controller = {}
+serviceWorker.register = async (url, options) => {
+  registeredWorker = { url, options }
+  return { installing: null, update: async () => {} }
+}
+await registerServiceWorkerUpdates({
+  windowObject: registrationWindow,
+  documentObject: registrationDocument,
+  baseUrl: '/ancient-lexicon/'
+})
+check(
+  'PWA worker registration bypasses HTTP caches and preserves project scope',
+  registeredWorker.url === '/ancient-lexicon/sw.js' &&
+    registeredWorker.options.scope === '/ancient-lexicon/' &&
+    registeredWorker.options.updateViaCache === 'none'
+)
+serviceWorker.dispatchEvent(new Event('controllerchange'))
+serviceWorker.dispatchEvent(new Event('controllerchange'))
+check('PWA reloads exactly once when an updated worker takes control', reloadCalls === 1)
+
+const firstInstallWindow = new EventTarget()
+const firstInstallDocument = new EventTarget()
+const firstInstallWorker = new EventTarget()
+let firstInstallReloads = 0
+firstInstallDocument.visibilityState = 'visible'
+firstInstallWindow.location = { reload: () => firstInstallReloads++ }
+firstInstallWindow.navigator = { onLine: true, serviceWorker: firstInstallWorker }
+firstInstallWindow.setInterval = () => 1
+firstInstallWorker.controller = null
+firstInstallWorker.register = async () => ({ installing: null, update: async () => {} })
+await registerServiceWorkerUpdates({
+  windowObject: firstInstallWindow,
+  documentObject: firstInstallDocument
+})
+firstInstallWorker.dispatchEvent(new Event('controllerchange'))
+firstInstallWorker.dispatchEvent(new Event('controllerchange'))
+check('PWA reloads only once when its first worker claims the page', firstInstallReloads === 1)
 
 // --- Script mappers ---------------------------------------------------------
 
@@ -411,6 +459,15 @@ check(
     referenceUiText.includes('data.latestRetainedRevisionTimestamp')
 )
 const viteConfigText = readFileSync(join(projectRoot, 'vite.config.js'), 'utf8')
+const mainText = readFileSync(join(projectRoot, 'src', 'main.jsx'), 'utf8')
+check(
+  'PWA build keeps one manual registration with immediate worker takeover',
+  viteConfigText.includes('injectRegister: false') &&
+    viteConfigText.includes('skipWaiting: true') &&
+    viteConfigText.includes('clientsClaim: true') &&
+    mainText.includes('registerServiceWorkerUpdates') &&
+    !mainText.includes('virtual:pwa-register')
+)
 const dictionaryRouteStart = viteConfigText.indexOf(
   "urlPattern: /\\/dicts\\/.*\\.json$/"
 )

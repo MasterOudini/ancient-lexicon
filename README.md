@@ -116,12 +116,14 @@ The app is fully usable offline after the first load: the service worker
 precaches the entire app shell, including the script fonts. New deployments
 are checked on launch; after this updater release has loaded once, checks are
 also attempted whenever the Home Screen app returns to the foreground or comes
-back online, and every five minutes while it is active. When a new release is
-found, it activates and reloads automatically. Unfinished Add-a-word drafts
-survive that reload, and the Home Screen icon does not need to be deleted or
-reinstalled. Large reference dictionaries remain on demand; while online, each
-open checks the deployed copy before falling back to its offline cache, so a
-new meaning index cannot remain paired with stale dictionary rows.
+back online, and every five minutes while it is active. Worker update requests
+bypass the browser HTTP cache so a cached worker cannot delay release detection.
+When a new release is found, it activates and reloads automatically.
+Unfinished Add-a-word drafts survive that reload, and the Home Screen icon does
+not need to be deleted or reinstalled. Large reference dictionaries remain on
+demand; while online, opening one checks the deployed copy before falling back
+to its offline cache, so a new meaning index cannot remain paired with stale
+dictionary rows.
 
 Note: iOS can clear the stored data of websites that have not been visited
 for a while. Custom entries and settings live in that storage, so export a

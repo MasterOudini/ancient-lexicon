@@ -23,6 +23,9 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Registration is handled in src/lib/pwaUpdates.js so the worker script
+      // itself always bypasses the HTTP cache on update checks.
+      injectRegister: false,
       manifest: {
         name: 'Ancient Lexicon',
         short_name: 'Lexicon',
@@ -47,6 +50,10 @@ export default defineConfig({
         ]
       },
       workbox: {
+        // Manual registration still needs the auto-update worker lifecycle:
+        // activate immediately and take control of open app windows.
+        skipWaiting: true,
+        clientsClaim: true,
         // Precache the whole app shell, including the script fonts, so the
         // curated app (comparative database, roots, Strong's) is fully usable
         // offline after the first load.
