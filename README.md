@@ -68,9 +68,9 @@ variables. Deploy it to any static host:
   `VITE_BASE=/<repo-name>/` — this sets the Vite base and the manifest
   start_url and scope together (see `vite.config.js`). The repository ships
   a ready-made workflow, `.github/workflows/deploy-pages.yml`, that builds
-  with the right base and deploys on every push; it requires GitHub Pages to
-  be available for the repository (public repository, or a plan that allows
-  Pages on private repositories) and Pages source set to GitHub Actions
+  with the right base and deploys every push to `main`; it requires GitHub
+  Pages to be available for the repository (public repository, or a plan that
+  allows Pages on private repositories) and Pages source set to GitHub Actions
   (the workflow attempts to enable this itself).
 
 The app must be served over HTTPS (or localhost) for the service worker and
@@ -83,7 +83,13 @@ Add to Home Screen to work.
 3. Tap Add to Home Screen.
 
 The app is fully usable offline after the first load: the service worker
-precaches the entire app shell, including the script fonts.
+precaches the entire app shell, including the script fonts. New deployments
+are checked on launch; after this updater release has loaded once, checks are
+also attempted whenever the Home Screen app returns to the foreground or comes
+back online, and every five minutes while it is active. When a new release is
+found, it activates and reloads automatically. Unfinished Add-a-word drafts
+survive that reload, and the Home Screen icon does not need to be deleted or
+reinstalled.
 
 Note: iOS can clear the stored data of websites that have not been visited
 for a while. Custom entries and settings live in that storage, so export a

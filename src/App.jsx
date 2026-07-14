@@ -111,10 +111,6 @@ export default function App() {
   const [selectedRootId, setSelectedRootId] = useState(null)
   const [query, setQuery] = useState('')
 
-  useEffect(() => {
-    setJSON(SETTINGS_KEY, { enabledLangs, theme })
-  }, [enabledLangs, theme])
-
   // Apply the theme to the document and keep the browser-chrome color in
   // step (the status bar around the installed app).
   useEffect(() => {
@@ -132,10 +128,6 @@ export default function App() {
     return () => media.removeEventListener('change', apply)
   }, [theme])
 
-  useEffect(() => {
-    setJSON(CUSTOM_ENTRIES_KEY, customEntries)
-  }, [customEntries])
-
   const allEntries = useMemo(
     () => [...LEXICON, ...customEntries],
     [customEntries]
@@ -152,10 +144,28 @@ export default function App() {
   )
   const allOn = enabledLangs.length === LANGUAGES.length
 
+  function updateSettings(nextEnabledLangs, nextTheme) {
+    setEnabledLangs(nextEnabledLangs)
+    setTheme(nextTheme)
+    setJSON(SETTINGS_KEY, {
+      enabledLangs: nextEnabledLangs,
+      theme: nextTheme
+    })
+  }
+
   function toggleLang(id) {
-    setEnabledLangs((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    )
+    const next = enabledLangs.includes(id)
+      ? enabledLangs.filter((x) => x !== id)
+      : [...enabledLangs, id]
+    updateSettings(next, theme)
+  }
+
+  function changeTheme(nextTheme) {
+    updateSettings(enabledLangs, nextTheme)
+  }
+
+  function changeEnabledLangs(nextEnabledLangs) {
+    updateSettings(nextEnabledLangs, theme)
   }
 
   // A root chip on a dictionary card navigates to that root's detail view.
@@ -168,23 +178,29 @@ export default function App() {
   }, [])
 
   const deleteCustomEntry = useCallback((id) => {
-    setCustomEntries((prev) => prev.filter((e) => e.id !== id))
-  }, [])
+    const next = customEntries.filter((entry) => entry.id !== id)
+    setCustomEntries(next)
+    setJSON(CUSTOM_ENTRIES_KEY, next)
+  }, [customEntries])
 
   const clearQuery = useCallback(() => setQuery(''), [])
 
   function addCustomEntry(entry) {
-    setCustomEntries((prev) => [...prev, entry])
+    const next = [...customEntries, entry]
+    setCustomEntries(next)
+    setJSON(CUSTOM_ENTRIES_KEY, next)
   }
 
   function importBackup({ settings, customEntries: imported }) {
-    if (Array.isArray(settings?.enabledLangs)) {
-      setEnabledLangs(settings.enabledLangs)
-    }
-    if (['auto', 'light', 'dark'].includes(settings?.theme)) {
-      setTheme(settings.theme)
-    }
+    const nextEnabledLangs = Array.isArray(settings?.enabledLangs)
+      ? settings.enabledLangs
+      : enabledLangs
+    const nextTheme = ['auto', 'light', 'dark'].includes(settings?.theme)
+      ? settings.theme
+      : theme
+    updateSettings(nextEnabledLangs, nextTheme)
     setCustomEntries(imported)
+    setJSON(CUSTOM_ENTRIES_KEY, imported)
   }
 
   return (
@@ -230,7 +246,7 @@ export default function App() {
                 <button
                   className={'chip' + (allOn ? ' on' : '')}
                   onClick={() =>
-                    setEnabledLangs(allOn ? [] : LANGUAGES.map((l) => l.id))
+                    changeEnabledLangs(allOn ? [] : LANGUAGES.map((l) => l.id))
                   }
                 >
                   {CONFIG.strings.allChip}
@@ -291,7 +307,7 @@ export default function App() {
         <SettingsView
           enabledLangs={enabledLangs}
           theme={theme}
-          onSetTheme={setTheme}
+          onSetTheme={changeTheme}
           customEntries={customEntries}
           onAddEntry={addCustomEntry}
           onDeleteEntry={deleteCustomEntry}

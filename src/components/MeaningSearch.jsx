@@ -85,7 +85,7 @@ export default function MeaningSearch({ strings, onRootClick }) {
   useEffect(() => {
     let alive = true
     const base = import.meta.env.BASE_URL || '/'
-    fetch(base + 'dicts/gloss-index.json')
+    fetch(base + 'dicts/gloss-index.json', { cache: 'no-cache' })
       .then((response) => {
         if (!response.ok) throw new Error('fetch failed: ' + response.status)
         return response.json()

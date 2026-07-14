@@ -32,6 +32,10 @@ import {
   expandGlossSense,
   searchGlossIndex
 } from '../src/lib/glossSearch.js'
+import {
+  monitorServiceWorkerUpdates,
+  UPDATE_CHECK_INTERVAL_MS
+} from '../src/lib/pwaUpdates.js'
 
 let failures = 0
 function check(name, cond) {
@@ -44,6 +48,68 @@ function check(name, cond) {
 }
 
 const cp = (...codes) => String.fromCodePoint(...codes)
+
+// --- Installed-app updates -------------------------------------------------
+
+const fakeWindow = new EventTarget()
+const fakeDocument = new EventTarget()
+fakeWindow.navigator = { onLine: true }
+fakeDocument.visibilityState = 'visible'
+let intervalCallback
+let updateInterval
+fakeWindow.setInterval = (callback, interval) => {
+  intervalCallback = callback
+  updateInterval = interval
+  return 1
+}
+let updateClock = 0
+let updateCalls = 0
+monitorServiceWorkerUpdates(
+  {
+    installing: null,
+    update: async () => {
+      updateCalls++
+    }
+  },
+  {
+    windowObject: fakeWindow,
+    documentObject: fakeDocument,
+    throttleMs: 1000,
+    now: () => updateClock
+  }
+)
+await Promise.resolve()
+check('PWA update polling uses the configured interval', updateInterval === UPDATE_CHECK_INTERVAL_MS)
+check('PWA checks for an update as soon as registration completes', updateCalls === 1)
+updateClock = 2000
+fakeWindow.dispatchEvent(new Event('focus'))
+await Promise.resolve()
+check('PWA checks for updates when the installed app regains focus', updateCalls === 2)
+fakeWindow.dispatchEvent(new Event('focus'))
+await Promise.resolve()
+check('PWA throttles duplicate lifecycle events', updateCalls === 2)
+updateClock = 4000
+fakeDocument.visibilityState = 'hidden'
+fakeDocument.dispatchEvent(new Event('visibilitychange'))
+await Promise.resolve()
+check('PWA does not check for updates while hidden', updateCalls === 2)
+fakeDocument.visibilityState = 'visible'
+fakeDocument.dispatchEvent(new Event('visibilitychange'))
+await Promise.resolve()
+check('PWA checks for updates when the installed app returns to the foreground', updateCalls === 3)
+updateClock = 6000
+fakeWindow.navigator.onLine = false
+fakeWindow.dispatchEvent(new Event('pageshow'))
+await Promise.resolve()
+check('PWA skips update checks while offline', updateCalls === 3)
+fakeWindow.navigator.onLine = true
+fakeWindow.dispatchEvent(new Event('online'))
+await Promise.resolve()
+check('PWA checks for updates when connectivity returns', updateCalls === 4)
+updateClock = 8000
+intervalCallback()
+await Promise.resolve()
+check('PWA periodically checks while it remains open', updateCalls === 5)
 
 // --- Script mappers ---------------------------------------------------------
 
