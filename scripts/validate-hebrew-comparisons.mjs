@@ -592,6 +592,7 @@ check(
 )
 
 const uiText = readFileSync(join(root, 'src', 'components', 'HebrewComparative.jsx'), 'utf8')
+const stylesText = readFileSync(join(root, 'src', 'styles.css'), 'utf8')
 const aboutText = readFileSync(join(root, 'src', 'components', 'AboutView.jsx'), 'utf8')
 const loaderText = readFileSync(join(root, 'src', 'lib', 'hebrewComparisonLoader.js'), 'utf8')
 const viteText = readFileSync(join(root, 'vite.config.js'), 'utf8')
@@ -610,6 +611,20 @@ check(
   'UI limits candidate expansion to four and never adds Hebrew/English plaques',
   uiText.includes('slot.alternatives.slice(0, 4)') &&
     !REQUIRED_LANGUAGES.includes('hebrew') && !REQUIRED_LANGUAGES.includes('english')
+)
+check(
+  'every Hebrew result exposes a visible mobile comparison control',
+  uiText.includes('className="hebrew-row-action"') &&
+    uiText.includes('Open comparison') && uiText.includes('Close comparison') &&
+    stylesText.includes('.hebrew-row-action') &&
+    stylesText.includes('flex: 1 0 100%')
+)
+check(
+  'expanded mobile rows remain renderable and failed shard loads can retry',
+  stylesText.includes('.hebrew-comparative-row[open] {') &&
+    stylesText.includes('content-visibility: visible') &&
+    uiText.includes("status === 'loading' || status === 'ready'") &&
+    uiText.includes('close and reopen this entry to retry')
 )
 check(
   'catalog and all 64 opened shards have separate NetworkFirst caches',

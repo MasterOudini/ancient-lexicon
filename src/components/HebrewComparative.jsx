@@ -199,7 +199,7 @@ function HebrewEntryRow({ entry }) {
   const [status, setStatus] = useState('idle')
 
   function openEntry(event) {
-    if (!event.currentTarget.open || status !== 'idle') return
+    if (!event.currentTarget.open || status === 'loading' || status === 'ready') return
     setStatus('loading')
     loadHebrewComparison(entry)
       .then((resolvedSenses) => {
@@ -224,11 +224,16 @@ function HebrewEntryRow({ entry }) {
         <span className="lex-id">{entry.sourceLabel}</span>
         {entry.partOfSpeech && <span className="lex-id">{entry.partOfSpeech}</span>}
         <span className="lex-def">{entry.definition}</span>
+        <span className="hebrew-row-action">
+          <span className="hebrew-row-action-open">Open comparison</span>
+          <span className="hebrew-row-action-close">Close comparison</span>
+          <span className="hebrew-row-action-icon" aria-hidden="true">⌄</span>
+        </span>
       </summary>
       <div className="lex-body universal-card-shell">
         {status === 'loading' && <p>Loading sense-specific comparisons…</p>}
         {status === 'failed' && (
-          <p>Comparison data could not be loaded. Open this entry once while online so it can be cached.</p>
+          <p>Comparison data could not be loaded. Go online, then close and reopen this entry to retry.</p>
         )}
         {status === 'ready' && senses && <UniversalComparisonCard entry={entry} senses={senses} />}
       </div>
@@ -293,7 +298,7 @@ export default function HebrewComparative({ query, strings, onClearQuery }) {
   return (
     <section className="hebrew-comparative">
       <div className="note-block">
-        Each Hebrew source entry opens a sense-specific semantic comparison. English explains the bridge; it is not a comparison language.
+        Every Hebrew source entry has a six-language, sense-specific comparison card. Tap Open comparison on any entry. English explains the bridge; it is not a comparison language.
       </div>
       <p className="result-count" aria-live="polite">
         {(query.trim() ? strings.matchCount : strings.entryCount)

@@ -1062,6 +1062,49 @@ details.langfields summary {
   padding: 14px 16px 10px;
 }
 
+.hebrew-comparative-row[open] {
+  content-visibility: visible;
+  contain-intrinsic-size: none;
+}
+
+.hebrew-row-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  margin-inline-start: auto;
+  padding: 3px 9px;
+  color: var(--faience);
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.hebrew-row-action-close {
+  display: none;
+}
+
+.hebrew-comparative-row[open] .hebrew-row-action-open {
+  display: none;
+}
+
+.hebrew-comparative-row[open] .hebrew-row-action-close {
+  display: inline;
+}
+
+.hebrew-row-action-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.hebrew-comparative-row[open] .hebrew-row-action-icon {
+  transform: rotate(180deg);
+}
+
 .hebrew-comparative-row[open] > summary .lex-lemma {
   font-size: 2rem;
   line-height: 1.2;
@@ -1234,6 +1277,11 @@ details.langfields summary {
 /* ---- Small screens -------------------------------------------------------- */
 
 @media (max-width: 480px) {
+  .hebrew-row-action {
+    flex: 1 0 100%;
+    margin-inline-start: 0;
+  }
+
   .comparison-candidate-main {
     flex-wrap: wrap;
   }
