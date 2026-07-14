@@ -50,6 +50,13 @@ export default function AboutView() {
           or securely conventional form belongs there — absence is
           information.
         </p>
+        <p>
+          The &lsquo;By meaning&rsquo; search automatically gathers entries whose
+          English glosses share a word. Those rows are leads for the reader
+          to judge, not verified equivalents, cognates, or claims of lexical
+          relationship. Only cards explicitly marked &lsquo;Verified comparative
+          entry&rsquo; are hand-curated cross-language comparisons.
+        </p>
         <p>{HEBREW_CAVEAT}</p>
         {LANGUAGES.map((l) => (
           <p key={l.id}>{l.caveat}</p>
@@ -83,7 +90,7 @@ export default function AboutView() {
       <div className="settings-section">
         <h2>Reference dictionaries</h2>
         <p>
-          The Dictionary tab&rsquo;s second mode is a shelf of complete
+          The Dictionary tab&rsquo;s Reference dictionaries mode is a shelf of complete
           published lexicons. Each is either public domain or openly licensed,
           reproduced unmodified and presented as published &mdash; they are the
           works themselves, not the hand-curated comparative data. The older
