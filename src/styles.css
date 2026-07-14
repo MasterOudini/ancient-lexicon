@@ -190,7 +190,7 @@ button {
 
 .segment {
   flex: 1 1 0;
-  min-height: 40px;
+  min-height: 44px;
   padding: 6px 10px;
   border-radius: 9px;
   color: var(--ink-soft);
@@ -398,6 +398,15 @@ details.infobox ul {
   border: 1px solid var(--faience);
   border-radius: 999px;
   padding: 1px 8px;
+}
+
+.badge-verified {
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  color: var(--faience);
+  border: 1px solid var(--faience);
+  border-radius: 999px;
+  padding: 2px 8px;
 }
 
 .btn-delete {
@@ -691,6 +700,7 @@ details.infobox ul {
 }
 
 .btn {
+  min-height: 44px;
   padding: 8px 16px;
   border: 1px solid var(--faience);
   border-radius: 10px;
@@ -921,6 +931,53 @@ details.langfields summary {
   color: var(--ink-soft);
   text-align: center;
   margin: 18px 0 8px;
+}
+
+/* ---- Cross-dictionary meaning search ----------------------------------- */
+
+.meaning-intro {
+  margin: 0 0 12px;
+  color: var(--ink);
+}
+
+.meaning-prompt {
+  margin-top: 12px;
+}
+
+.meaning-row summary {
+  flex-wrap: wrap;
+}
+
+.meaning-tag,
+.direct-tag {
+  flex: 1 0 100%;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  letter-spacing: 0.03em;
+  color: var(--ink-soft);
+}
+
+.direct-tag {
+  color: var(--faience);
+}
+
+.meaning-coverage-note,
+.lex-source-note {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+}
+
+.meaning-coverage-note {
+  margin: -4px 2px 10px;
+}
+
+.meaning-empty {
+  margin: -4px 2px 12px;
+}
+
+.lex-source-note {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
 }
 
 /* ---- About ---------------------------------------------------------------- */
