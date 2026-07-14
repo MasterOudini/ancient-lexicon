@@ -16,7 +16,7 @@ export async function loadReferenceDictionary(dict) {
         data = mod.default
       } else {
         const base = import.meta.env.BASE_URL || '/'
-        const res = await fetch(base + dict.source.url)
+        const res = await fetch(base + dict.source.url, { cache: 'no-cache' })
         if (!res.ok) throw new Error('fetch failed: ' + res.status)
         data = await res.json()
       }

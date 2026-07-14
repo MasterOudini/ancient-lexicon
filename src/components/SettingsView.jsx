@@ -1,6 +1,12 @@
 import { useRef, useState } from 'react'
 import { LANGUAGES } from '../data/languages.js'
-import { buildExport, parseImport } from '../lib/storage.js'
+import {
+  buildExport,
+  getJSON,
+  NEW_ENTRY_DRAFT_KEY,
+  parseImport,
+  setJSON
+} from '../lib/storage.js'
 import { foldFinals } from '../lib/scripts.js'
 
 // Settings: appearance, backup (export/import), and add-a-word. The
@@ -25,17 +31,45 @@ export default function SettingsView({
   const [formStatus, setFormStatus] = useState('')
 
   // Add-a-word form state.
-  const [english, setEnglish] = useState('')
-  const [hebrewWord, setHebrewWord] = useState('')
-  const [hebrewTranslit, setHebrewTranslit] = useState('')
-  const [rootLetters, setRootLetters] = useState('')
-  const [langFields, setLangFields] = useState({})
+  const [savedDraft] = useState(() => getJSON(NEW_ENTRY_DRAFT_KEY, {}))
+  const [english, setEnglish] = useState(
+    typeof savedDraft?.english === 'string' ? savedDraft.english : ''
+  )
+  const [hebrewWord, setHebrewWord] = useState(
+    typeof savedDraft?.hebrewWord === 'string' ? savedDraft.hebrewWord : ''
+  )
+  const [hebrewTranslit, setHebrewTranslit] = useState(
+    typeof savedDraft?.hebrewTranslit === 'string' ? savedDraft.hebrewTranslit : ''
+  )
+  const [rootLetters, setRootLetters] = useState(
+    typeof savedDraft?.rootLetters === 'string' ? savedDraft.rootLetters : ''
+  )
+  const [langFields, setLangFields] = useState(
+    savedDraft?.langFields && typeof savedDraft.langFields === 'object'
+      ? savedDraft.langFields
+      : {}
+  )
+
+  // Persist on the input event itself so an automatic service-worker reload
+  // cannot race React's passive effects and erase the latest edit.
+  function saveDraft(changes) {
+    setJSON(NEW_ENTRY_DRAFT_KEY, {
+      english,
+      hebrewWord,
+      hebrewTranslit,
+      rootLetters,
+      langFields,
+      ...changes
+    })
+  }
 
   function setLangField(langId, field, value) {
-    setLangFields((prev) => ({
-      ...prev,
-      [langId]: { ...(prev[langId] || {}), [field]: value }
-    }))
+    const next = {
+      ...langFields,
+      [langId]: { ...(langFields[langId] || {}), [field]: value }
+    }
+    setLangFields(next)
+    saveDraft({ langFields: next })
   }
 
   function handleExport() {
@@ -125,6 +159,7 @@ export default function SettingsView({
       forms,
       custom: true
     })
+    setJSON(NEW_ENTRY_DRAFT_KEY, {})
     setEnglish('')
     setHebrewWord('')
     setHebrewTranslit('')
@@ -192,7 +227,10 @@ export default function SettingsView({
             English glosses (comma-separated)
             <input
               value={english}
-              onChange={(e) => setEnglish(e.target.value)}
+              onChange={(e) => {
+                setEnglish(e.target.value)
+                saveDraft({ english: e.target.value })
+              }}
               placeholder="water, waters"
             />
           </label>
@@ -202,14 +240,20 @@ export default function SettingsView({
               dir="rtl"
               lang="he"
               value={hebrewWord}
-              onChange={(e) => setHebrewWord(e.target.value)}
+              onChange={(e) => {
+                setHebrewWord(e.target.value)
+                saveDraft({ hebrewWord: e.target.value })
+              }}
             />
           </label>
           <label className="field">
             Hebrew transliteration
             <input
               value={hebrewTranslit}
-              onChange={(e) => setHebrewTranslit(e.target.value)}
+              onChange={(e) => {
+                setHebrewTranslit(e.target.value)
+                saveDraft({ hebrewTranslit: e.target.value })
+              }}
             />
           </label>
           <label className="field">
@@ -218,7 +262,10 @@ export default function SettingsView({
               dir="rtl"
               lang="he"
               value={rootLetters}
-              onChange={(e) => setRootLetters(e.target.value)}
+              onChange={(e) => {
+                setRootLetters(e.target.value)
+                saveDraft({ rootLetters: e.target.value })
+              }}
             />
           </label>
 

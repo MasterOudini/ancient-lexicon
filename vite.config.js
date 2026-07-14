@@ -9,9 +9,16 @@ import { VitePWA } from 'vite-plugin-pwa'
 // match; set VITE_BASE=/<repo-name>/ at build time to do all three at once
 // (.github/workflows/deploy-pages.yml does exactly this).
 const base = process.env.VITE_BASE || '/'
+// A data-only commit may otherwise produce a byte-identical app shell, which
+// gives an installed service worker nothing new to detect. GitHub supplies a
+// stable SHA for each deployment; local builds get a unique diagnostic id.
+const buildId = (process.env.GITHUB_SHA || `local-${Date.now().toString(36)}`).slice(0, 18)
 
 export default defineConfig({
   base,
+  define: {
+    __APP_BUILD_ID__: JSON.stringify(buildId)
+  },
   plugins: [
     react(),
     VitePWA({
@@ -48,9 +55,20 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         // The large reference dictionaries and the ~8 MiB generated gloss
         // index in public/dicts/ are not precached (they would bloat the
-        // install); they load on demand and are cached here after first open,
-        // so each is available offline once viewed.
+        // install). Meaning search waits for the current index when online;
+        // published dictionaries keep their fast cached-first behavior.
         runtimeCaching: [
+          {
+            urlPattern: /\/dicts\/gloss-index\.json$/,
+            handler: 'NetworkFirst',
+            options: {
+              // Keep the established cache name so this upgrade can still
+              // read an index that an existing installation cached offline.
+              cacheName: 'reference-dictionaries',
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          },
           {
             urlPattern: /\/dicts\/.*\.json$/,
             handler: 'StaleWhileRevalidate',

@@ -5,6 +5,7 @@
 
 export const SETTINGS_KEY = 'ancient-lexicon.settings.v1'
 export const CUSTOM_ENTRIES_KEY = 'ancient-lexicon.custom-entries.v1'
+export const NEW_ENTRY_DRAFT_KEY = 'ancient-lexicon.new-entry-draft.v1'
 
 export function getJSON(key, fallback) {
   try {
