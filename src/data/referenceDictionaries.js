@@ -1,7 +1,7 @@
-// Registry of the full reference dictionaries browsable in the Dictionary
-// tab's "Reference dictionaries" mode. These are complete published works —
-// public domain or openly licensed — presented as published, distinct from
-// the hand-curated comparative database.
+// Registry of the reference dictionaries and open lexical datasets browsable
+// in the Dictionary tab. Each source is public domain or openly licensed and
+// keeps its own coverage/provenance label; a compact community wordlist must
+// never be presented as if it were a comprehensive scholarly dictionary.
 //
 // Each dictionary's data is a JSON file of the shape
 //   { work, license?, conversion, count, entries: [ ... ] }
@@ -115,6 +115,84 @@ export const REFERENCE_DICTIONARIES = [
     license: 'CC BY-SA 3.0',
     attribution:
       'Akkadian glossary of RINAP (Royal Inscriptions of the Neo-Assyrian Period), ORACC / University of Pennsylvania, CC BY-SA 3.0. One Neo-Assyrian sub-corpus, not the full Akkadian lexicon.'
+  },
+  {
+    id: 'hittite-iecor',
+    label: 'Hittite (IE-CoR)',
+    language: 'Hittite',
+    lang: 'hit',
+    dir: 'ltr',
+    index: 'latin',
+    source: { kind: 'url', url: 'dicts/hittite-iecor.json' },
+    fields: {
+      head: 'lemma',
+      sub: null,
+      ref: 'conceptId',
+      refPrefix: 'concept ',
+      def: 'def',
+      extra: [
+        { key: 'sourceGloss', label: 'IE-CoR contributor gloss (source wording; may be non-English; not meaning-indexed)' },
+        { key: 'spelling', label: 'Syllabic spelling (transliterated)' },
+        { key: 'note', label: 'IE-CoR note' },
+        { key: 'cognateSet', label: 'IE-CoR cognate-set ID' }
+      ]
+    },
+    license: 'CC BY 4.0',
+    attribution:
+      'IE-CoR release v1.2 (DOI 10.5281/zenodo.13304537), Heggarty, Anderson, Scarborough et al.; Hittite data by Matilde Serangeli and Matthew Scarborough. IE-CoR has a 170-concept frame; this attested-form subset retains 133 Hittite forms across 130 concepts, not a comprehensive dictionary.'
+  },
+  {
+    id: 'hittite-wiktionary',
+    label: 'Hittite (Wiktionary)',
+    language: 'Hittite',
+    lang: 'hit',
+    dir: 'ltr',
+    index: 'latin',
+    source: { kind: 'url', url: 'dicts/hittite-wiktionary.json' },
+    fields: {
+      head: 'lemma',
+      sub: 'pos',
+      ref: null,
+      def: 'def',
+      script: 'script',
+      scriptClass: 'script-cuneiform',
+      scriptDir: 'ltr',
+      extra: [
+        { key: 'pron', label: 'Pronunciation (Wiktionary)' },
+        { key: 'source', label: 'Wiktionary source revision', href: true, linkLabel: 'Open exact source revision' },
+        { key: 'revision', label: 'Revision ID' },
+        { key: 'timestamp', label: 'Revision timestamp' }
+      ]
+    },
+    license: 'CC BY-SA 4.0',
+    attribution:
+      'A dated, transformed snapshot of English Wiktionary Hittite lemma pages with page and revision attribution. Community-authored coverage, not a comprehensive scholarly Hittite dictionary.'
+  },
+  {
+    id: 'osa-wiktionary',
+    label: 'OSA varieties (Wiktionary)',
+    language: 'Old South Arabian',
+    dir: 'ltr',
+    index: 'latin',
+    source: { kind: 'url', url: 'dicts/osa-wiktionary.json' },
+    fields: {
+      head: 'lemma',
+      sub: 'pos',
+      ref: 'variety',
+      def: 'def',
+      script: 'script',
+      scriptClass: 'script-osa',
+      scriptDir: 'rtl',
+      extra: [
+        { key: 'variety', label: 'Language variety' },
+        { key: 'source', label: 'Wiktionary source revision', href: true, linkLabel: 'Open exact source revision' },
+        { key: 'revision', label: 'Revision ID' },
+        { key: 'timestamp', label: 'Revision timestamp' }
+      ]
+    },
+    license: 'CC BY-SA 4.0',
+    attribution:
+      'A dated, transformed snapshot of English Wiktionary Old South Arabian, Sabaean, Minaean, and Qatabanian lemma pages with exact page-revision attribution. Principally Sabaean community coverage, with small Minaean and Qatabanian subsets; not a comprehensive dictionary of the language family.'
   }
 ]
 

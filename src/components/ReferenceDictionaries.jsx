@@ -50,6 +50,7 @@ export default function ReferenceDictionaries({ strings }) {
       rec,
       head: normalize(rec[f.head] || ''),
       sub: normalize(f.sub ? rec[f.sub] || '' : ''),
+      script: normalize(f.script ? rec[f.script] || '' : ''),
       def: (rec[f.def] || '').toLowerCase(),
       idLower: String(rec.id || '').toLowerCase()
     }))
@@ -67,9 +68,9 @@ export default function ReferenceDictionaries({ strings }) {
       for (const item of index) {
         let score = 0
         if (numId && item.idLower.replace(/^h/, '') === numId) score = 5
-        else if (nq && (item.head === nq || item.sub === nq)) score = 4
-        else if (nq && (item.head.startsWith(nq) || item.sub.startsWith(nq))) score = 3
-        else if (nq && (item.head.includes(nq) || item.sub.includes(nq))) score = 2
+        else if (nq && (item.head === nq || item.sub === nq || item.script === nq)) score = 4
+        else if (nq && (item.head.startsWith(nq) || item.sub.startsWith(nq) || item.script.startsWith(nq))) score = 3
+        else if (nq && (item.head.includes(nq) || item.sub.includes(nq) || item.script.includes(nq))) score = 2
         else if (item.def.includes(ql)) score = 1
         if (score > 0) scored.push({ item, score })
       }
@@ -137,6 +138,52 @@ export default function ReferenceDictionaries({ strings }) {
 
       {status === 'ready' && data && (
         <>
+          <section className="dictionary-provenance" aria-label="Source, license, and coverage">
+            <h2>{data.work}</h2>
+            <p>{dict.attribution}</p>
+            {data.conversion && (
+              <p>
+                <span className="dictionary-provenance-label">Transformation:</span>{' '}
+                {data.conversion}
+              </p>
+            )}
+            {data.fetchedAt && (
+              <p>
+                <span className="dictionary-provenance-label">Dataset fetched:</span>{' '}
+                <time dateTime={data.fetchedAt}>{data.fetchedAt}</time>
+                {data.latestRetainedRevisionTimestamp && (
+                  <>
+                    {' · '}Latest retained source revision:{' '}
+                    <time dateTime={data.latestRetainedRevisionTimestamp}>
+                      {data.latestRetainedRevisionTimestamp}
+                    </time>
+                  </>
+                )}
+              </p>
+            )}
+            {(data.license || (data.source && /^https?:\/\//.test(data.source))) && (
+              <p className="dictionary-provenance-links">
+                {data.license && (
+                  <>
+                    License:{' '}
+                    {data.licenseUrl ? (
+                      <a href={data.licenseUrl} target="_blank" rel="noreferrer">
+                        {data.license}
+                      </a>
+                    ) : data.license}
+                  </>
+                )}
+                {data.source && /^https?:\/\//.test(data.source) && (
+                  <>
+                    {data.license && <span aria-hidden="true"> · </span>}
+                    <a href={data.source} target="_blank" rel="noreferrer">
+                      Open source
+                    </a>
+                  </>
+                )}
+              </p>
+            )}
+          </section>
           <input
             className="searchbar"
             type="search"
@@ -191,11 +238,16 @@ export default function ReferenceDictionaries({ strings }) {
             return (
               <details className="lexrow" key={rec.id}>
                 <summary>
-                  <span className="lex-lemma" dir={dict.dir} lang={dict.index === 'hebrew' ? 'he' : undefined}>
+                  <span className="lex-lemma" dir={dict.dir} lang={rec.lang || dict.lang || (dict.index === 'hebrew' ? 'he' : undefined)}>
                     {rec[f.head]}
                   </span>
                   {f.script && rec[f.script] && (
-                    <span className={'lex-script ' + (f.scriptClass || '')} aria-hidden="true">
+                    <span
+                      className={'lex-script ' + (f.scriptClass || '')}
+                      dir={f.scriptDir}
+                      lang={rec.lang || dict.lang}
+                      aria-hidden="true"
+                    >
                       {rec[f.script]}
                     </span>
                   )}
@@ -208,12 +260,16 @@ export default function ReferenceDictionaries({ strings }) {
                 <div className="lex-body">
                   <p>{rec[f.def]}</p>
                   {(f.extra || []).map(
-                    (ex) =>
-                      rec[ex.key] && (
-                        <p className="lex-kjv" key={ex.key}>
-                          {ex.label}: {rec[ex.key]}
-                        </p>
-                      )
+                    (ex) => rec[ex.key] && (
+                      <p className="lex-kjv" key={ex.key}>
+                        {ex.label}:{' '}
+                        {ex.href ? (
+                          <a href={rec[ex.key]} target="_blank" rel="noreferrer">
+                            {ex.linkLabel || rec[ex.key]}
+                          </a>
+                        ) : rec[ex.key]}
+                      </p>
+                    )
                   )}
                 </div>
               </details>
@@ -227,10 +283,6 @@ export default function ReferenceDictionaries({ strings }) {
                 .replace('{total}', String(results.length))}
             </p>
           )}
-          <p className="lex-attribution">
-            {data.work}
-            {data.license ? ' — ' + data.license : ''}. {strings.strongsPresentedNote}
-          </p>
         </>
       )}
     </>

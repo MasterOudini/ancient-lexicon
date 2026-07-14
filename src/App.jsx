@@ -58,7 +58,6 @@ const CONFIG = {
     strongsLoading: 'Loading dictionary…',
     strongsLoadFailed:
       'This dictionary could not be loaded. Check your connection and try again.',
-    strongsPresentedNote: 'Presented as published.',
     meaningSearchPlaceholder: 'Search by English or Hebrew meaning…',
     meaningIntro:
       'Automatic results share an English gloss. They are gathered for comparison, not verified as equivalents or cognates. Only the curated comparative cards are verified cross-language matches.',
@@ -81,10 +80,12 @@ const CONFIG = {
       'Only Egyptian entries with an explicit English gloss are searched; German-only entries are omitted.',
     akkadianCoverage:
       'Akkadian results come from the limited RINAP Neo-Assyrian sub-corpus, not a complete Akkadian dictionary.',
+    hittiteCoverage:
+      'Open Hittite coverage combines expert IE-CoR core concepts with a small community Wiktionary lexicon. It is not the Chicago Hittite Dictionary and is not a complete Hittite lexicon.',
+    osaCoverage:
+      'Open Old South Arabian coverage is a small community Wiktionary layer, mainly Sabaean with tiny Minaean and Qatabanian subsets. DASI is an open inscription corpus, not a word-to-English dictionary, so it is not used to invent lexical matches.',
     curatedOnlyCoverage:
-      'No reference dictionary is bundled; a verified comparative form appears above.',
-    noCuratedCoverage:
-      'No reference dictionary is bundled; not in database for this search.',
+      'No automatic open-dataset match; a verified comparative form appears above.',
     notFoundInGlosses: 'not found in indexed English glosses'
   }
 }

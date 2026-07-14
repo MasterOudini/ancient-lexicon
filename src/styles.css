@@ -842,6 +842,7 @@ details.langfields summary {
 .lexrow summary {
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
   gap: 10px;
   padding: 9px 12px;
   cursor: pointer;
@@ -857,7 +858,9 @@ details.langfields summary {
   font-family: var(--serif);
   font-weight: 500;
   font-size: 1.2rem;
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .lex-xlit {
@@ -871,7 +874,9 @@ details.langfields summary {
 .lex-script {
   font-size: 1.15rem;
   color: var(--ink);
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .dictpicker .chip-lang {
@@ -919,6 +924,14 @@ details.langfields summary {
   margin: 6px 0;
 }
 
+.lex-body a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--faience);
+  text-underline-offset: 0.15em;
+}
+
 .lex-kjv,
 .lex-pron {
   color: var(--ink-soft);
@@ -933,6 +946,48 @@ details.langfields summary {
   margin: 18px 0 8px;
 }
 
+.dictionary-provenance {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--plaque);
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+
+.dictionary-provenance h2 {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.dictionary-provenance p {
+  margin: 6px 0;
+}
+
+.dictionary-provenance-label {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.dictionary-provenance-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 4px;
+}
+
+.dictionary-provenance a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--faience);
+  text-underline-offset: 0.15em;
+}
+
 /* ---- Cross-dictionary meaning search ----------------------------------- */
 
 .meaning-intro {
@@ -942,10 +997,6 @@ details.langfields summary {
 
 .meaning-prompt {
   margin-top: 12px;
-}
-
-.meaning-row summary {
-  flex-wrap: wrap;
 }
 
 .meaning-tag,

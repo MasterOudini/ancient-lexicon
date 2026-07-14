@@ -389,11 +389,52 @@ check(
 )
 
 // --- The on-demand reference dictionaries in public/dicts/ ------------------
-// Each is a complete published work loaded at runtime; check structure and
-// that every one declared in the registry has its data file present.
+// Each is a published dictionary or openly licensed lexical dataset loaded at
+// runtime; check structure and that every registry item has its data file.
 
 const projectRoot = join(here, '..')
 const dictsDir = join(projectRoot, 'public', 'dicts')
+const referenceUiText = readFileSync(
+  join(projectRoot, 'src', 'components', 'ReferenceDictionaries.jsx'),
+  'utf8'
+)
+check(
+  'reference source scope, transformation, and links render before dictionary entries',
+  referenceUiText.indexOf('className="dictionary-provenance"') >= 0 &&
+    referenceUiText.indexOf('className="dictionary-provenance"') <
+      referenceUiText.indexOf('results.slice(0, visible)') &&
+    referenceUiText.includes('data.conversion') &&
+    referenceUiText.includes('data.licenseUrl') &&
+    referenceUiText.includes('data.source') &&
+    referenceUiText.includes('data.fetchedAt') &&
+    referenceUiText.includes('data.latestRetainedRevisionTimestamp')
+)
+const viteConfigText = readFileSync(join(projectRoot, 'vite.config.js'), 'utf8')
+const dictionaryRouteStart = viteConfigText.indexOf(
+  "urlPattern: /\\/dicts\\/.*\\.json$/"
+)
+const dictionaryRouteHeader = dictionaryRouteStart >= 0
+  ? viteConfigText.slice(
+      dictionaryRouteStart,
+      viteConfigText.indexOf('options:', dictionaryRouteStart)
+    )
+  : ''
+check(
+  'all runtime dictionary JSON uses network-first freshness with offline fallback',
+  dictionaryRouteHeader.includes("handler: 'NetworkFirst'")
+)
+const dictionaryLoaderText = readFileSync(
+  join(projectRoot, 'src', 'lib', 'referenceDictionaryLoader.js'),
+  'utf8'
+)
+check(
+  'parsed dictionary caches reset safely when an updated worker takes control',
+  dictionaryLoaderText.includes(
+    "addEventListener('controllerchange', clearReferenceDictionaryCaches)"
+  ) &&
+    dictionaryLoaderText.includes('generation !== cacheGeneration') &&
+    dictionaryLoaderText.includes('PENDING.get(dict.id) === pending')
+)
 const registryText = readFileSync(
   join(dataDir, 'referenceDictionaries.js'),
   'utf8'
@@ -434,6 +475,112 @@ for (const file of urlDicts) {
   )
   if (registered) referenceData.set(registered.id, dict)
 }
+
+const hittiteIecor = referenceData.get('hittite-iecor')
+check(
+  'IE-CoR Hittite subset records its exact open source and attested-form filtering',
+  hittiteIecor?.doi === '10.5281/zenodo.13304537' &&
+    hittiteIecor?.license === 'CC BY 4.0' &&
+    hittiteIecor?.licenseUrl === 'https://creativecommons.org/licenses/by/4.0/' &&
+    hittiteIecor?.excludedReconstructed === 4 &&
+    hittiteIecor?.omittedReconstructedSpellings === 5
+)
+check(
+  'IE-CoR bundled fields contain no reconstructed starred form',
+  hittiteIecor?.entries.every((entry) => !JSON.stringify(entry).includes('*'))
+)
+const iecorLeg = hittiteIecor?.entries.find((entry) => entry.id === '80-93-1')
+check(
+  'IE-CoR meaning guides use authoritative English concepts, not contributor glosses',
+  hittiteIecor?.entries.every((entry) => entry.def === entry.concept) &&
+    iecorLeg?.def === 'leg' &&
+    /Beines/i.test(iecorLeg?.sourceGloss || '') &&
+    hittiteIecor.entries.every((entry) => !/Beines/i.test(entry.def))
+)
+
+const hittiteWiktionary = referenceData.get('hittite-wiktionary')
+const osaWiktionary = referenceData.get('osa-wiktionary')
+const exactRevisionSource = (entry) =>
+  /^https:\/\/en\.wiktionary\.org\/w\/index\.php\?title=.+&oldid=\d+$/.test(entry.source) &&
+  Number.isInteger(entry.revision) &&
+  /^\d{4}-\d{2}-\d{2}T/.test(entry.timestamp)
+const truthfulWiktionaryFetchMetadata = (data) => {
+  const latestRetainedRevisionTimestamp = data.entries.reduce(
+    (latest, entry) => (entry.timestamp > latest ? entry.timestamp : latest),
+    ''
+  )
+  return (
+    !Object.hasOwn(data, 'snapshot') &&
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(data.fetchedAt) &&
+    data.latestRetainedRevisionTimestamp === latestRetainedRevisionTimestamp &&
+    Date.parse(data.fetchedAt) >= Date.parse(latestRetainedRevisionTimestamp)
+  )
+}
+check(
+  'Wiktionary snapshots select CC BY-SA 4.0 and retain exact revision attribution',
+  [hittiteWiktionary, osaWiktionary].every((data) =>
+    data?.license === 'CC BY-SA 4.0' &&
+    data?.licenseUrl === 'https://creativecommons.org/licenses/by-sa/4.0/' &&
+    data.entries.every(exactRevisionSource) &&
+    truthfulWiktionaryFetchMetadata(data)
+  )
+)
+check(
+  'Hittite Wiktionary headwords and scripts are clean and correctly tagged',
+  hittiteWiktionary?.entries.every((entry) =>
+    entry.lang === 'hit' &&
+    !entry.lemma.includes('/') &&
+    !/[<>{}\[\]]/.test(`${entry.lemma}${entry.script}`) &&
+    !JSON.stringify(entry).includes('*') &&
+    [...entry.script].every((char) => char === '-' || inCuneiform(char.codePointAt(0)))
+  )
+)
+check(
+  'truncated Wiktionary comment does not leak into the Hittite headword',
+  hittiteWiktionary?.entries.find(
+    (entry) => entry.id === 'wiktionary-hittite-hit-1022842-verb-1'
+  )?.lemma === 'i-ya-at-ta'
+)
+check(
+  'bracket-delimited Hittite IPA is separated from both known headwords',
+  [
+    {
+      id: 'wiktionary-hittite-hit-6895917-adjective-1',
+      lemma: 'iš-ḫa-nu-wa-an-za',
+      pron: '[ʔsχn̩want͡s]'
+    },
+    {
+      id: 'wiktionary-hittite-hit-7037188-adjective-1',
+      lemma: 'iš-ḫar-wa-an-za',
+      pron: '[ʔsχr̩want͡s]'
+    }
+  ].every(({ id, lemma, pron }) => {
+    const entry = hittiteWiktionary?.entries.find((candidate) => candidate.id === id)
+    return entry?.lemma === lemma && entry?.pron === pron
+  })
+)
+const osaLanguageTags = {
+  Sabaean: 'xsa',
+  Minaean: 'inm',
+  Qatabanian: 'xqt',
+  'Old South Arabian': undefined
+}
+check(
+  'OSA Wiktionary rows retain variety, valid language tags, and Musnad script',
+  osaWiktionary?.entries.every((entry) =>
+    Object.hasOwn(osaLanguageTags, entry.variety) &&
+    entry.lang === osaLanguageTags[entry.variety] &&
+    !JSON.stringify(entry).includes('*') &&
+    [...entry.script].every((char) => char === ' ' || (
+      char.codePointAt(0) >= 0x10a60 && char.codePointAt(0) <= 0x10a7f
+    ))
+  )
+)
+check(
+  'Wiktionary browse definitions do not leak internal language-template codes',
+  [...(hittiteWiktionary?.entries || []), ...(osaWiktionary?.entries || [])]
+    .every((entry) => !/\b(?:xsa|hit)-.* form of/i.test(entry.def))
+)
 
 // --- Cross-dictionary English gloss index ---------------------------------
 // The artifact is generated at build time. Its compact integer references
@@ -558,6 +705,76 @@ if (glossIndex) {
       languageCount(searchGlossIndex(glossIndex, word)) >= 3
     )
   }
+  const fatherAcrossSources = searchGlossIndex(glossIndex, 'father')
+  const waterAcrossSources = searchGlossIndex(glossIndex, 'water')
+  const kingAcrossSources = searchGlossIndex(glossIndex, 'king')
+  const legAcrossSources = searchGlossIndex(glossIndex, 'leg')
+  check(
+    'father reaches open Hittite and Sabaean Wiktionary records',
+    fatherAcrossSources.groups.Hittite.some(
+      (posting) => posting.d === 'hittite-wiktionary' && posting.i === 'wiktionary-hittite-hit-855325-noun-1'
+    ) && fatherAcrossSources.groups['Old South Arabian'].some(
+      (posting) => posting.i === 'wiktionary-osa-xsa-9460592-noun-1' && posting.v === 'Sabaean' && posting.lc === 'xsa'
+    )
+  )
+  check(
+    'water reaches both Hittite sources and the Sabaean water headword',
+    waterAcrossSources.groups.Hittite.some(
+      (posting) => posting.d === 'hittite-iecor' && posting.i === '80-188-1'
+    ) && waterAcrossSources.groups.Hittite.some(
+      (posting) => posting.d === 'hittite-wiktionary' && posting.i === 'wiktionary-hittite-hit-855375-noun-1'
+    ) && waterAcrossSources.groups['Old South Arabian'].some(
+      (posting) => posting.i === 'wiktionary-osa-xsa-3397501-noun-1' && posting.v === 'Sabaean'
+    )
+  )
+  const kingVarieties = new Set(
+    kingAcrossSources.groups['Old South Arabian']
+      .filter((posting) => posting.l === 'mlk')
+      .map((posting) => posting.v)
+  )
+  check(
+    'king reaches Hittite plus separately labeled Sabaean, Minaean, and Qatabanian rows',
+    kingAcrossSources.groups.Hittite.some(
+      (posting) => posting.i === 'wiktionary-hittite-hit-6557087-noun-1'
+    ) && ['Sabaean', 'Minaean', 'Qatabanian'].every((variety) => kingVarieties.has(variety))
+  )
+  check(
+    'IE-CoR leg uses its English concept and excludes the German contributor wording',
+    legAcrossSources.groups.Hittite.some(
+      (posting) => posting.d === 'hittite-iecor' && posting.i === '80-93-1'
+    ) && !searchGlossIndex(glossIndex, 'beines').groups.Hittite.some(
+      (posting) => posting.d === 'hittite-iecor'
+    )
+  )
+  check(
+    'Wiktionary meta records remain browseable but are excluded from automatic meaning matches',
+    glossIndex.coverage?.['hittite-wiktionary']?.skippedMeta > 0 &&
+      glossIndex.coverage?.['osa-wiktionary']?.skippedMeta > 0 &&
+      ['letter', 'abjad'].every((query) =>
+        searchGlossIndex(glossIndex, query).groups['Old South Arabian'].every((posting) =>
+          !/^(?:letter|symbol)$/i.test(
+            sourceEntriesById.get(posting.d)?.get(String(posting.i))?.pos || ''
+          )
+        )
+      )
+  )
+  const morphologyOnlyOsaId = 'wiktionary-osa-xsa-11771511-verb-1'
+  check(
+    'bare Wiktionary morphology cross-reference is excluded from third meaning matches',
+    osaWiktionary?.entries.some((entry) =>
+      entry.id === morphologyOnlyOsaId && /^Third-person\b.*\bform of\b/i.test(entry.def)
+    ) && !searchGlossIndex(glossIndex, 'third').groups['Old South Arabian'].some(
+      (posting) => posting.i === morphologyOnlyOsaId
+    )
+  )
+  check(
+    'lexical senses after Wiktionary colon and semicolon morphology labels remain indexed',
+    searchGlossIndex(glossIndex, 'pair').groups['Old South Arabian'].some(
+      (posting) => posting.i === 'wiktionary-osa-xsa-11736929-pronoun-1'
+    ) && searchGlossIndex(glossIndex, 'captives').groups['Old South Arabian'].some(
+      (posting) => posting.i === 'wiktionary-osa-xsa-8142283-noun-1'
+    )
+  )
   check(
     'every curated primary English gloss returns its own verified card',
     LEXICON.every((entry) =>
@@ -663,6 +880,10 @@ check(
   normalize('ʾab') === 'ab' && normalize('ʿayin') === 'ayin' && normalize('ʼâb') === 'ab'
 )
 check('Egyptological ꜣ folds for plain-keyboard search', normalize('ꜣb') === 'ab')
+check(
+  'South Arabian sibilant index digits fold for plain-keyboard search',
+  normalize('s¹m s² s₃') === normalize('s1m s2 s3')
+)
 check(
   'final letters fold in search too',
   normalize('מלך') === normalize('מלכ')

@@ -6,6 +6,8 @@
 //   - Latin text is lowercased, NFD-normalized, stripped of combining marks,
 //     and stripped of the transliteration marks ʾ ʿ ' ' ` so a user can type
 //     "shalom" or "salamu" without diacritics.
+//   - Superscript/subscript 1–3 used to distinguish South Arabian sibilants
+//     fold to plain digits for phone keyboards (s² and s2 search alike).
 
 import { foldFinals, toImperialAramaic, toMusnad } from './scripts.js'
 
@@ -18,6 +20,11 @@ const TRANSLIT_MARKS = /[ʾʿʼ'’‘`]/g
 // so NFD does not simplify them. Folding both to a lets a plain keyboard
 // query find a headword that uses either scholarly sign.
 const EGYPTOLOGICAL_MARKS = /[ꜣꜥ]/g
+const SCRIPT_INDEX_DIGITS = /[¹²³₁₂₃]/g
+const SCRIPT_INDEX_DIGIT_VALUE = {
+  '¹': '1', '²': '2', '³': '3',
+  '₁': '1', '₂': '2', '₃': '3'
+}
 
 export function normalize(str) {
   if (!str) return ''
@@ -29,6 +36,7 @@ export function normalize(str) {
       .replace(COMBINING_MARKS, '')
       .replace(TRANSLIT_MARKS, '')
       .replace(EGYPTOLOGICAL_MARKS, 'a')
+      .replace(SCRIPT_INDEX_DIGITS, (digit) => SCRIPT_INDEX_DIGIT_VALUE[digit])
   ).trim()
 }
 
