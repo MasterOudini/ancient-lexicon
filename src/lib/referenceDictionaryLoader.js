@@ -5,11 +5,28 @@
 const CACHE = new Map()
 const ENTRY_CACHE = new Map()
 const PENDING = new Map()
+let cacheGeneration = 0
+
+function clearReferenceDictionaryCaches() {
+  cacheGeneration++
+  CACHE.clear()
+  ENTRY_CACHE.clear()
+  PENDING.clear()
+}
+
+// An auto-updated worker can take control before WebKit reloads an installed
+// app. Drop parsed rows at that boundary so a newly fetched gloss index cannot
+// resolve against dictionary data retained from the previous release.
+if (typeof navigator !== 'undefined' && navigator.serviceWorker) {
+  navigator.serviceWorker.addEventListener('controllerchange', clearReferenceDictionaryCaches)
+}
 
 export async function loadReferenceDictionary(dict) {
   if (CACHE.has(dict.id)) return CACHE.get(dict.id)
   if (!PENDING.has(dict.id)) {
-    const pending = (async () => {
+    const generation = cacheGeneration
+    let pending
+    pending = (async () => {
       let data
       if (dict.source.kind === 'strongs') {
         const mod = await import('../data/strongs.json')
@@ -20,16 +37,23 @@ export async function loadReferenceDictionary(dict) {
         if (!res.ok) throw new Error('fetch failed: ' + res.status)
         data = await res.json()
       }
+      if (generation !== cacheGeneration) return loadReferenceDictionary(dict)
       CACHE.set(dict.id, data)
       ENTRY_CACHE.set(dict.id, new Map(data.entries.map((entry) => [String(entry.id), entry])))
       return data
-    })().finally(() => PENDING.delete(dict.id))
+    })().finally(() => {
+      if (PENDING.get(dict.id) === pending) PENDING.delete(dict.id)
+    })
     PENDING.set(dict.id, pending)
   }
   return PENDING.get(dict.id)
 }
 
 export async function loadReferenceEntry(dict, id) {
-  await loadReferenceDictionary(dict)
+  let generation
+  do {
+    generation = cacheGeneration
+    await loadReferenceDictionary(dict)
+  } while (generation !== cacheGeneration)
   return ENTRY_CACHE.get(dict.id)?.get(String(id)) || null
 }

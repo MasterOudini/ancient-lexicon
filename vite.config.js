@@ -55,8 +55,9 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         // The large reference dictionaries and the ~8 MiB generated gloss
         // index in public/dicts/ are not precached (they would bloat the
-        // install). Meaning search waits for the current index when online;
-        // published dictionaries keep their fast cached-first behavior.
+        // install). The index and dictionaries both check the network first
+        // so one release cannot mix a new index with stale dictionary rows;
+        // Workbox falls back to the shared cache while offline.
         runtimeCaching: [
           {
             urlPattern: /\/dicts\/gloss-index\.json$/,
@@ -71,7 +72,7 @@ export default defineConfig({
           },
           {
             urlPattern: /\/dicts\/.*\.json$/,
-            handler: 'StaleWhileRevalidate',
+            handler: 'NetworkFirst',
             options: {
               cacheName: 'reference-dictionaries',
               expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
