@@ -1163,6 +1163,91 @@ details.langfields summary {
   overflow-wrap: anywhere;
 }
 
+/* ---- Pronunciation guides ---------------------------------------------- */
+
+.pronunciation-control {
+  margin-top: 10px;
+}
+
+.pronunciation-toggle {
+  min-height: 38px;
+  font-size: 0.8rem;
+}
+
+.pronunciation-panel,
+.reading-explainer {
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--plaque);
+  overflow-wrap: anywhere;
+}
+
+.pronunciation-panel dl {
+  margin: 8px 0;
+}
+
+.pronunciation-panel dl > div {
+  display: grid;
+  grid-template-columns: minmax(9rem, 36%) 1fr;
+  gap: 6px 12px;
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+}
+
+.pronunciation-panel dt {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.pronunciation-panel dd {
+  margin: 0;
+}
+
+.pronunciation-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.pronunciation-source,
+.pronunciation-audio-note,
+.pronunciation-provenance {
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.pronunciation-audio {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+
+.reading-explainer summary {
+  cursor: pointer;
+  color: var(--faience);
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+}
+
+.reading-explainer p {
+  line-height: 1.55;
+}
+
+.reading-explainer-compact {
+  padding: 8px;
+}
+
+@media (max-width: 520px) {
+  .pronunciation-panel dl > div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
 .sense-picker {
   margin: 10px 0 4px;
   padding-top: 12px;
