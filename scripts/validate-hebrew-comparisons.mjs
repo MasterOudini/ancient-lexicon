@@ -14,10 +14,13 @@ import {
   getDictionary
 } from '../src/data/referenceDictionaries.js'
 import {
+  HEBREW_CATALOG_MATCH_TIER,
   HEBREW_COMPARISON_LANGUAGES,
   decodeHebrewCatalog,
+  getHebrewCatalogMatchTier,
   resolveHebrewComparison,
-  searchHebrewCatalog
+  searchHebrewCatalog,
+  selectAutoOpenSourceKey
 } from '../src/lib/hebrewComparisonLoader.js'
 import { normalize } from '../src/lib/search.js'
 import { toImperialAramaic, toMusnad } from '../src/lib/scripts.js'
@@ -575,6 +578,137 @@ check(
     searchHebrewCatalog(catalog, 'Brown-Driver-Briggs').some((entry) => entry.source === 'bdb')
 )
 
+const exactMinimum = HEBREW_CATALOG_MATCH_TIER.normalizedHeadwordDisplayOnly
+check(
+  'all 18,992 records classify their own headword as an exact match',
+  catalog.entries.every((entry) => getHebrewCatalogMatchTier(entry, entry.headword) >= exactMinimum)
+)
+check(
+  'all 18,992 source IDs independently select their own card for automatic opening',
+  new Set(catalog.entries.map((entry) => entry.idSearch)).size === 18_992 &&
+    new Set(catalog.entries.map((entry) => entry.sourceKeySearch)).size === 18_992 &&
+    catalog.entries.every((entry) =>
+      getHebrewCatalogMatchTier(entry, entry.id) === HEBREW_CATALOG_MATCH_TIER.sourceId &&
+      selectAutoOpenSourceKey([entry], entry.id) === entry.sourceKey &&
+      selectAutoOpenSourceKey([entry], entry.headword) === entry.sourceKey
+    )
+)
+
+function exactHeadwordBlock(query) {
+  const queryKey = normalize(query)
+  const results = searchHebrewCatalog(catalog, query)
+  const exact = results.filter((entry) => entry.sortKey === queryKey)
+  return {
+    results,
+    exact,
+    leading: results.slice(0, exact.length)
+  }
+}
+
+const shemenBlock = exactHeadwordBlock('שמן')
+check(
+  'שמן ranks every exact source-distinct homograph before broader matches',
+  shemenBlock.exact.length === 8 &&
+    shemenBlock.leading.every((entry) => entry.sortKey === normalize('שמן')) &&
+    sameArray(sortedKeys(shemenBlock.leading), sortedKeys(shemenBlock.exact))
+)
+check(
+  'matchable שמן records rank before its display-only cross-reference',
+  shemenBlock.leading.slice(0, -1).every((entry) => entry.hasMatchableSense) &&
+    shemenBlock.leading.at(-1)?.sourceKey === 'bdb:v.ec.aa' &&
+    !shemenBlock.leading.at(-1)?.hasMatchableSense
+)
+
+const pointedShemen = searchHebrewCatalog(catalog, 'שֶׁמֶן')
+check(
+  'pointed שמן narrows the first-ranked homograph group without dropping results',
+  pointedShemen[0]?.sourceKey === 'bdb:v.eb.ad' &&
+    pointedShemen[1]?.sourceKey === 'strongs:H8081' &&
+    sameArray(sortedKeys(pointedShemen), sortedKeys(shemenBlock.results))
+)
+
+const pointedGroups = new Map()
+for (const entry of catalog.entries) {
+  if (!pointedGroups.has(entry.pointedKey)) pointedGroups.set(entry.pointedKey, [])
+  pointedGroups.get(entry.pointedKey).push(entry)
+}
+const pointingPattern = /[\u05B0-\u05BD\u05BF-\u05C2\u05C4-\u05C7]/u
+const mixedPointedGroups = [...pointedGroups.values()].filter((group) =>
+  group.some((entry) => pointingPattern.test(entry.headword)) &&
+  group.some((entry) => entry.hasMatchableSense) &&
+  group.some((entry) => !entry.hasMatchableSense)
+)
+check(
+  'pointed exact matches rank real senses before display-only cross-references',
+  mixedPointedGroups.length > 0 && mixedPointedGroups.every((group) => {
+    const query = group.find((entry) => pointingPattern.test(entry.headword)).headword
+    const matchableTier = Math.max(...group
+      .filter((entry) => entry.hasMatchableSense)
+      .map((entry) => getHebrewCatalogMatchTier(entry, query)))
+    const displayOnlyTier = Math.max(...group
+      .filter((entry) => !entry.hasMatchableSense)
+      .map((entry) => getHebrewCatalogMatchTier(entry, query)))
+    return matchableTier > displayOnlyTier
+  }) &&
+    ['אֲבַדֹּה', 'אַבְנֵט'].every((query) =>
+      searchHebrewCatalog(catalog, query)[0]?.hasMatchableSense
+    )
+)
+
+const hashavBlock = exactHeadwordBlock('חשב')
+check(
+  'חשב ranks its four audited homographs first and keeps H2803 authoritative',
+  hashavBlock.exact.length === 4 &&
+    hashavBlock.leading.every((entry) => entry.sortKey === normalize('חשב')) &&
+    hashavBlock.leading[0]?.sourceKey === 'strongs:H2803' &&
+    new Set(hashavBlock.leading.map((entry) => entry.sourceKey)).size === 4
+)
+check(
+  'אב promotes the authoritative curated H1 card',
+  searchHebrewCatalog(catalog, 'אב')[0]?.sourceKey === 'strongs:H1'
+)
+
+const exactIdCases = [
+  ['H2803', 'strongs:H2803'],
+  ['H2805', 'strongs:H2805'],
+  ['h.gr.aa', 'bdb:h.gr.aa'],
+  ['h.gr.ab', 'bdb:h.gr.ab']
+]
+check(
+  'exact source IDs rank and automatically open their own source record',
+  exactIdCases.every(([query, expected]) => {
+    const results = searchHebrewCatalog(catalog, query)
+    return results[0]?.sourceKey === expected &&
+      selectAutoOpenSourceKey(results, query) === expected
+  })
+)
+check(
+  'only exact Hebrew headwords and source IDs automatically open a card',
+  selectAutoOpenSourceKey(searchHebrewCatalog(catalog, 'interpenetrate'), 'interpenetrate') === null &&
+    selectAutoOpenSourceKey(searchHebrewCatalog(catalog, 'chasha'), 'chasha') === null &&
+    selectAutoOpenSourceKey(searchHebrewCatalog(catalog, 'שְׁמוֹנ'), 'שְׁמוֹנ') === null &&
+    selectAutoOpenSourceKey(searchHebrewCatalog(catalog, 'uwlay'), 'uwlay') === null &&
+    searchHebrewCatalog(catalog, 'uwlay')[0]?.hasMatchableSense
+)
+
+const shardSourceSamples = new Map()
+for (const entry of catalog.entries) {
+  const sampleKey = `${entry.shard}:${entry.source}`
+  if (!shardSourceSamples.has(sampleKey)) shardSourceSamples.set(sampleKey, entry)
+}
+check(
+  'representative Strong\'s and BDB records from all 64 shards promote an exact card',
+  shardSourceSamples.size === 128 && [...shardSourceSamples.values()].every((sample) => {
+    const results = searchHebrewCatalog(catalog, sample.headword)
+    const selectedKey = selectAutoOpenSourceKey(results, sample.headword)
+    const selected = catalogByKey.get(selectedKey)
+    const senses = resolvedByKey.get(selectedKey) || []
+    return results[0]?.sortKey === sample.sortKey && selected?.sourceKey === results[0]?.sourceKey &&
+      senses.length === selected.senses.length &&
+      senses.every((sense) => sameArray(sense.slots.map((slot) => slot.languageId), REQUIRED_LANGUAGES))
+  })
+)
+
 const collisionPairs = [
   ['servant', 'serve'], ['seed', 'sow'], ['nose', 'anger'], ['knee', 'bless'],
   ['hair', 'gate'], ['friend', 'evil'], ['goat', 'strength'], ['cattle', 'morning'],
@@ -625,6 +759,20 @@ check(
     stylesText.includes('content-visibility: visible') &&
     uiText.includes("status === 'loading' || status === 'ready'") &&
     uiText.includes('close and reopen this entry to retry')
+)
+check(
+  'the best exact result is wired to render open and load its comparison automatically',
+  uiText.includes('selectAutoOpenSourceKey') &&
+    uiText.includes('initiallyOpen={entry.sourceKey === promotedSourceKey}') &&
+    uiText.includes('open={open}') &&
+    uiText.includes('if (initiallyOpen) loadEntry()')
+)
+check(
+  'About visibly reports the package version and the same installed build marker used by main',
+  aboutText.includes('aria-label="Installed app version"') &&
+    aboutText.includes('__APP_VERSION__') && aboutText.includes('__APP_BUILD_ID__') &&
+    viteText.includes('__APP_VERSION__') && viteText.includes('__APP_BUILD_ID__') &&
+    readFileSync(join(root, 'src', 'main.jsx'), 'utf8').includes('__APP_BUILD_ID__')
 )
 check(
   'catalog and all 64 opened shards have separate NetworkFirst caches',

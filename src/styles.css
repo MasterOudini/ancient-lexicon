@@ -694,6 +694,44 @@ details.infobox ul {
   margin: 6px 0;
 }
 
+.app-version {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--plaque);
+}
+
+.app-version > div {
+  display: grid;
+  grid-template-columns: minmax(72px, auto) 1fr;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.app-version dt {
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+}
+
+.app-version dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.app-version code {
+  font-size: 0.78rem;
+}
+
+.settings-section .app-version-note {
+  font-size: 0.78rem;
+}
+
 .btnrow {
   display: flex;
   gap: 10px;

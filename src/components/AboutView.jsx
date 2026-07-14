@@ -18,6 +18,19 @@ export default function AboutView() {
           explorer and a shelf of public-domain and openly licensed reference
           dictionaries and lexical datasets.
         </p>
+        <dl className="app-version" aria-label="Installed app version">
+          <div>
+            <dt>Version</dt>
+            <dd data-app-version={__APP_VERSION__}>{__APP_VERSION__}</dd>
+          </div>
+          <div>
+            <dt>Build</dt>
+            <dd data-app-build={__APP_BUILD_ID__}><code dir="ltr">{__APP_BUILD_ID__}</code></dd>
+          </div>
+        </dl>
+        <p className="app-version-note">
+          This build identifies the code currently running on this device.
+        </p>
         <p>
           The curated comparative database holds {LEXICON.length} concepts and{' '}
           {ROOTS.length} Hebrew roots. The Dictionary tab&rsquo;s Reference
