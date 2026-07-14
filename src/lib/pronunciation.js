@@ -5,13 +5,13 @@ export const GUIDE_LANGUAGE_DEFAULT = 'he'
 export const GUIDE_LANGUAGE_OPTIONS = Object.freeze(['he', 'en'])
 
 export const PRONUNCIATION_PROVENANCE = Object.freeze({
-  hebrew: 'Masoretic vocalization and standard Biblical Hebrew transliteration conventions.',
-  akkadian: 'Standard Assyriological normalized-transliteration conventions.',
-  sumerian: 'Standard Sumerological transliteration and later scribal reading conventions.',
-  egyptian: 'Egyptological transcription conventions; vowels are largely conventional.',
-  hittite: 'Standard Hittitological transliteration conventions for cuneiform sources.',
-  aramaic: 'Imperial Aramaic consonantal-script and scholarly transliteration conventions.',
-  osa: 'Old South Arabian/Musnad scholarly transliteration conventions.'
+  hebrew: 'Masoretic vocalization and Geoffrey Khan, The Tiberian Pronunciation Tradition of Biblical Hebrew.',
+  akkadian: 'John Huehnergard, A Grammar of Akkadian, and standard Assyriological normalized transliteration.',
+  sumerian: 'Marie-Louise Thomsen, The Sumerian Language, and standard Sumerological transliteration.',
+  egyptian: 'James P. Allen, Middle Egyptian; Egyptological transcription keeps conventional vowels distinct from evidence.',
+  hittite: 'Hoffner and Melchert, A Grammar of the Hittite Language, with standard Hittitological transliteration.',
+  aramaic: 'Porten and Yardeni, Textbook of Aramaic Documents from Ancient Egypt, for Imperial Aramaic conventions.',
+  osa: 'Peter Stein, The Ancient South Arabian Languages, for Musnad and Old South Arabian conventions.'
 })
 
 const VOWELS = /[aeiouāēīūâêîûə]/iu
@@ -76,8 +76,8 @@ const LANGUAGE_NOTES = Object.freeze({
 
 const HEBREW_OVERRIDES = Object.freeze({
   H1: { syllables: 'אָב', ipa: 'ʔaːv', he: 'אָב — אָב (av)', en: 'ahv', stress: 'הברה יחידה / one syllable' },
-  H2803: { syllables: 'חָ־שַׁב', ipa: 'ħaːˈʃav', he: 'חָ־שַׁב — kha-SHAV', en: 'kha-SHAV', stress: 'מלעיל בקריאה זו / final stress in this guide' },
-  H2805: { syllables: 'חֵ־שֶׁב', ipa: 'ħeːˈʃev', he: 'חֵ־שֶׁב — khe-SHEV', en: 'khe-SHEV', stress: 'מלעיל בקריאה זו / final stress in this guide' }
+  H2803: { syllables: 'חָ־שַׁב', ipa: 'ħaːˈʃav', he: 'חָ־שַׁב — kha-SHAV', en: 'kha-SHAV', stress: 'מלרע בקריאה זו / final stress in this guide' },
+  H2805: { syllables: 'חֵ־שֶׁב', ipa: 'ħeːˈʃev', he: 'חֵ־שֶׁב — khe-SHEV', en: 'khe-SHEV', stress: 'מלרע בקריאה זו / final stress in this guide' }
 })
 
 function tokenise(value) {

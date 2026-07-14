@@ -1237,6 +1237,27 @@ details.langfields summary {
   line-height: 1.55;
 }
 
+.reading-explainer h3 {
+  margin: 14px 0 6px;
+  font-family: var(--serif);
+  font-size: 1rem;
+}
+
+.reading-language-section {
+  border-top: 1px solid var(--line);
+  padding: 8px 0 2px;
+}
+
+.reading-language-section h4 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+.reading-language-section p {
+  margin: 3px 0 5px;
+}
+
 .reading-explainer-compact {
   padding: 8px;
 }

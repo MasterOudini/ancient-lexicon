@@ -33,6 +33,8 @@ for (const [id, entry] of important) {
   assert.ok(guide.syllables, `${id} must have syllable guidance`)
 }
 assert.notEqual(guideForHebrewEntry(important.get('H2803')).hebrew, guideForHebrewEntry(important.get('H2805')).hebrew)
+assert.match(guideForHebrewEntry(important.get('H2803')).stress, /final stress/)
+assert.match(guideForHebrewEntry(important.get('H2805')).stress, /final stress/)
 
 const covered = new Set()
 for (let shard = 0; shard < catalog.shardCount; shard++) {
@@ -80,5 +82,8 @@ assert.match(uiText, /slot\.alternatives\.slice\(0, 4\)/)
 assert.match(guideText, /data-guide-language/)
 assert.match(guideText, /dir=\{isHebrew \? 'rtl' : 'ltr'\}/)
 assert.match(guideText, /modern-Hebrew approximation/i)
+for (const language of ['Hebrew', 'Akkadian', 'Sumerian', 'Egyptian', 'Hittite', 'Imperial Aramaic', 'Old South Arabian']) {
+  assert.match(guideText, new RegExp(`\\['${language}'`))
+}
 
 console.log(`verified pronunciation guidance for ${catalog.entries.length} Hebrew entries and every populated comparison candidate`)
