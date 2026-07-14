@@ -28,6 +28,33 @@ dictionary by copying many individually short glosses.
 
 ### Cleared open data
 
+- **Sturtevant, _A Hittite Glossary_, second edition (1936) — public-domain
+  scan.** The [Internet Archive item][sturtevant] records the rights review as
+  “Public domain according to HathiTrust rights database” and supplies the
+  unrestricted scan and DjVu OCR. Hittite entries are interleaved with
+  uppercase Sumerian and Akkadian entries, and the OCR contains real errors.
+  **Decision:** bundle only a deliberately lossy automatic subset: lowercase
+  Hittite-shaped heads, high-confidence OCR, a nearby English gloss, no
+  question-marked uncertainty, no reconstructed asterisked head, and no
+  detected Latin/German-only gloss. Retain the printed page, scan leaf, OCR
+  confidence, and exact source link on every row. Label it prominently as a
+  historical 1936 glossary based on OCR—not current scholarship, not verified
+  equivalence, and not a complete or modern Hittite dictionary. The committed
+  import retains 633 of 4,234 detected rows and records a reason for all 3,601
+  exclusions. Before parsing, the importer verifies the exact DjVuXML byte
+  length, MD5, and SHA-1 against the Internet Archive file metadata and fails
+  closed on any mismatch.
+
+- **DIACL / Lexibank 3.0 — CC BY 4.0.** The official [versioned
+  release][diacl] supplies machine-readable CLDF under CC BY 4.0. Its Hittite
+  subset is a comparative lexical dataset, not a general dictionary; it adds
+  concepts outside IE-CoR while retaining source form and concept IDs.
+  **Decision:** bundle only attested Hittite rows, retain release/citation and
+  source identifiers, exclude reconstructed forms, and describe the actual
+  concept/form coverage rather than implying completeness. The committed
+  import retains 146 rows across 121 concepts after explicitly reporting and
+  excluding three source-inconsistent duplicate assignments.
+
 - **IE-CoR 1.2 — CC BY 4.0.** The official [Zenodo release][iecor-zenodo]
   and [versioned repository][iecor-repo] license this expert Indo-European
   cognacy dataset under CC BY 4.0. It covers 170 precisely defined core English
@@ -43,9 +70,21 @@ dictionary by copying many individually short glosses.
 
 - **ASJP Hittite wordlist — CC BY 4.0.** The official [Hittite wordlist][asjp]
   is a small basic-vocabulary list with English/Concepticon meanings, not
-  dictionary definitions. **Decision:** legally bundleable with ASJP compiler,
-  source, and version attribution, but use only if it adds coverage not already
-  supplied by IE-CoR. Label it as a basic wordlist.
+  dictionary definitions. The current official record has 30 rows and credits
+  compiler Viveka Velupillai. **Decision:** bundle the exact ASJP transcription
+  with compiler/source attribution so every cleared source remains separately
+  inspectable, while labeling it as a 30-item basic wordlist rather than a
+  dictionary. Do not silently normalize its transcription.
+
+- **Wikidata Lexemes — CC0 1.0.** Wikidata's [licensing
+  policy][wikidata-license] applies CC0 to its structured data, including its
+  [lexicographical data][wikidata-lexemes]. The 2026-07-14 snapshot has 39
+  Hittite lexemes with English senses. It is small community data; many rows
+  have no statement-level source and a cited reference item is provenance, not
+  permission to copy that publication. **Decision:** bundle the dated CC0
+  snapshot with Lexeme IDs and exact revision timestamps, preserve any source
+  item IDs as provenance, and label every row as community data—not independently
+  verified scholarship.
 
 - **English Wiktionary Hittite entries — redistributed under CC BY-SA 4.0.**
   Wiktionary's original entry text is [dual-licensed][wiktionary-license]; this
@@ -101,6 +140,13 @@ family.
 
 ### Cleared open data
 
+- **Wikidata Lexemes — CC0 1.0.** The same dated snapshot contains only eight
+  Old South Arabian-family Lexemes with English senses: one umbrella OSA row,
+  four Qatabanian, two Sabaean, and one Hadramautic; no Minaean row was present.
+  **Decision:** bundle with exact Lexeme/revision attribution and show the
+  variety on every row. Eight community records do not establish meaningful
+  family-wide coverage.
+
 - **English Wiktionary Old South Arabian-language entries — redistributed under
   CC BY-SA 4.0.** The upstream text is dual-licensed; this transformed snapshot
   uses the CC BY-SA 4.0 option. The import reads the [Old South Arabian][wiktionary-osa],
@@ -126,13 +172,15 @@ family.
   discourages third-party AI-generated summaries or interpretations.
 
   DASI is an epigraphic corpus and word-list environment, not a ready-made
-  English dictionary; its records do not guarantee an English lexical gloss for
-  every lemma. **Decision:** do not crawl the website and never import its
-  images. Request API/OAI/export access, confirm which lexical fields are covered
-  by CC BY 4.0, preserve per-record attribution in the bundled record and UI, and
-  index only supplied English meanings. A deterministic English-keyword match
-  must remain visibly labeled as an unverified meaning match, not an
-  AI-generated interpretation or scholarly equivalence.
+  English dictionary. The public API schema inspected in this audit exposes
+  inscription/object/site records rather than lemma/root/POS/English-sense
+  records; anonymous OAI requests currently meet the site challenge, and REST
+  access requires a token. No reproducible public lexical record with an
+  explicit supplied English word meaning was found. **Decision:** do not crawl
+  the website, never import images, and never align inscription translations to
+  tokens to infer a dictionary. Request an authorized lexical-layer export and
+  confirmation that those fields are CC BY 4.0; preserve every record's editor,
+  publication/revision dates, DOI, and license if access is granted.
 
 ### Permission required
 
@@ -145,6 +193,30 @@ family.
   substantial part. If permission is granted, retain the German-language label;
   do not silently machine-translate or place German glosses in the English
   meaning index.
+
+- **KALAM.** The live morphological analyzer can search Old South Arabian
+  forms and English meanings across Sabaic, Minaic, Qatabanic, and Hadramitic,
+  and a 2016 description reports more than 2,000 Sabaic words. It has no
+  documented bulk export or reuse license and can also synthesize forms rather
+  than returning dictionary attestations only. **Decision:** do not scrape or
+  redistribute it. Request a licensed, provenance-audited dictionary export
+  before considering an import.
+
+## Assessed but not bundleable
+
+- **PanLex.** A historical snapshot has substantial English-linked Hittite
+  coverage, but PanLex's current [official license][panlex-license] is
+  CC BY-NC-SA 4.0, commercial use requires written permission, its live API is
+  not currently a reproducible import route, and the largest Hittite component
+  traces to an unlicensed Hittite Online source. **Decision:** use PanLex only
+  as a discovery lead; do not bundle it under unresolved source-level rights.
+
+- **eDiAna.** Its project data are CC BY-SA 4.0, but the public site exposes
+  diachronic entries—often reconstructed Proto-Anatolian or minor-Anatolian
+  heads—with linked Hittite sections rather than a standalone Hittite export.
+  The API is reserved for project staff. **Decision:** request an official
+  attested-Hittite export with per-lemma author/version attribution; do not
+  scrape internal endpoints or import reconstructed heads.
 
 ## Product rules for every imported source
 
@@ -245,6 +317,7 @@ Target: the SabaWeb project team through the official project page.
 > the website or imply project endorsement.
 
 [asjp]: https://asjp.clld.org/languages/HITTITE
+[diacl]: https://github.com/lexibank/diacl/releases/tag/v3.0
 [chd-page]: https://isac.uchicago.edu/research/publications/chicago-hittite-dictionary
 [chd-pdf]: https://isac.uchicago.edu/sites/default/files/uploads/shared/docs/CHDP.pdf
 [dasi-contact]: https://dasi.cnr.it/about#contact
@@ -255,12 +328,16 @@ Target: the SabaWeb project team through the official project page.
 [iecor-zenodo]: https://zenodo.org/records/13304537
 [lauffenburger-home]: https://www.assyrianlanguages.org/hittite/index_fr.php?page=accueil
 [lauffenburger-lexicon]: https://www.assyrianlanguages.org/hittite/en_lexique_hittite.htm
+[panlex-license]: https://panlex.org/license/
 [sabaweb]: https://asaweb.uni-jena.de/asaweb_t3/home/the-sabaic-online-dictionary
+[sturtevant]: https://archive.org/details/hittiteglossary00stur
 [tlhdig]: https://wres-hatti.adwudlit.uni-mainz.de/TLHdig/dataset.php
 [ud-hittite]: https://universaldependencies.org/treebanks/hit_hittb/index.html
 [usco-db]: https://www.copyright.gov/register/tx-databases.html
 [usco-short]: https://www.copyright.gov/circs/circ33.pdf
 [wiktionary-hittite]: https://en.wiktionary.org/wiki/Category:Hittite_lemmas
+[wikidata-license]: https://www.wikidata.org/wiki/Wikidata:Licensing
+[wikidata-lexemes]: https://www.wikidata.org/wiki/Wikidata:Lexicographical_data
 [wiktionary-license]: https://en.wiktionary.org/wiki/Wiktionary:Copyrights
 [wiktionary-minaean]: https://en.wiktionary.org/wiki/Category:Minaean_lemmas
 [wiktionary-osa]: https://en.wiktionary.org/wiki/Category:Old_South_Arabian_lemmas
