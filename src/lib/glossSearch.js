@@ -16,9 +16,11 @@ export const GLOSS_STOP_WORDS = new Set([
   'very', 'etc', 'especially', 'chiefly', 'properly', 'literal', 'literally',
   'figurative', 'figuratively', 'specifically', 'concretely', 'causatively',
   'collectively', 'immediate', 'remote', 'application', 'implication', 'hence',
-  'perhaps', 'compare', 'meaning', 'unknown',
+  'perhaps', 'possible', 'possibly', 'uncertain', 'formerly', 'interpreted',
+  'compare', 'meaning', 'unknown',
   'plural', 'singular', 'masculine', 'feminine', 'noun', 'verb', 'substantive',
   'adj', 'adjective', 'adv', 'adverb', 'pronoun', 'preposition', 'conjunction',
+  'inflected', 'inflectional', 'conjugation',
   'vb', 'qal', 'niph', 'hiph', 'hoph', 'piel', 'pual', 'hith', 'peal', 'pael',
   'aph', 'cstr', 'const', 'abs', 'gent', 'denom', 'loc', 'lit', 'specif',
   'late', 'rare', 'gen', 'med', 'sem', 'loan', 'cf', 'cmp', 'ibid', 'ib', 'fr',
@@ -31,7 +33,9 @@ export const MEANING_LANGUAGE_ORDER = [
   'Aramaic',
   'Egyptian',
   'Sumerian',
-  'Akkadian'
+  'Akkadian',
+  'Hittite',
+  'Old South Arabian'
 ]
 
 export function englishKeywords(text) {
@@ -60,6 +64,8 @@ export function expandGlossRecord(index, recordIndex) {
   }
   if (rec[6]) posting.x = rec[6]
   if (rec[7]) posting.s = rec[7]
+  if (rec[8]) posting.v = rec[8]
+  if (rec[9]) posting.lc = rec[9]
   return posting
 }
 
@@ -79,7 +85,7 @@ function postingKey(posting) {
 // values encode `senseIndex * 3 + senseRank` (2 exact guide sense, 1 leading
 // guide word, 0 another gloss word); each sense points to its source record,
 // and expanding that pair yields the
-// public posting shape { d, i, l, g, lang, x?, s? }. `heads` makes Hebrew or
+// public posting shape { d, i, l, g, lang, x?, s?, v?, lc? }. `heads` makes Hebrew or
 // transliterated input a two-hop lookup: headword -> English sense keywords
 // -> postings in every covered language. No full dictionary is loaded here.
 export function searchGlossIndex(index, query) {

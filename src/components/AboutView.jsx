@@ -15,15 +15,15 @@ export default function AboutView() {
           A comparative dictionary of the ancient Near East, pivoting on
           Hebrew and English across Akkadian, Sumerian, Egyptian, Hittite,
           Imperial Aramaic, and Old South Arabian, with a Semitic root
-          explorer and a shelf of complete public-domain and openly-licensed
-          reference dictionaries.
+          explorer and a shelf of public-domain and openly licensed reference
+          dictionaries and lexical datasets.
         </p>
         <p>
           The curated comparative database holds {LEXICON.length} concepts and{' '}
           {ROOTS.length} Hebrew roots. The Dictionary tab&rsquo;s Reference
-          dictionaries mode adds complete published lexicons &mdash; tens of
-          thousands of headwords each &mdash; that load on demand and are then
-          available offline.
+          dictionaries mode adds both published lexicons and clearly labeled
+          smaller open wordlists. They load on demand and are then available
+          offline.
         </p>
         <p>
           There is no backend, no account, and no analytics; your settings and
@@ -80,24 +80,33 @@ export default function AboutView() {
           <li>Hebrew — Brown–Driver–Briggs and Strong&rsquo;s (public domain), against the Masoretic text</li>
         </ul>
         <p>
-          Every cuneiform and hieroglyphic character in the database was
-          generated from its verified Unicode codepoint — no glyph was ever
-          typed from memory — and an integrity test keeps each script inside
-          its own Unicode block.
+          In the hand-curated comparative database, every cuneiform and
+          hieroglyphic character was generated from its independently verified
+          Unicode codepoint. Imported lexical datasets preserve the source
+          project&rsquo;s Unicode spellings; integrity tests validate their script
+          blocks, but the app does not claim to re-verify every imported sign.
         </p>
       </div>
 
       <div className="settings-section">
         <h2>Reference dictionaries</h2>
         <p>
-          The Dictionary tab&rsquo;s Reference dictionaries mode is a shelf of complete
-          published lexicons. Each is either public domain or openly licensed,
-          reproduced unmodified and presented as published &mdash; they are the
-          works themselves, not the hand-curated comparative data. The older
-          ones are historical references: read them as documents of their time,
-          not as current scholarship. There is no open full dictionary for
-          Hittite or Old South Arabian, so those are covered only by the
-          curated comparative entries.
+          This shelf mixes complete historical lexicons with smaller modern
+          lexical datasets. Every source is public domain or openly licensed,
+          and its label states its real scope. The older works are historical
+          references: read them as documents of their time, not as current
+          scholarship. Open Hittite coverage currently combines IE-CoR core
+          vocabulary with community Wiktionary entries. Open Old South Arabian
+          coverage is a small community snapshot, principally Sabaean with
+          small Minaean and Qatabanian subsets. Neither is presented as a full
+          scholarly dictionary.
+        </p>
+        <p>
+          The Chicago Hittite Dictionary and SabaWeb are not bundled because
+          their published terms do not grant redistribution. DASI&rsquo;s record
+          data are CC BY 4.0, but DASI is an inscription corpus rather than a
+          consistent word-to-English dictionary; the app does not infer a
+          word&rsquo;s meaning from an inscription-level translation.
         </p>
         <ul className="about-sources">
           {REFERENCE_DICTIONARIES.map((d) => (

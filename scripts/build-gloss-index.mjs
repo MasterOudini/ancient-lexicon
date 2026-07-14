@@ -32,6 +32,8 @@ const SOURCE_QUALIFIERS = /\b(?:properly|literally|figuratively|specifically|con
 const MORPHOLOGY = /\b(?:n\.?m|n\.?f|n\.?pr|vb|v|adj|adv|qal|niph|hiph|hoph|piel|pual|hith|pe|pa|aph|pf|impf|inf|pt|cstr|const|abs)\.?\b/gi
 const UNKNOWN = /^(?:\[?(?:noun|verb|unknown(?: meaning)?)\]?|\?+)$/i
 const LEGACY_CROSS_REFERENCE = /^(?:id|v|q\.?\s*v|see)\.?\b/i
+const WIKTIONARY_META_REFERENCE = /^(?:(?:(?:[a-z-]+-)?state\s+form|(?:alternative|alternate|obsolete|archaic|inflected|inflectional|plural|singular|comparative|superlative)\s+(?:form|spelling)|inflection)\s+of\b|(?:source-listed\s+)?(?:(?:first|second|third)[-\s]person|masculine|feminine|oblique|singular|dual|plural)\b[^;:]*\bform(?:\s+of\b|$))/i
+const WIKTIONARY_SENSE_BOUNDARY = /[;:]/
 const LEGACY_NOISE = new Set([
   'ab', 'af', 'appar', 'ar', 'arab', 'arabic', 'aram', 'assyr', 'au', 'benj',
   'cant', 'ch', 'coll', 'constr', 'contr', 'contrad', 'corresp', 'corr', 'ct',
@@ -66,6 +68,15 @@ function cleanSenseText(dictId, entry) {
     .replace(POS_PARENTHETICAL, '')
     .replace(/[{}\[\]]/g, '')
     .replace(SOURCE_QUALIFIERS, ' ')
+
+  if (dictId.endsWith('-wiktionary')) {
+    text = text
+      // Treat a colon like a sense boundary so "inflection of X: we" keeps
+      // the lexical sense while discarding only its morphology label.
+      .split(WIKTIONARY_SENSE_BOUNDARY)
+      .filter((segment) => !WIKTIONARY_META_REFERENCE.test(segment.trim()))
+      .join('; ')
+  }
 
   if (dictId === 'bdb' || dictId === 'jastrow') {
     text = text
@@ -124,6 +135,15 @@ function sensesFor(dictId, entry) {
   return senses.length > 0 ? senses : null
 }
 
+function skipAutomaticMeaning(dict, entry) {
+  if (!dict.id.endsWith('-wiktionary')) return false
+  if (/^(?:letter|symbol)$/i.test(entry.pos || '')) return true
+  const useful = String(entry.def || '')
+    .split(WIKTIONARY_SENSE_BOUNDARY)
+    .some((segment) => segment.trim() && !WIKTIONARY_META_REFERENCE.test(segment.trim()))
+  return !useful
+}
+
 function headAliases(value) {
   if (!value) return []
   const raw = String(value).trim()
@@ -139,16 +159,25 @@ function headAliases(value) {
 }
 
 const sourceIds = ['curated', ...REFERENCE_DICTIONARIES.map((dict) => dict.id)]
-const languageNames = ['Comparative', 'Hebrew', 'Aramaic', 'Egyptian', 'Sumerian', 'Akkadian']
+const languageNames = [
+  'Comparative',
+  'Hebrew',
+  'Aramaic',
+  'Egyptian',
+  'Sumerian',
+  'Akkadian',
+  'Hittite',
+  'Old South Arabian'
+]
 const sourceCode = new Map(sourceIds.map((id, i) => [id, i]))
 const languageCode = new Map(languageNames.map((name, i) => [name, i]))
 const candidates = []
 const headKeysByCandidate = []
 const coverage = {}
 
-function addCandidate({ dictId, id, lemma, language, translit, script, senses, heads }) {
+function addCandidate({ dictId, id, lemma, language, langCode, translit, script, variety, senses, heads }) {
   const index = candidates.length
-  candidates.push({ dictId, id, lemma, language, translit, script, senses })
+  candidates.push({ dictId, id, lemma, language, langCode, translit, script, variety, senses })
   headKeysByCandidate[index] = [...new Set(heads.flatMap(headAliases))]
 }
 
@@ -181,6 +210,7 @@ coverage.curated = { sourceEntries: LEXICON.length, indexedEntries: LEXICON.leng
 for (const dict of REFERENCE_DICTIONARIES) {
   const data = readDictionary(dict)
   let skippedNoEnglish = 0
+  let skippedMeta = 0
   let indexedEntries = 0
   for (const entry of data.entries) {
     // In the Egyptian import, `def` is English only when `de` is also
@@ -188,6 +218,14 @@ for (const dict of REFERENCE_DICTIONARIES) {
     // records are deliberately skipped rather than mislabeled as English.
     if (dict.id === 'egyptian' && !entry.de) {
       skippedNoEnglish++
+      continue
+    }
+    // Letter-name records and bare "form of" cross-references are useful in
+    // dictionary browsing but do not supply an independent lexical meaning.
+    // Feeding their boilerplate into the bridge would make searches such as
+    // "letter" or "abjad" look like cross-language sense matches.
+    if (skipAutomaticMeaning(dict, entry)) {
+      skippedMeta++
       continue
     }
     const senses = sensesFor(dict.id, entry)
@@ -202,13 +240,20 @@ for (const dict of REFERENCE_DICTIONARIES) {
       id: entry.id,
       lemma: entry.lemma,
       language,
+      langCode: entry.lang || dict.lang,
       translit: entry.xlit,
-      script: dict.id === 'sumerian' ? entry.cun : undefined,
+      script: dict.fields.script ? entry[dict.fields.script] : undefined,
+      variety: entry.variety,
       senses,
       heads
     })
   }
-  coverage[dict.id] = { sourceEntries: data.entries.length, indexedEntries, skippedNoEnglish }
+  coverage[dict.id] = {
+    sourceEntries: data.entries.length,
+    indexedEntries,
+    skippedNoEnglish,
+    skippedMeta
+  }
 }
 
 const candidatesByKeyword = new Map()
@@ -251,6 +296,8 @@ const records = candidates.map((candidate, recordId) => {
   ]
   if (candidate.translit || candidate.script) record[6] = candidate.translit || null
   if (candidate.script) record[7] = candidate.script
+  if (candidate.variety) record[8] = candidate.variety
+  if (candidate.langCode) record[9] = candidate.langCode
   return record
 })
 
