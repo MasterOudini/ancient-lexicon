@@ -99,6 +99,26 @@ function decodeSense(tuple) {
   }
 }
 
+function decodeRootReferenceKey(tuple, sources) {
+  if (!Array.isArray(tuple) || tuple.length < 2) return null
+  const source = sources[tuple[0]]
+  if (!source || !tuple[1]) return null
+  return `${source}:${tuple[1]}`
+}
+
+function decodeRootReference(sourceKey, entriesBySourceKey) {
+  const entry = entriesBySourceKey.get(sourceKey)
+  if (!entry) return null
+  return {
+    source: entry.source,
+    sourceLabel: entry.sourceLabel,
+    id: entry.id,
+    sourceKey: entry.sourceKey,
+    headword: entry.headword,
+    definition: entry.definition
+  }
+}
+
 export function decodeHebrewCatalog(payload) {
   if (!payload || payload.version !== 1 || !Array.isArray(payload.entries)) {
     throw new Error('Unsupported Hebrew catalog')
@@ -129,6 +149,7 @@ export function decodeHebrewCatalog(payload) {
       partOfSpeech: tuple[5],
       shard: tuple[6],
       senses,
+      rootReferenceKey: decodeRootReferenceKey(tuple[9], sources),
       searchText,
       sortKey: normalize(tuple[2]),
       pointedKey: canonicalPointedHeadword(tuple[2]),
@@ -142,6 +163,11 @@ export function decodeHebrewCatalog(payload) {
     a.source.localeCompare(b.source) ||
     String(a.id).localeCompare(String(b.id))
   )
+  const entriesBySourceKey = new Map(entries.map((entry) => [entry.sourceKey, entry]))
+  for (const entry of entries) {
+    entry.rootReference = decodeRootReference(entry.rootReferenceKey, entriesBySourceKey)
+    delete entry.rootReferenceKey
+  }
   return {
     version: payload.version,
     revision: payload.revision,

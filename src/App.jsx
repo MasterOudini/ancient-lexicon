@@ -10,6 +10,7 @@ import TabIcon from './components/TabIcon.jsx'
 import { LANGUAGES, HEBREW_CAVEAT } from './data/languages.js'
 import { LEXICON } from './data/lexicon.js'
 import { findRoot } from './data/roots.js'
+import { findAttestedRoot, loadAttestedRootCatalog } from './lib/attestedRootCatalog.js'
 import { searchEntries } from './lib/search.js'
 import {
   getJSON,
@@ -116,6 +117,7 @@ export default function App() {
     getJSON(CUSTOM_ENTRIES_KEY, [])
   )
   const [selectedRootId, setSelectedRootId] = useState(null)
+  const [selectedRootReference, setSelectedRootReference] = useState(null)
   const [query, setQuery] = useState('')
   const [comparisonScope, setComparisonScope] = useState('hebrew')
 
@@ -180,9 +182,31 @@ export default function App() {
   const openRoot = useCallback((letters) => {
     const root = findRoot('hebrew', letters)
     if (root) {
+      setSelectedRootReference(null)
       setSelectedRootId(root.id)
       setActiveTab('roots')
     }
+  }, [])
+
+  const openUniversalRoot = useCallback((reference) => {
+    if (!reference) return
+    setSelectedRootId(null)
+    setSelectedRootReference(reference)
+    setActiveTab('roots')
+
+    loadAttestedRootCatalog()
+      .then((catalog) => {
+        const root = findAttestedRoot(catalog, 'hebrew', reference.headword)
+        if (!root) return
+        setSelectedRootReference(null)
+        setSelectedRootId(root.id)
+      })
+      .catch(() => {})
+  }, [])
+
+  const selectRoot = useCallback((id) => {
+    setSelectedRootId(id)
+    if (!id) setSelectedRootReference(null)
   }, [])
 
   const deleteCustomEntry = useCallback((id) => {
@@ -316,6 +340,7 @@ export default function App() {
                   query={query}
                   strings={CONFIG.strings}
                   onClearQuery={clearQuery}
+                  onRootClick={openUniversalRoot}
                 />
               )}
             </>
@@ -334,7 +359,8 @@ export default function App() {
       {activeTab === 'roots' && (
         <RootsView
           selectedRootId={selectedRootId}
-          onSelectRoot={setSelectedRootId}
+          selectedRootReference={selectedRootReference}
+          onSelectRoot={selectRoot}
         />
       )}
 

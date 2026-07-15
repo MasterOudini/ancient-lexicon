@@ -195,7 +195,7 @@ export function UniversalComparisonCard({ entry, senses }) {
   )
 }
 
-export function HebrewEntryRow({ entry, initiallyOpen = false, promotionKey = '' }) {
+export function HebrewEntryRow({ entry, initiallyOpen = false, promotionKey = '', onRootClick }) {
   const [senses, setSenses] = useState(null)
   const [status, setStatus] = useState('idle')
   const [open, setOpen] = useState(initiallyOpen)
@@ -243,6 +243,23 @@ export function HebrewEntryRow({ entry, initiallyOpen = false, promotionKey = ''
         <span className="lex-id">{entry.sourceLabel}</span>
         {entry.partOfSpeech && <span className="lex-id">{entry.partOfSpeech}</span>}
         <span className="lex-def">{entry.definition}</span>
+        {entry.rootReference && (
+          <button
+            type="button"
+            className="rootchip hebrew-row-root"
+            dir="rtl"
+            lang="he"
+            onClick={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              onRootClick?.(entry.rootReference)
+            }}
+            aria-label={`Open root ${entry.rootReference.headword}`}
+            data-root-source={entry.rootReference.sourceKey}
+          >
+            {entry.rootReference.headword}
+          </button>
+        )}
         <span className="hebrew-row-action">
           <span className="hebrew-row-action-open">Open comparison</span>
           <span className="hebrew-row-action-close">Close comparison</span>
@@ -260,7 +277,7 @@ export function HebrewEntryRow({ entry, initiallyOpen = false, promotionKey = ''
   )
 }
 
-export default function HebrewComparative({ query, strings, onClearQuery }) {
+export default function HebrewComparative({ query, strings, onClearQuery, onRootClick }) {
   const [catalog, setCatalog] = useState(null)
   const [status, setStatus] = useState('loading')
   const [visible, setVisible] = useState(PAGE)
@@ -335,6 +352,7 @@ export default function HebrewComparative({ query, strings, onClearQuery }) {
           entry={entry}
           initiallyOpen={entry.sourceKey === promotedSourceKey}
           promotionKey={entry.sourceKey === promotedSourceKey ? `${query}:${promotedSourceKey}` : ''}
+          onRootClick={onRootClick}
         />
       ))}
       <div ref={sentinelRef} aria-hidden="true" />

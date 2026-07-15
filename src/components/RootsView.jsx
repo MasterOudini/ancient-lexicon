@@ -255,7 +255,34 @@ export function RootDetail({ root, catalog, catalogStatus, onSelectRoot }) {
   )
 }
 
-export default function RootsView({ selectedRootId, onSelectRoot }) {
+export function RootReferenceDetail({ reference, onSelectRoot }) {
+  return (
+    <section className="root-reference-detail">
+      <button className="btn-back" onClick={() => onSelectRoot(null)}>
+        ‹ All roots
+      </button>
+
+      <div className="root-letters-large" dir="rtl" lang="he">
+        {reference.headword}
+      </div>
+      <div className="root-gloss">{reference.definition}</div>
+
+      <div className="note-block root-provenance">
+        <div className="doublet-label">Published lexical root entry</div>
+        <div>
+          Source: {reference.sourceLabel} {reference.id}.
+        </div>
+        <div>
+          This source heading is the lexical root destination for the selected
+          word. It is not added to the permutation explorer unless the source
+          explicitly classifies it as an attested root.
+        </div>
+      </div>
+    </section>
+  )
+}
+
+export default function RootsView({ selectedRootId, selectedRootReference, onSelectRoot }) {
   const [query, setQuery] = useState('')
   const [catalog, setCatalog] = useState(CURATED_ROOT_CATALOG)
   const [catalogStatus, setCatalogStatus] = useState('loading')
@@ -279,6 +306,10 @@ export default function RootsView({ selectedRootId, onSelectRoot }) {
   const selected = selectedRootId
     ? findAttestedRootById(catalog, selectedRootId)
     : null
+
+  if (selectedRootReference) {
+    return <RootReferenceDetail reference={selectedRootReference} onSelectRoot={onSelectRoot} />
+  }
 
   if (selected) {
     return (
