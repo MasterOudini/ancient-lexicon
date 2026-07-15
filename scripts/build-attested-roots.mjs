@@ -164,7 +164,10 @@ export function extractAttestedRootCandidates(strongs, bdb) {
     // At the pinned BDB revision every XML type="root" group leader is the
     // stable .aa record. Other verb rows can be derived or inflected forms;
     // treating their displayed consonants as radicals creates false roots.
-    const explicitUnpointedRoot = !/[\u0591-\u05c7]/u.test(entry.lemma || '')
+    // Shin/sin dots identify the consonant rather than vocalize it, so a root
+    // such as BDB t.eu.aa (רשׁף) is still an unpointed root heading.
+    const hasLexicalPointing = POINTING.test(entry.lemma || '')
+    const explicitUnpointedRoot = !hasLexicalPointing
     if (
       !entry.id.endsWith('.aa') ||
       (!/^vb(?:\.|$)/i.test(entry.pos || '') && !explicitUnpointedRoot)

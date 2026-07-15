@@ -307,7 +307,9 @@ for (const entry of strongsSource.entries) {
   }
 }
 for (const entry of bdbSource.entries) {
-  const explicitUnpointedRoot = !/[\u0591-\u05c7]/u.test(entry.lemma || '')
+  // Shin/sin dots identify the consonant; they are not lexical pointing.
+  const hasLexicalPointing = independentlyPointedRoot(entry.lemma || '')
+  const explicitUnpointedRoot = !hasLexicalPointing
   if (
     !entry.id.endsWith('.aa') ||
     (!/^vb(?:\.|$)/i.test(entry.pos || '') && !explicitUnpointedRoot)
@@ -406,6 +408,18 @@ check(
         source.sourceLanguage === candidate.sourceLanguage
     )
   })
+)
+check(
+  'unpointed BDB root headings with a shin dot remain source-backed roots',
+  publishedByKey
+    .get(`hebrew:${rootKey('\u05e8\u05e9\u05e3')}`)
+    ?.sources.some((source) => source.source === 'bdb' && source.sourceId === 't.eu.aa')
+)
+check(
+  'the pointed five-consonant Aramaic derivative remains excluded from roots',
+  !publishedCatalog.roots.some((root) =>
+    root.sources?.some((source) => source.source === 'bdb' && source.sourceId === 'xv.am.aa')
+  )
 )
 const alternateRootRegressions = new Map([
   ['סוט', 'H7750'],
