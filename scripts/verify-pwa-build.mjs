@@ -18,8 +18,21 @@ const appModule = moduleFile
 const packageVersion = JSON.parse(
   readFileSync(join(projectRoot, 'package.json'), 'utf8')
 ).version
+const release = JSON.parse(readFileSync(join(distDir, 'release.json'), 'utf8'))
+const expectedBuildId = (process.env.GITHUB_SHA || release.buildId).slice(0, 18)
+const expectedReleaseNumber = process.env.GITHUB_RUN_NUMBER
+  ? Number.parseInt(process.env.GITHUB_RUN_NUMBER, 10) || 0
+  : release.releaseNumber
+const expectedReleaseId = expectedReleaseNumber > 0
+  ? `${expectedReleaseNumber}-${expectedBuildId}`
+  : expectedBuildId
+const releaseShellPath = join(distDir, `shell-${expectedReleaseId}.html`)
+const releaseWorkerPath = join(distDir, `sw-${expectedReleaseId}.js`)
+const releaseHooksPath = join(distDir, `sw-hooks-${expectedReleaseId}.js`)
 const rootDatasetUrl = 'dicts/attested-roots-2026-07-v1.json'
 const rootDatasetPath = join(distDir, ...rootDatasetUrl.split('/'))
+const releaseRootDatasetUrl = `release-${expectedReleaseId}/${rootDatasetUrl}`
+const releaseRootDatasetPath = join(distDir, ...releaseRootDatasetUrl.split('/'))
 const rootDatasetFormat = 'ancient-lexicon-attested-roots-v1'
 const rootDatasetPayloadMarker = 'attested-root-payload-only-2026-07-v1'
 const rootDatasetPayloadProbe = 'attested-root-records-only-2026-07-v1'
@@ -31,12 +44,37 @@ function verify(condition, message) {
 const expectedBase = process.env.VITE_BASE || '/'
 verify(!html.includes('registerSW.js'), 'an extra injected registrar is present')
 verify(
+  release.format === 'ancient-lexicon-release-v1' &&
+    release.buildId === expectedBuildId &&
+    release.releaseNumber === expectedReleaseNumber &&
+    release.releaseId === expectedReleaseId &&
+    release.worker === `sw-${expectedReleaseId}.js` &&
+    release.shell === `shell-${expectedReleaseId}.html`,
+  'release.json does not identify this exact build and workflow run'
+)
+verify(existsSync(releaseShellPath), 'the immutable release shell is missing')
+verify(existsSync(releaseWorkerPath), 'the immutable release worker is missing')
+verify(existsSync(releaseHooksPath), 'the release worker hooks are missing')
+verify(
+  readFileSync(releaseShellPath, 'utf8') === html,
+  'the immutable release shell is not the final index.html'
+)
+verify(
+  readFileSync(releaseWorkerPath, 'utf8') === worker,
+  'the immutable worker alias differs from the migration worker'
+)
+verify(
   appModule.includes('updateViaCache') && appModule.includes('none'),
   'the worker registration does not bypass the HTTP cache'
 )
 verify(
-  appModule.includes('controllerchange') && appModule.includes('location.reload'),
-  'controller replacement does not reload the open app'
+  appModule.includes('controllerchange') &&
+    appModule.includes('location.reload') &&
+    appModule.includes('GET_ANCIENT_LEXICON_RELEASE') &&
+    appModule.includes('release.json') &&
+    appModule.includes('no-store') &&
+    appModule.includes(expectedReleaseId),
+  'the client does not independently detect and converge to the newest release'
 )
 verify(
   appModule.includes('Installed app version') &&
@@ -56,12 +94,31 @@ verify(
   'the generated worker does not activate and claim clients immediately'
 )
 verify(
+  worker.includes(`sw-hooks-${expectedReleaseId}.js`) &&
+    worker.includes(`shell-${expectedReleaseId}.html`) &&
+    worker.includes(`createHandlerBoundToURL("shell-${expectedReleaseId}.html")`),
+  'the worker does not import matching release hooks and navigate via its immutable shell'
+)
+const workerHooks = readFileSync(releaseHooksPath, 'utf8')
+verify(
+  workerHooks.includes(expectedReleaseId) &&
+    workerHooks.includes('GET_ANCIENT_LEXICON_RELEASE') &&
+    workerHooks.includes('CLAIM_ANCIENT_LEXICON_CLIENTS') &&
+    workerHooks.includes('client.navigate') &&
+    !workerHooks.includes('await client.navigate'),
+  'the activation hook cannot identify the release and navigate old clients'
+)
+verify(
   worker.includes('hebrew-comparison-catalog') &&
     worker.includes('hebrew-comparison-shards') &&
     worker.includes('attested-root-catalog'),
   'the generated worker does not keep separate offline caches for Hebrew comparisons and roots'
 )
 verify(existsSync(rootDatasetPath), 'the attested-root catalog was not copied to dist')
+verify(
+  existsSync(releaseRootDatasetPath),
+  'the immutable release copy of the attested-root catalog is missing'
+)
 const rootDataset = JSON.parse(readFileSync(rootDatasetPath, 'utf8'))
 verify(
   rootDataset.format === rootDatasetFormat &&
@@ -78,6 +135,13 @@ const precacheUrls = [...precacheMatch[1].matchAll(/\burl:"([^"]+)"/g)]
 verify(
   !precacheUrls.includes(rootDatasetUrl),
   'the on-demand attested-root catalog entered the precache'
+)
+verify(
+  precacheUrls.includes(`shell-${expectedReleaseId}.html`) &&
+    !precacheUrls.includes('release.json') &&
+    !precacheUrls.includes(`sw-hooks-${expectedReleaseId}.js`) &&
+    !precacheUrls.includes(releaseRootDatasetUrl),
+  'the precache does not contain exactly the immutable shell while excluding release discovery and data files'
 )
 verify(
   !precacheUrls.some((url) => /^dicts\/.*\.json$/.test(url)),

@@ -2,6 +2,8 @@
 // supplies enough compact data to render result rows; a full dictionary is
 // fetched only when the user opens one of those rows.
 
+import { fetchReleaseAsset } from './releaseAssets.js'
+
 const CACHE = new Map()
 const ENTRY_CACHE = new Map()
 const PENDING = new Map()
@@ -32,8 +34,9 @@ export async function loadReferenceDictionary(dict) {
         const mod = await import('../data/strongs.json')
         data = mod.default
       } else {
-        const base = import.meta.env.BASE_URL || '/'
-        const res = await fetch(base + dict.source.url, { cache: 'no-cache' })
+        const res = await fetchReleaseAsset(dict.source.url, {
+          options: { cache: 'no-cache' }
+        })
         if (!res.ok) throw new Error('fetch failed: ' + res.status)
         data = await res.json()
       }

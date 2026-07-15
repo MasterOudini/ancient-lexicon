@@ -1,4 +1,5 @@
 import { ROOTS, rootKey } from '../data/roots.js'
+import { fetchReleaseAsset } from './releaseAssets.js'
 
 export const ATTESTED_ROOT_CATALOG_FILE = 'attested-roots-2026-07-v1.json'
 export const ATTESTED_ROOT_CATALOG_FORMAT = 'ancient-lexicon-attested-roots-v1'
@@ -128,12 +129,13 @@ function validatePayload(payload) {
 export function loadAttestedRootCatalog({ fetchImpl = fetch, baseUrl } = {}) {
   if (catalogPromise) return catalogPromise
   const generation = cacheGeneration
-  const base = baseUrl ?? import.meta.env?.BASE_URL ?? '/'
-  const url = `${base.endsWith('/') ? base : `${base}/`}dicts/${ATTESTED_ROOT_CATALOG_FILE}`
-
-  catalogPromise = fetchImpl(url, {
-    cache: 'no-cache',
-    headers: { accept: 'application/json' }
+  catalogPromise = fetchReleaseAsset(`dicts/${ATTESTED_ROOT_CATALOG_FILE}`, {
+    fetchImpl,
+    baseUrl,
+    options: {
+      cache: 'no-cache',
+      headers: { accept: 'application/json' }
+    }
   })
     .then((response) => {
       if (!response.ok) throw new Error(`Root catalog request failed (${response.status}).`)

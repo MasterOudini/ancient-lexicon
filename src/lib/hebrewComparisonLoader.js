@@ -1,5 +1,6 @@
 import { getDictionary } from '../data/referenceDictionaries.js'
 import { normalize } from './search.js'
+import { fetchReleaseAsset } from './releaseAssets.js'
 
 export const HEBREW_CATALOG_PATH = 'dicts/hebrew-catalog-2026-07-v1.json'
 export const HEBREW_SHARD_DIRECTORY = 'dicts/hebrew-comparisons-2026-07-v1'
@@ -327,8 +328,9 @@ export function resolveHebrewComparison(entry, shard) {
 }
 
 async function fetchJson(path) {
-  const base = import.meta.env?.BASE_URL || '/'
-  const response = await fetch(base + path, { cache: 'no-cache' })
+  const response = await fetchReleaseAsset(path, {
+    options: { cache: 'no-cache' }
+  })
   if (!response.ok) throw new Error('fetch failed: ' + response.status)
   return response.json()
 }
