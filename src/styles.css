@@ -400,6 +400,15 @@ details.infobox ul {
   font-size: 0.95rem;
 }
 
+.root-unavailable {
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
 .badge-custom {
   font-size: 0.72rem;
   letter-spacing: 0.06em;

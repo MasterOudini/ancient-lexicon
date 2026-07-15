@@ -95,8 +95,18 @@ let sensesComplete = true
 let searchFieldsNormalized = true
 let rootReferencesValid = true
 let rootReferenceCount = 0
+const publishedRootMismatches = []
+const attestedRootPayload = json(join(dicts, 'attested-roots-2026-07-v1.json'))
+const publishedRootKeysBySource = new Map()
+for (const root of attestedRootPayload.roots.filter((entry) => entry.lang === 'hebrew')) {
+  for (const source of root.sources || []) {
+    const key = sourceKey(source.source, source.sourceId)
+    if (!publishedRootKeysBySource.has(key)) publishedRootKeysBySource.set(key, new Set())
+    publishedRootKeysBySource.get(key).add(rootKey(root.letters))
+  }
+}
 const completeRootCatalog = mergeAttestedRootCatalog(
-  json(join(dicts, 'attested-roots-2026-07-v1.json')),
+  attestedRootPayload,
   ROOTS
 )
 for (const entry of catalog.entries) {
@@ -139,6 +149,20 @@ for (const entry of catalog.entries) {
       rootKey(attestedRoot.letters) !== root.letters
     ) rootReferencesValid = false
   }
+  const publishedRootKeys = publishedRootKeysBySource.get(entry.sourceKey)
+  if (
+    publishedRootKeys &&
+    (
+      !root ||
+      root.sourceKey !== entry.sourceKey ||
+      root.letters !== rootKey(entry.headword) ||
+      !publishedRootKeys.has(root.letters)
+    )
+  ) {
+    publishedRootMismatches.push(
+      `${entry.sourceKey}:${root?.letters || 'missing'}=>${[...publishedRootKeys].join('|')}`
+    )
+  }
 }
 check('all catalog keys are unique', catalogByKey.size === 18_992)
 check('every catalog row round-trips its exact raw source fields', exactRawRoundTrip)
@@ -151,6 +175,118 @@ check(
   'source-backed root buttons cover the Hebrew comparison catalog',
   rootReferenceCount > 15_000,
   String(rootReferenceCount)
+)
+check(
+  'every published root-source card opens its own consonants in source order',
+  publishedRootKeysBySource.size > 3_000 && publishedRootMismatches.length === 0,
+  publishedRootMismatches.join(', ')
+)
+const ratsaf = catalogByKey.get('bdb:t.eh.aa')
+check(
+  'BDB רָצַף keeps the published רצפ root instead of a Strong\'s cross-reference chain',
+  ratsaf?.rootReference?.sourceKey === 'bdb:t.eh.aa' &&
+    ratsaf.rootReference.letters === 'רצפ'
+)
+const RATSAF_ROOT = '\u05e8\u05e6\u05e4'
+const RESHEPH_ROOT = '\u05e8\u05e9\u05e4'
+const SARAPH_ROOT = '\u05e9\u05e8\u05e4'
+const ratsafFamily = [
+  'strongs:H4837',
+  'strongs:H7528',
+  'strongs:H7529',
+  'strongs:H7530',
+  'strongs:H7531',
+  'strongs:H7532',
+  'bdb:m.dn.ad',
+  'bdb:t.eh.aa',
+  'bdb:t.eh.ab',
+  'bdb:t.eh.ac',
+  'bdb:t.ei.aa',
+  'bdb:t.ei.ab',
+  'bdb:t.ei.ac',
+  'bdb:t.ei.ad',
+  'bdb:t.ei.ae'
+]
+check(
+  'all רצף-family cards keep רצפ instead of following the רשף-to-שרף chain',
+  ratsafFamily.every((key) => catalogByKey.get(key)?.rootReference?.letters === RATSAF_ROOT),
+  ratsafFamily
+    .filter((key) => catalogByKey.get(key)?.rootReference?.letters !== RATSAF_ROOT)
+    .map((key) => `${key}:${catalogByKey.get(key)?.rootReference?.letters || 'missing'}`)
+    .join(', ')
+)
+const reshephFamily = [
+  'strongs:H7565',
+  'strongs:H7566',
+  'bdb:t.eu.aa',
+  'bdb:t.eu.ab',
+  'bdb:t.eu.ac'
+]
+check(
+  'all רשף-family cards keep רשפ without metathesis to שרפ',
+  reshephFamily.every((key) => catalogByKey.get(key)?.rootReference?.letters === RESHEPH_ROOT),
+  reshephFamily
+    .filter((key) => catalogByKey.get(key)?.rootReference?.letters !== RESHEPH_ROOT)
+    .map((key) => `${key}:${catalogByKey.get(key)?.rootReference?.letters || 'missing'}`)
+    .join(', ')
+)
+check(
+  'the distinct שרף primitive root remains שרפ',
+  catalogByKey.get('strongs:H8313')?.rootReference?.letters === SARAPH_ROOT
+)
+const reviewedRootRoutes = new Map([
+  ['strongs:H4837', ['bdb:t.eh.aa', RATSAF_ROOT]],
+  ['strongs:H7528', ['bdb:t.eh.aa', RATSAF_ROOT]],
+  ['strongs:H7529', ['bdb:t.ei.aa', RATSAF_ROOT]],
+  ['strongs:H7530', ['bdb:t.ei.aa', RATSAF_ROOT]],
+  ['strongs:H7531', ['bdb:t.ei.aa', RATSAF_ROOT]],
+  ['strongs:H7532', ['bdb:t.ei.aa', RATSAF_ROOT]],
+  ['strongs:H7565', ['bdb:t.eu.aa', RESHEPH_ROOT]],
+  ['strongs:H7566', ['bdb:t.eu.aa', RESHEPH_ROOT]],
+  ['strongs:H8313', ['strongs:H8313', SARAPH_ROOT]],
+  ['bdb:m.dn.ad', ['bdb:t.eh.aa', RATSAF_ROOT]],
+  ...['t.eh.aa', 't.eh.ab', 't.eh.ac'].map((id) =>
+    [`bdb:${id}`, ['bdb:t.eh.aa', RATSAF_ROOT]]
+  ),
+  ...['t.ei.aa', 't.ei.ab', 't.ei.ac', 't.ei.ad', 't.ei.ae'].map((id) =>
+    [`bdb:${id}`, ['bdb:t.ei.aa', RATSAF_ROOT]]
+  ),
+  ...['t.eu.aa', 't.eu.ab', 't.eu.ac'].map((id) =>
+    [`bdb:${id}`, ['bdb:t.eu.aa', RESHEPH_ROOT]]
+  ),
+  ...['u.cj.aa', 'u.cj.ab', 'u.cj.ac', 'u.cj.ad', 'u.cj.ae', 'u.cj.af', 'u.cj.ag']
+    .map((id) => [`bdb:${id}`, ['bdb:u.cj.aa', SARAPH_ROOT]])
+])
+const reviewedRouteMismatches = [...reviewedRootRoutes].filter(([key, expected]) => {
+  const rootReference = catalogByKey.get(key)?.rootReference
+  return rootReference?.sourceKey !== expected[0] || rootReference?.letters !== expected[1]
+})
+check(
+  'reviewed רצף, רשף, and שרף cards open the intended published root source',
+  reviewedRouteMismatches.length === 0,
+  reviewedRouteMismatches
+    .map(([key, expected]) =>
+      `${key}:${catalogByKey.get(key)?.rootReference?.sourceKey || 'missing'}=>${expected[0]}`
+    )
+    .join(', ')
+)
+check(
+  'unrelated weak-letter derivations retain their explicit Strong\'s roots',
+  catalogByKey.get('strongs:H68')?.rootReference?.sourceKey === 'strongs:H1129' &&
+    catalogByKey.get('strongs:H68')?.rootReference?.letters === '\u05d1\u05e0\u05d4' &&
+    catalogByKey.get('strongs:H101')?.rootReference?.sourceKey === 'strongs:H5059' &&
+    catalogByKey.get('strongs:H101')?.rootReference?.letters === '\u05e0\u05d2\u05e0'
+)
+const yad = catalogByKey.get('strongs:H3027')
+check(
+  'Strong\'s יָד keeps its primitive יד base before comparison references',
+  yad?.rootReference?.sourceKey === 'strongs:H3027' && yad.rootReference.letters === 'יד'
+)
+const muthLabben = catalogByKey.get('strongs:H4192')
+check(
+  'Strong\'s H4192 follows its stated H4191 derivation instead of a Psalm citation number',
+  muthLabben?.rootReference?.sourceKey === 'strongs:H4191' &&
+    muthLabben.rootReference.letters === 'מות'
 )
 check('catalog search fields preserve normalized headword, ID, definition, and source label', searchFieldsNormalized)
 

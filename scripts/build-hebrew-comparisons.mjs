@@ -737,22 +737,64 @@ function strongsRootEntry(entry, strongsById, attestedRootKeys, seen = new Set()
     !/\(Aramaic\)/i.test(entry.deriv || '')
   ) return entry
 
+  // A published primitive lexical base is authoritative for itself. Any
+  // Strong's IDs later in the note can be contrasts or comparisons rather
+  // than derivational parents (for example H3027 distinguishes itself from
+  // H3709), so do not traverse them before honoring this declaration.
+  if (letters && attestedRootKeys.has(letters) && /\bprimitive word\b/i.test(entry.deriv || '')) {
+    return entry
+  }
+
   for (const id of referencedStrongsIds(entry)) {
     const root = strongsRootEntry(strongsById.get(id), strongsById, attestedRootKeys, seen)
     if (root) return root
-  }
-
-  // The curated catalog also contains reviewed primitive noun bases such as
-  // אב. They are valid root destinations even though Strong's does not label
-  // them as verbal primitive roots.
-  if (letters && attestedRootKeys.has(letters) && /\bprimitive word\b/i.test(entry.deriv || '')) {
-    return entry
   }
   return null
 }
 
 function bdbGroupKey(id) {
   return String(id).replace(/\.[^.]+$/, '')
+}
+
+// These pinned BDB families were reviewed together because Strong's links the
+// רצף and רשף spellings through a deeper שרף metathesis chain. The card should
+// open the nearer published BDB root family, while unrelated BDB prefixes must
+// not inherit a group leader automatically.
+const REVIEWED_STRONGS_BDB_ROOTS = new Map([
+  ['H4837', 't.eh.aa'],
+  ['H7528', 't.eh.aa'],
+  ['H7529', 't.ei.aa'],
+  ['H7530', 't.ei.aa'],
+  ['H7531', 't.ei.aa'],
+  ['H7532', 't.ei.aa'],
+  ['H7565', 't.eu.aa'],
+  ['H7566', 't.eu.aa']
+])
+// H4192 begins with a parenthetical Psalm citation containing H48 before its
+// actual derivation, "from H4191". The free-form citation number must not be
+// traversed as a lexical parent.
+const REVIEWED_STRONGS_ROOTS = new Map([
+  ['H4192', 'H4191']
+])
+const REVIEWED_BDB_ROOT_FAMILIES = new Map([
+  ['t.eh.', 't.eh.aa'],
+  ['t.ei.', 't.ei.aa'],
+  ['t.eu.', 't.eu.aa'],
+  ['u.cj.', 'u.cj.aa']
+])
+const REVIEWED_BDB_ROOT_ROWS = new Map([
+  ['m.dn.ad', 't.eh.aa']
+])
+
+function reviewedBdbRootId(source, id) {
+  if (source === 'strongs') return REVIEWED_STRONGS_BDB_ROOTS.get(String(id)) || null
+  if (source !== 'bdb') return null
+  const reviewedRow = REVIEWED_BDB_ROOT_ROWS.get(String(id))
+  if (reviewedRow) return reviewedRow
+  for (const [prefix, rootId] of REVIEWED_BDB_ROOT_FAMILIES) {
+    if (String(id).startsWith(prefix)) return rootId
+  }
+  return null
 }
 
 function publicRootReference(sourceIndex, entry) {
@@ -772,10 +814,28 @@ function rootReferenceFor(sourceIndex, entry, rootContext) {
     attestedRootKeys,
     strongsById,
     strongsByLemma,
+    bdbRootSourceIds,
+    bdbRootsById,
     bdbRootsByGroup,
     bdbRootsByLetters
   } = rootContext
-  if (HEBREW_SOURCES[sourceIndex] === 'strongs') {
+  const source = HEBREW_SOURCES[sourceIndex]
+  const reviewedStrongsRootId = source === 'strongs'
+    ? REVIEWED_STRONGS_ROOTS.get(String(entry.id))
+    : null
+  if (reviewedStrongsRootId) {
+    const reviewedRoot = strongsById.get(reviewedStrongsRootId)
+    if (!reviewedRoot) throw new Error(`reviewed Strong's root is missing: ${reviewedStrongsRootId}`)
+    return publicRootReference(0, reviewedRoot)
+  }
+  const reviewedRootId = reviewedBdbRootId(source, entry.id)
+  if (reviewedRootId) {
+    const reviewedRoot = bdbRootsById.get(reviewedRootId)
+    if (!reviewedRoot) throw new Error(`reviewed BDB root is missing: ${reviewedRootId}`)
+    return publicRootReference(1, reviewedRoot)
+  }
+
+  if (source === 'strongs') {
     const strongsRootReference = publicRootReference(
       sourceIndex,
       strongsRootEntry(entry, strongsById, attestedRootKeys)
@@ -784,6 +844,12 @@ function rootReferenceFor(sourceIndex, entry, rootContext) {
     const matchingBdbRoot = bdbRootsByLetters.get(rootKey(entry.lemma))
     return matchingBdbRoot ? publicRootReference(1, matchingBdbRoot) : null
   }
+
+  // These exact BDB records are cited as published roots by the attested-root
+  // catalog. Keep each source-distinct heading authoritative even when another
+  // BDB root has the same consonants; a Map keyed only by letters cannot retain
+  // that identity and previously let unrelated Strong's chains override it.
+  if (bdbRootSourceIds.has(entry.id)) return publicRootReference(1, entry)
 
   const ownSourceRoot = bdbRootsByLetters.get(rootKey(entry.lemma))
   if (ownSourceRoot?.id === entry.id) return publicRootReference(1, ownSourceRoot)
@@ -856,8 +922,10 @@ export function buildArtifacts() {
     join(projectRoot, 'public', 'dicts', 'attested-roots-2026-07-v1.json')
   )
   const attestedRootKeys = new Set([
-    ...ROOTS.map((root) => rootKey(root.letters)),
-    ...attestedRootPayload.roots.map((root) => rootKey(root.letters))
+    ...ROOTS.filter((root) => root.lang === 'hebrew').map((root) => rootKey(root.letters)),
+    ...attestedRootPayload.roots
+      .filter((root) => root.lang === 'hebrew')
+      .map((root) => rootKey(root.letters))
   ])
   const bdbRootSourceIds = new Set(
     attestedRootPayload.roots.flatMap((root) =>
@@ -867,17 +935,26 @@ export function buildArtifacts() {
     )
   )
   const bdbRootEntries = hebrewBdb.filter((entry) => bdbRootSourceIds.has(entry.id))
+  const bdbRootsById = new Map(bdbRootEntries.map((entry) => [entry.id, entry]))
+  // Newly recovered unpointed headings with shin/sin dots are authoritative
+  // for their own source rows. Do not also turn them into consonant-only
+  // fallbacks for unrelated homographs until that cross-link is reviewed.
+  const reusableBdbRootEntries = bdbRootEntries.filter((entry) =>
+    /^vb(?:\.|$)/i.test(entry.pos || '') || !/[\u0591-\u05c7]/u.test(entry.lemma || '')
+  )
   const bdbRootsByLetters = new Map(
-    bdbRootEntries.map((entry) => [rootKey(entry.lemma), entry])
+    reusableBdbRootEntries.map((entry) => [rootKey(entry.lemma), entry])
   )
   const bdbRootsByGroup = new Map(
-    bdbRootEntries
+    reusableBdbRootEntries
       .map((entry) => [bdbGroupKey(entry.id), entry])
   )
   const rootContext = {
     attestedRootKeys,
     strongsById,
     strongsByLemma,
+    bdbRootSourceIds,
+    bdbRootsById,
     bdbRootsByGroup,
     bdbRootsByLetters
   }

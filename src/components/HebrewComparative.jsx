@@ -243,7 +243,7 @@ export function HebrewEntryRow({ entry, initiallyOpen = false, promotionKey = ''
         <span className="lex-id">{entry.sourceLabel}</span>
         {entry.partOfSpeech && <span className="lex-id">{entry.partOfSpeech}</span>}
         <span className="lex-def">{entry.definition}</span>
-        {entry.rootReference && (
+        {entry.rootReference ? (
           <button
             type="button"
             className="rootchip hebrew-row-root"
@@ -259,6 +259,10 @@ export function HebrewEntryRow({ entry, initiallyOpen = false, promotionKey = ''
           >
             {entry.rootReference.letters}
           </button>
+        ) : (
+          <span className="root-unavailable" data-root-status="unresolved">
+            Root not identified by source
+          </span>
         )}
         <span className="hebrew-row-action">
           <span className="hebrew-row-action-open">Open comparison</span>

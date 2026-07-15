@@ -72,9 +72,28 @@ try {
   assert.match(openRow, /data-source-key="strongs:H2803"/)
   assert.match(openRow, /Close comparison/)
   assert.match(openRow, /class="rootchip hebrew-row-root"/)
+  assert.match(openRow, /class="rootchip hebrew-row-root"[^>]*dir="rtl"[^>]*lang="he"/)
   assert.match(openRow, /data-root-source="strongs:H2803"/)
   assert.match(openRow, />\u05d7\u05e9\u05d1<\/button>/)
   assert.doesNotMatch(openRow, /Published lexical root entry/)
+
+  const unresolvedRow = renderToStaticMarkup(
+    React.createElement(HebrewEntryRow, {
+      entry: {
+        ...entry,
+        sourceKey: 'strongs:H5',
+        id: 'H5',
+        headword: '\u05d0\u05b2\u05d1\u05b7\u05d2\u05b0\u05ea\u05b8\u05d0',
+        rootReference: null
+      },
+      initiallyOpen: false,
+      promotionKey: null,
+      onRootClick: () => {}
+    })
+  )
+  assert.match(unresolvedRow, /data-root-status="unresolved"/)
+  assert.match(unresolvedRow, /Root not identified by source/)
+  assert.doesNotMatch(unresolvedRow, /class="rootchip hebrew-row-root"/)
 
   const languages = ['akkadian', 'sumerian', 'egyptian', 'hittite', 'aramaic', 'osa']
   const senses = [{
