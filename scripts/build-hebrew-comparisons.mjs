@@ -8,11 +8,12 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { LEXICON } from '../src/data/lexicon.js'
+import { ROOTS, rootKey } from '../src/data/roots.js'
 import { REFERENCE_DICTIONARIES } from '../src/data/referenceDictionaries.js'
 import { englishKeywords, GLOSS_STOP_WORDS } from '../src/lib/glossSearch.js'
 import { normalize } from '../src/lib/search.js'
 import { toImperialAramaic, toMusnad } from '../src/lib/scripts.js'
-import { isDirectStrongsRoot } from './build-attested-roots.mjs'
+import { isDirectStrongsRoot, rootLettersFromLemma } from './build-attested-roots.mjs'
 
 export const BUILD_ID = '2026-07-v1'
 export const SHARD_COUNT = 64
@@ -725,20 +726,29 @@ function referencedStrongsIds(entry) {
   return [...new Set((entry.deriv || '').match(/\bH\d+\b/g) || [])]
 }
 
-function strongsRootEntry(entry, strongsById, seen = new Set()) {
-  if (!entry || seen.has(entry.id)) return entry
+function strongsRootEntry(entry, strongsById, attestedRootKeys, seen = new Set()) {
+  if (!entry || seen.has(entry.id)) return null
   seen.add(entry.id)
-  if (isDirectStrongsRoot(entry) && !/\(Aramaic\)/i.test(entry.deriv || '')) return entry
+  const letters = rootLettersFromLemma(entry.lemma)?.join('')
+  if (
+    letters &&
+    attestedRootKeys.has(letters) &&
+    isDirectStrongsRoot(entry) &&
+    !/\(Aramaic\)/i.test(entry.deriv || '')
+  ) return entry
 
   for (const id of referencedStrongsIds(entry)) {
-    const root = strongsRootEntry(strongsById.get(id), strongsById, seen)
-    if (root && isDirectStrongsRoot(root) && !/\(Aramaic\)/i.test(root.deriv || '')) return root
+    const root = strongsRootEntry(strongsById.get(id), strongsById, attestedRootKeys, seen)
+    if (root) return root
   }
 
-  // Proper names, particles, and unanalysed lexical entries do not all have
-  // an explicit verbal derivation in Strong's. Their own published heading is
-  // still the honest lexical destination for the root button.
-  return entry
+  // The curated catalog also contains reviewed primitive noun bases such as
+  // אב. They are valid root destinations even though Strong's does not label
+  // them as verbal primitive roots.
+  if (letters && attestedRootKeys.has(letters) && /\bprimitive word\b/i.test(entry.deriv || '')) {
+    return entry
+  }
+  return null
 }
 
 function bdbGroupKey(id) {
@@ -746,14 +756,61 @@ function bdbGroupKey(id) {
 }
 
 function publicRootReference(sourceIndex, entry) {
-  return [sourceIndex, String(entry.id)]
+  const letters = rootLettersFromLemma(entry?.lemma)?.join('')
+  return entry && letters ? [sourceIndex, String(entry.id), letters] : null
 }
 
-function rootReferenceFor(sourceIndex, entry, strongsById, bdbRootsByGroup) {
+function explicitBdbRootLetters(entry) {
+  const match = String(entry.def || '').match(
+    /\bv\.\s*([\u05d0-\u05ea][\u0591-\u05c7\u05d0-\u05ea]*)/u
+  )
+  return match ? rootLettersFromLemma(match[1])?.join('') || null : null
+}
+
+function rootReferenceFor(sourceIndex, entry, rootContext) {
+  const {
+    attestedRootKeys,
+    strongsById,
+    strongsByLemma,
+    bdbRootsByGroup,
+    bdbRootsByLetters
+  } = rootContext
   if (HEBREW_SOURCES[sourceIndex] === 'strongs') {
-    return publicRootReference(sourceIndex, strongsRootEntry(entry, strongsById))
+    const strongsRootReference = publicRootReference(
+      sourceIndex,
+      strongsRootEntry(entry, strongsById, attestedRootKeys)
+    )
+    if (strongsRootReference) return strongsRootReference
+    const matchingBdbRoot = bdbRootsByLetters.get(rootKey(entry.lemma))
+    return matchingBdbRoot ? publicRootReference(1, matchingBdbRoot) : null
   }
-  return publicRootReference(sourceIndex, bdbRootsByGroup.get(bdbGroupKey(entry.id)) || entry)
+
+  const ownSourceRoot = bdbRootsByLetters.get(rootKey(entry.lemma))
+  if (ownSourceRoot?.id === entry.id) return publicRootReference(1, ownSourceRoot)
+
+  const explicitLetters = explicitBdbRootLetters(entry)
+  if (explicitLetters) {
+    const explicitRoot = bdbRootsByLetters.get(explicitLetters)
+    if (explicitRoot) return publicRootReference(1, explicitRoot)
+  }
+
+  const strongsMatches = strongsByLemma.get(rootKey(entry.lemma)) || []
+  const strongsRoots = strongsMatches
+    .map((match) => strongsRootEntry(match, strongsById, attestedRootKeys))
+    .filter(Boolean)
+  const strongsRootKeys = new Set(
+    strongsRoots.map((root) => rootLettersFromLemma(root.lemma)?.join('')).filter(Boolean)
+  )
+  if (strongsRootKeys.size === 1) return publicRootReference(0, strongsRoots[0])
+
+  const groupRoot = bdbRootsByGroup.get(bdbGroupKey(entry.id))
+  if (groupRoot) return publicRootReference(1, groupRoot)
+
+  const ownLetters = rootKey(entry.lemma)
+  if (attestedRootKeys.has(ownLetters) && ownSourceRoot) {
+    return publicRootReference(1, ownSourceRoot)
+  }
+  return null
 }
 
 function makeCatalogEntry(sourceIndex, entry, shardId, senses, rootReference) {
@@ -789,11 +846,41 @@ export function buildArtifacts() {
   const targetIndex = buildTargetIndex()
   const curatedHeads = buildCuratedHeadIndex()
   const strongsById = new Map(strongs.entries.map((entry) => [entry.id, entry]))
+  const strongsByLemma = new Map()
+  for (const entry of hebrewStrongs) {
+    const key = rootKey(entry.lemma)
+    if (!strongsByLemma.has(key)) strongsByLemma.set(key, [])
+    strongsByLemma.get(key).push(entry)
+  }
+  const attestedRootPayload = readJson(
+    join(projectRoot, 'public', 'dicts', 'attested-roots-2026-07-v1.json')
+  )
+  const attestedRootKeys = new Set([
+    ...ROOTS.map((root) => rootKey(root.letters)),
+    ...attestedRootPayload.roots.map((root) => rootKey(root.letters))
+  ])
+  const bdbRootSourceIds = new Set(
+    attestedRootPayload.roots.flatMap((root) =>
+      (root.sources || [])
+        .filter((source) => source.source === 'bdb' && source.sourceLanguage === 'hebrew')
+        .map((source) => source.sourceId)
+    )
+  )
+  const bdbRootEntries = hebrewBdb.filter((entry) => bdbRootSourceIds.has(entry.id))
+  const bdbRootsByLetters = new Map(
+    bdbRootEntries.map((entry) => [rootKey(entry.lemma), entry])
+  )
   const bdbRootsByGroup = new Map(
-    hebrewBdb
-      .filter((entry) => entry.id.endsWith('.aa'))
+    bdbRootEntries
       .map((entry) => [bdbGroupKey(entry.id), entry])
   )
+  const rootContext = {
+    attestedRootKeys,
+    strongsById,
+    strongsByLemma,
+    bdbRootsByGroup,
+    bdbRootsByLetters
+  }
   const shards = Array.from({ length: SHARD_COUNT }, (_, index) => ({
     id: index.toString(16).padStart(2, '0'),
     records: {},
@@ -820,7 +907,7 @@ export function buildArtifacts() {
           entry,
           shardId,
           senses,
-          rootReferenceFor(sourceIndex, entry, strongsById, bdbRootsByGroup)
+          rootReferenceFor(sourceIndex, entry, rootContext)
         )
       )
       senseCount += senses.length

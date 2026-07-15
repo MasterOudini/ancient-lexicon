@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url'
 
 import { LANGUAGES } from '../src/data/languages.js'
 import { LEXICON } from '../src/data/lexicon.js'
+import { ROOTS, rootKey } from '../src/data/roots.js'
 import {
   REFERENCE_DICTIONARIES,
   getDictionary
@@ -23,6 +24,7 @@ import {
   selectAutoOpenSourceKey
 } from '../src/lib/hebrewComparisonLoader.js'
 import { normalize } from '../src/lib/search.js'
+import { findAttestedRoot, mergeAttestedRootCatalog } from '../src/lib/attestedRootCatalog.js'
 import { toImperialAramaic, toMusnad } from '../src/lib/scripts.js'
 import {
   canonicalTerms,
@@ -91,7 +93,12 @@ const catalogByKey = new Map(catalog.entries.map((entry) => [entry.sourceKey, en
 let exactRawRoundTrip = catalogByKey.size === rawHebrew.size
 let sensesComplete = true
 let searchFieldsNormalized = true
-let rootReferencesComplete = true
+let rootReferencesValid = true
+let rootReferenceCount = 0
+const completeRootCatalog = mergeAttestedRootCatalog(
+  json(join(dicts, 'attested-roots-2026-07-v1.json')),
+  ROOTS
+)
 for (const entry of catalog.entries) {
   const raw = rawHebrew.get(entry.sourceKey)
   if (
@@ -118,18 +125,33 @@ for (const entry of catalog.entries) {
     !entry.searchText.includes(normalize(getDictionary(entry.source)?.label))
   ) searchFieldsNormalized = false
   const root = entry.rootReference
-  const sourceRoot = root && rawHebrew.get(root.sourceKey)
-  if (
-    !root ||
-    !sourceRoot ||
-    root.headword !== sourceRoot.lemma ||
-    root.definition !== sourceRoot.def
-  ) rootReferencesComplete = false
+  if (root) {
+    rootReferenceCount++
+    const sourceRoot = rawHebrew.get(root.sourceKey)
+    const attestedRoot = findAttestedRoot(completeRootCatalog, 'hebrew', root.letters)
+    if (
+      !sourceRoot ||
+      root.headword !== sourceRoot.lemma ||
+      root.definition !== sourceRoot.def ||
+      root.letters !== rootKey(root.letters) ||
+      /[\u0591-\u05c7\u05da\u05dd\u05df\u05e3\u05e5]/u.test(root.letters) ||
+      !attestedRoot ||
+      rootKey(attestedRoot.letters) !== root.letters
+    ) rootReferencesValid = false
+  }
 }
 check('all catalog keys are unique', catalogByKey.size === 18_992)
 check('every catalog row round-trips its exact raw source fields', exactRawRoundTrip)
 check('every catalog row has stable, complete display senses and a shard ID', sensesComplete)
-check('every catalog row has a source-backed lexical root destination', rootReferencesComplete)
+check(
+  'every emitted root button uses normalized consonants and opens an attested root',
+  rootReferencesValid
+)
+check(
+  'source-backed root buttons cover the Hebrew comparison catalog',
+  rootReferenceCount > 15_000,
+  String(rootReferenceCount)
+)
 check('catalog search fields preserve normalized headword, ID, definition, and source label', searchFieldsNormalized)
 
 const bdbFieldPayload = JSON.stringify(
@@ -764,7 +786,7 @@ check(
     stylesText.includes('flex: 1 0 100%')
 )
 check(
-  'every Hebrew result exposes its yellow source-root control',
+  'every source-backed Hebrew root exposes its yellow control',
   uiText.includes('className="rootchip hebrew-row-root"') &&
     uiText.includes('data-root-source={entry.rootReference.sourceKey}') &&
     uiText.includes('onRootClick?.(entry.rootReference)')

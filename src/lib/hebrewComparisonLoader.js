@@ -103,17 +103,22 @@ function decodeRootReferenceKey(tuple, sources) {
   if (!Array.isArray(tuple) || tuple.length < 2) return null
   const source = sources[tuple[0]]
   if (!source || !tuple[1]) return null
-  return `${source}:${tuple[1]}`
+  return {
+    sourceKey: `${source}:${tuple[1]}`,
+    letters: tuple[2] || null
+  }
 }
 
-function decodeRootReference(sourceKey, entriesBySourceKey) {
-  const entry = entriesBySourceKey.get(sourceKey)
+function decodeRootReference(referenceKey, entriesBySourceKey) {
+  if (!referenceKey?.letters) return null
+  const entry = entriesBySourceKey.get(referenceKey.sourceKey)
   if (!entry) return null
   return {
     source: entry.source,
     sourceLabel: entry.sourceLabel,
     id: entry.id,
     sourceKey: entry.sourceKey,
+    letters: referenceKey.letters,
     headword: entry.headword,
     definition: entry.definition
   }

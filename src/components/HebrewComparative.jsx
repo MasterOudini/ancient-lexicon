@@ -254,10 +254,10 @@ export function HebrewEntryRow({ entry, initiallyOpen = false, promotionKey = ''
               event.stopPropagation()
               onRootClick?.(entry.rootReference)
             }}
-            aria-label={`Open root ${entry.rootReference.headword}`}
+            aria-label={`Open root ${entry.rootReference.letters}`}
             data-root-source={entry.rootReference.sourceKey}
           >
-            {entry.rootReference.headword}
+            {entry.rootReference.letters}
           </button>
         )}
         <span className="hebrew-row-action">

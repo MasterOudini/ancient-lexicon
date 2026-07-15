@@ -106,15 +106,13 @@ function validatePayload(payload) {
         root.letters.every((letter) => /^[אבגדהוזחטיכלמנסעפצקרשת]$/u.test(letter)) &&
         Array.isArray(root.attested) &&
         root.attested.length > 0 &&
-        root.attested.some((attestation) =>
-          /[\u05b0-\u05bb\u05c7]|\u05d5\u05bc/u.test(attestation.word)
-        ) &&
+        root.attested.every((attestation) => /[\u05d0-\u05ea]/u.test(attestation.word)) &&
         Array.isArray(root.sources) &&
         root.sources.length > 0 &&
         root.sources.every(
           (source) =>
             source.sourceLanguage === root.lang &&
-            /[\u05b0-\u05bb\u05c7]|\u05d5\u05bc/u.test(source.headword)
+            /[\u05d0-\u05ea]/u.test(source.headword)
         )
       ids.add(root.id)
       keys.add(key)

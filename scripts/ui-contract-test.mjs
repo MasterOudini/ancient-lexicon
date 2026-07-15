@@ -34,7 +34,7 @@ try {
   } = await server.ssrLoadModule('/src/components/HebrewComparative.jsx')
   const { default: AboutView } = await server.ssrLoadModule('/src/components/AboutView.jsx')
   const { default: TabIcon } = await server.ssrLoadModule('/src/components/TabIcon.jsx')
-  const { RootDetail, RootReferenceDetail } = await server.ssrLoadModule('/src/components/RootsView.jsx')
+  const { RootDetail } = await server.ssrLoadModule('/src/components/RootsView.jsx')
   const {
     findAttestedRoot,
     mergeAttestedRootCatalog
@@ -55,6 +55,7 @@ try {
       sourceLabel: 'Strongâ€™s',
       id: 'H2803',
       sourceKey: 'strongs:H2803',
+      letters: '\u05d7\u05e9\u05d1',
       headword: '×—Ö¸×©×Ö·×‘',
       definition: 'think, count, weave'
     }
@@ -72,15 +73,8 @@ try {
   assert.match(openRow, /Close comparison/)
   assert.match(openRow, /class="rootchip hebrew-row-root"/)
   assert.match(openRow, /data-root-source="strongs:H2803"/)
-
-  const lexicalRoot = renderToStaticMarkup(
-    React.createElement(RootReferenceDetail, {
-      reference: entry.rootReference,
-      onSelectRoot: () => {}
-    })
-  )
-  assert.match(lexicalRoot, /Published lexical root entry/)
-  assert.match(lexicalRoot, /Strong/)
+  assert.match(openRow, />\u05d7\u05e9\u05d1<\/button>/)
+  assert.doesNotMatch(openRow, /Published lexical root entry/)
 
   const languages = ['akkadian', 'sumerian', 'egyptian', 'hittite', 'aramaic', 'osa']
   const senses = [{

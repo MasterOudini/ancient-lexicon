@@ -31,7 +31,12 @@ import { foldFinals, toImperialAramaic, toMusnad } from '../lib/scripts.js'
 // Accepts an array of letters or a string.
 export function rootKey(letters) {
   const str = Array.isArray(letters) ? letters.join('') : letters
-  return foldFinals(str)
+  return foldFinals(
+    String(str || '')
+      .normalize('NFKD')
+      .replace(/[\u0591-\u05c7]/gu, '')
+      .replace(/[^\u05d0-\u05ea]/gu, '')
+  )
 }
 
 // All unique orderings of the given letters (array or string), as canonical

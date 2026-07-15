@@ -1,8 +1,9 @@
 // Builds the on-demand Hebrew and Biblical-Aramaic root catalog used by the
 // permutation explorer. The source dictionaries are pinned, published works;
 // this script selects only entries that those works explicitly classify as
-// verbs or direct primitive roots. It never infers a missing root from a
-// permutation and never admits an "unused root" mentioned by a derivative.
+// root headings, direct primitive roots, or primitive lexical bases. It never
+// infers a missing root from a permutation and never admits an "unused root"
+// mentioned by a derivative.
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -60,6 +61,11 @@ export function isDirectStrongsRoot(entry) {
     !/\bfrom a primitive root\b/i.test(derivation) &&
     !/unused root/i.test(derivation)
   )
+}
+
+function isPrimitiveStrongsWord(entry) {
+  const derivation = (entry.deriv || '').replace(/\s+/g, ' ').trim()
+  return /\ba primitive word\b/i.test(derivation) && !/\bfrom a primitive word\b/i.test(derivation)
 }
 
 export function isCorrespondingAramaicStrongsRoot(entry, strongsById) {
@@ -139,11 +145,12 @@ export function extractAttestedRootCandidates(strongs, bdb) {
 
   for (const entry of strongs.entries) {
     const directRoot = isDirectStrongsRoot(entry)
+    const primitiveWord = isPrimitiveStrongsWord(entry)
     const correspondingAramaic = isCorrespondingAramaicStrongsRoot(
       entry,
       strongsById
     )
-    if (!directRoot && !correspondingAramaic) continue
+    if (!directRoot && !primitiveWord && !correspondingAramaic) continue
     const lemmas = directRoot
       ? [entry.lemma, ...alternateStrongsRootLemmas(entry)]
       : [entry.lemma]
@@ -157,9 +164,16 @@ export function extractAttestedRootCandidates(strongs, bdb) {
     // At the pinned BDB revision every XML type="root" group leader is the
     // stable .aa record. Other verb rows can be derived or inflected forms;
     // treating their displayed consonants as radicals creates false roots.
-    if (!entry.id.endsWith('.aa') || !/^vb(?:\.|$)/i.test(entry.pos || '')) continue
+    const explicitUnpointedRoot = !/[\u0591-\u05c7]/u.test(entry.lemma || '')
+    if (
+      !entry.id.endsWith('.aa') ||
+      (!/^vb(?:\.|$)/i.test(entry.pos || '') && !explicitUnpointedRoot)
+    ) continue
     const record = candidate('bdb', entry)
-    if (record?.pointed) candidates.push(record)
+    // Pointed five-consonant verb rows such as Aramaic שׁיציא are derived
+    // lexical forms, not the consonantal root headings represented here.
+    if (/[\u0591-\u05c7]/u.test(entry.lemma || '') && record?.letters.length > 4) continue
+    if (record) candidates.push(record)
   }
 
   return candidates.sort((a, b) =>
@@ -252,7 +266,7 @@ export function buildAttestedRootCatalog(strongs, bdb) {
     payloadMarker: CATALOG_PAYLOAD_MARKER,
     payloadProbe: CATALOG_PAYLOAD_PROBE,
     sourcePolicy:
-      "Pointed BDB type-root group leaders explicitly labeled as verbs, direct Strong's primitive roots, and Biblical-Aramaic Strong's records corresponding to those roots; published headwords are retained as lexical attestations. The hand-curated database supplies the reviewed biconsonantal and noun-base roots.",
+      "BDB type-root group leaders explicitly labeled as verbs or preserved as unpointed root headings, direct Strong's primitive roots, Strong's primitive lexical bases, and Biblical-Aramaic Strong's records corresponding to those roots; published headwords are retained as lexical attestations. The hand-curated database supplies reviewed roots and attestations.",
     sources: [
       { id: 'strongs', work: strongs.work, count: strongs.count },
       {
