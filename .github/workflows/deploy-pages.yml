@@ -29,6 +29,7 @@ jobs:
           enablement: true
       - run: npm ci
       - run: npm test
+      - run: npm run test:pwa-update
       - run: npm run build
         env:
           # Project page is served at /<repo-name>/; this sets the Vite base

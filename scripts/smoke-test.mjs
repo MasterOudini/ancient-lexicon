@@ -34,10 +34,19 @@ import {
 } from '../src/lib/glossSearch.js'
 import { buildHebrewCatalog } from '../src/lib/hebrewCatalog.js'
 import {
+  clearReleaseNavigationMarker,
+  discoverLatestRelease,
   monitorServiceWorkerUpdates,
+  normalizeRelease,
+  queryServiceWorkerRelease,
   registerServiceWorkerUpdates,
+  replaceWithRelease,
   UPDATE_CHECK_INTERVAL_MS
 } from '../src/lib/pwaUpdates.js'
+import {
+  fetchReleaseAsset,
+  releaseAssetUrls
+} from '../src/lib/releaseAssets.js'
 import {
   clearAttestedRootCatalogCache,
   findAttestedRoot,
@@ -63,9 +72,66 @@ const cp = (...codes) => String.fromCodePoint(...codes)
 
 // --- Installed-app updates -------------------------------------------------
 
+const releaseA = normalizeRelease({
+  buildId: 'aaaaaaaaaaaaaaaaaa',
+  releaseNumber: 101
+})
+const releaseB = normalizeRelease({
+  buildId: 'bbbbbbbbbbbbbbbbbb',
+  releaseNumber: 102
+})
+const releaseC = normalizeRelease({
+  buildId: 'cccccccccccccccccc',
+  releaseNumber: 103
+})
+
+function memoryStorage() {
+  const values = new Map()
+  return {
+    getItem: (key) => values.has(key) ? values.get(key) : null,
+    setItem: (key, value) => values.set(key, String(value)),
+    removeItem: (key) => values.delete(key)
+  }
+}
+
+function updateTestWindow() {
+  const windowObject = new EventTarget()
+  windowObject.navigator = { onLine: true, serviceWorker: new EventTarget() }
+  windowObject.location = {
+    href: 'https://example.test/ancient-lexicon/',
+    hostname: 'example.test',
+    replace: () => {},
+    reload: () => {}
+  }
+  windowObject.localStorage = memoryStorage()
+  windowObject.sessionStorage = memoryStorage()
+  windowObject.setTimeout = (callback) => {
+    callback()
+    return 1
+  }
+  return windowObject
+}
+
 const fakeWindow = new EventTarget()
 const fakeDocument = new EventTarget()
-fakeWindow.navigator = { onLine: true }
+const currentWorker = {
+  release: releaseA,
+  scriptURL: 'https://example.test/ancient-lexicon/sw.js',
+  postMessage: () => {}
+}
+const fakeServiceWorker = new EventTarget()
+fakeServiceWorker.register = async () => {
+  throw new Error('an up-to-date worker must not be re-registered')
+}
+fakeWindow.navigator = { onLine: true, serviceWorker: fakeServiceWorker }
+fakeWindow.location = {
+  href: 'https://example.test/ancient-lexicon/',
+  hostname: 'example.test',
+  replace: () => {},
+  reload: () => {}
+}
+fakeWindow.localStorage = memoryStorage()
+fakeWindow.sessionStorage = memoryStorage()
 fakeDocument.visibilityState = 'visible'
 let intervalCallback
 let updateInterval
@@ -76,99 +142,446 @@ fakeWindow.setInterval = (callback, interval) => {
 }
 let updateClock = 0
 let updateCalls = 0
-monitorServiceWorkerUpdates(
-  {
-    installing: null,
-    update: async () => {
-      updateCalls++
-    }
-  },
+const currentRegistration = {
+  active: currentWorker,
+  waiting: null,
+  installing: null,
+  update: async () => {
+    updateCalls++
+  }
+}
+const updateMonitor = monitorServiceWorkerUpdates(
+  currentRegistration,
   {
     windowObject: fakeWindow,
     documentObject: fakeDocument,
+    serviceWorker: fakeServiceWorker,
+    currentRelease: releaseA,
+    discoverRelease: async () => ({ release: releaseA }),
+    queryWorkerRelease: async (worker) => worker?.release || null,
     throttleMs: 1000,
     now: () => updateClock
   }
 )
-await Promise.resolve()
+await updateMonitor.checkForUpdate(true)
+const settleUpdateEvent = () => new Promise((resolve) => setImmediate(resolve))
 check('PWA update polling uses the configured interval', updateInterval === UPDATE_CHECK_INTERVAL_MS)
 check('PWA checks for an update as soon as registration completes', updateCalls === 1)
 updateClock = 2000
 fakeWindow.dispatchEvent(new Event('focus'))
-await Promise.resolve()
+await settleUpdateEvent()
 check('PWA checks for updates when the installed app regains focus', updateCalls === 2)
 fakeWindow.dispatchEvent(new Event('focus'))
-await Promise.resolve()
+await settleUpdateEvent()
 check('PWA throttles duplicate lifecycle events', updateCalls === 2)
 updateClock = 4000
 fakeDocument.visibilityState = 'hidden'
 fakeDocument.dispatchEvent(new Event('visibilitychange'))
-await Promise.resolve()
 check('PWA does not check for updates while hidden', updateCalls === 2)
 fakeDocument.visibilityState = 'visible'
 fakeDocument.dispatchEvent(new Event('visibilitychange'))
-await Promise.resolve()
+await settleUpdateEvent()
 check('PWA checks for updates when the installed app returns to the foreground', updateCalls === 3)
 updateClock = 6000
 fakeWindow.navigator.onLine = false
 fakeWindow.dispatchEvent(new Event('pageshow'))
-await Promise.resolve()
 check('PWA skips update checks while offline', updateCalls === 3)
 fakeWindow.navigator.onLine = true
 fakeWindow.dispatchEvent(new Event('online'))
-await Promise.resolve()
+await settleUpdateEvent()
 check('PWA checks for updates when connectivity returns', updateCalls === 4)
 updateClock = 8000
 intervalCallback()
-await Promise.resolve()
+await settleUpdateEvent()
 check('PWA periodically checks while it remains open', updateCalls === 5)
+
+const fetchCalls = []
+const discoveredRelease = await discoverLatestRelease({
+  currentRelease: releaseA,
+  baseUrl: '/ancient-lexicon/',
+  now: () => 2468,
+  fetchObject: async (url, options) => {
+    fetchCalls.push({ url, options })
+    if (url.startsWith('/ancient-lexicon/release.json')) {
+      return { ok: true, json: async () => ({ ...releaseB }) }
+    }
+    throw new Error('release discovery must stay on the app origin')
+  }
+})
+check(
+  'PWA release discovery chooses the same-origin deployed marker',
+  discoveredRelease.release.releaseId === releaseB.releaseId
+)
+check(
+  'PWA release discovery bypasses caches without polling a per-client remote feed',
+  fetchCalls.length === 1 &&
+    fetchCalls[0].url === '/ancient-lexicon/release.json?update-check=2468' &&
+    fetchCalls[0].options.cache === 'no-store' &&
+    fetchCalls[0].options.credentials === 'same-origin'
+)
+
+const failedDiscovery = await discoverLatestRelease({
+  currentRelease: releaseB,
+  baseUrl: '/ancient-lexicon/',
+  fetchObject: async () => { throw new Error('offline') }
+})
+check(
+  'PWA release discovery preserves the installed release while offline',
+  failedDiscovery.release.releaseId === releaseB.releaseId
+)
+
+const timeoutWindow = new EventTarget()
+const timeoutDocument = new EventTarget()
+const timeoutServiceWorker = new EventTarget()
+const timeoutCurrentWorker = {
+  release: releaseA,
+  scriptURL: `https://example.test/ancient-lexicon/${releaseA.worker}`,
+  postMessage: () => {}
+}
+const timeoutNextWorker = {
+  release: releaseB,
+  scriptURL: `https://example.test/ancient-lexicon/${releaseB.worker}`,
+  postMessage: () => {}
+}
+const timeoutRegistration = {
+  active: timeoutCurrentWorker,
+  waiting: null,
+  update: async () => {}
+}
+let timeoutClock = 0
+let timeoutFetchCalls = 0
+let timeoutFetchAborted = false
+let timeoutRegistrationUrl
+let timeoutNavigations = 0
+let resolveTimeoutNavigation
+const timeoutNavigation = new Promise((resolve) => {
+  resolveTimeoutNavigation = resolve
+})
+timeoutWindow.navigator = { onLine: true, serviceWorker: timeoutServiceWorker }
+timeoutWindow.location = {
+  href: 'https://example.test/ancient-lexicon/',
+  hostname: 'example.test',
+  replace: () => {},
+  reload: () => {}
+}
+timeoutWindow.fetch = (_url, options) => {
+  timeoutFetchCalls++
+  if (timeoutFetchCalls === 1) {
+    return new Promise(() => {
+      options.signal?.addEventListener('abort', () => {
+        timeoutFetchAborted = true
+      })
+    })
+  }
+  return Promise.resolve({ ok: true, json: async () => ({ ...releaseB }) })
+}
+timeoutWindow.setTimeout = globalThis.setTimeout.bind(globalThis)
+timeoutWindow.clearTimeout = globalThis.clearTimeout.bind(globalThis)
+timeoutWindow.setInterval = () => 1
+timeoutWindow.localStorage = memoryStorage()
+timeoutWindow.sessionStorage = memoryStorage()
+timeoutDocument.visibilityState = 'visible'
+timeoutDocument.documentElement = { dataset: {} }
+timeoutServiceWorker.register = async (url) => {
+  timeoutRegistrationUrl = url
+  return {
+    active: timeoutNextWorker,
+    waiting: null,
+    update: async () => {}
+  }
+}
+const timeoutMonitor = monitorServiceWorkerUpdates(timeoutRegistration, {
+  windowObject: timeoutWindow,
+  documentObject: timeoutDocument,
+  serviceWorker: timeoutServiceWorker,
+  currentRelease: releaseA,
+  baseUrl: '/ancient-lexicon/',
+  fetchTimeoutMs: 5,
+  throttleMs: 10,
+  now: () => timeoutClock,
+  queryWorkerRelease: async (worker) => worker?.release || null,
+  navigateToRelease: () => {
+    timeoutNavigations++
+    resolveTimeoutNavigation()
+    return true
+  }
+})
+await timeoutMonitor.checkForUpdate(true)
+check(
+  'PWA aborts a hung same-origin marker fetch and releases the in-flight check',
+  timeoutFetchCalls === 1 && timeoutFetchAborted && timeoutNavigations === 0
+)
+timeoutClock = 20
+timeoutWindow.dispatchEvent(new Event('pageshow'))
+await Promise.race([
+  timeoutNavigation,
+  new Promise((_, reject) => globalThis.setTimeout(
+    () => reject(new Error('pageshow did not retry the timed-out update check')),
+    1000
+  ))
+])
+check(
+  'PWA retries after a marker timeout on the next lifecycle event and converges',
+  timeoutFetchCalls === 2 &&
+    timeoutRegistrationUrl === `/ancient-lexicon/${releaseB.worker}` &&
+    timeoutNavigations === 1
+)
+
+async function proveMissedControllerChange(currentRelease, targetRelease) {
+  const windowObject = updateTestWindow()
+  const documentObject = new EventTarget()
+  const serviceWorker = windowObject.navigator.serviceWorker
+  const active = {
+    release: targetRelease,
+    scriptURL: `https://example.test/ancient-lexicon/${targetRelease.worker}`,
+    postMessage: () => {}
+  }
+  let updateCalls = 0
+  const registration = {
+    active,
+    waiting: null,
+    update: async () => { updateCalls++ }
+  }
+  let registrations = 0
+  let navigations = 0
+  serviceWorker.register = async () => {
+    registrations++
+    return registration
+  }
+  documentObject.visibilityState = 'visible'
+  windowObject.setInterval = () => 1
+  const monitor = monitorServiceWorkerUpdates(registration, {
+    windowObject,
+    documentObject,
+    serviceWorker,
+    currentRelease,
+    discoverRelease: async () => ({ release: targetRelease }),
+    queryWorkerRelease: async (worker) => worker?.release || null,
+    navigateToRelease: (release) => {
+      if (release.releaseId === targetRelease.releaseId) navigations++
+      return true
+    }
+  })
+  await monitor.checkForUpdate(true)
+  await monitor.checkForUpdate(true)
+  return { registrations, navigations, updateCalls }
+}
+
+const missedAB = await proveMissedControllerChange(releaseA, releaseB)
+const missedBC = await proveMissedControllerChange(releaseB, releaseC)
+check(
+  'PWA A to B update converges when the newer worker is already active and controllerchange was missed',
+  missedAB.registrations === 0 && missedAB.navigations === 1 && missedAB.updateCalls === 0
+)
+check(
+  'PWA B to C update repeats automatically without relying on controllerchange',
+  missedBC.registrations === 0 && missedBC.navigations === 1
+)
+
+const waitingWindow = updateTestWindow()
+const waitingDocument = new EventTarget()
+const waitingServiceWorker = waitingWindow.navigator.serviceWorker
+waitingDocument.visibilityState = 'visible'
+waitingWindow.setInterval = () => 1
+const oldWorker = { release: releaseA, postMessage: () => {} }
+const nextWorker = {
+  release: releaseB,
+  postMessage: (message) => {
+    if (message.type !== 'SKIP_WAITING') return
+    waitingRegistration.active = nextWorker
+    waitingRegistration.waiting = null
+  }
+}
+const waitingRegistration = {
+  active: oldWorker,
+  waiting: null,
+  update: async () => {}
+}
+let immutableRegistration
+let waitingNavigations = 0
+waitingServiceWorker.register = async (url, options) => {
+  immutableRegistration = { url, options }
+  waitingRegistration.waiting = nextWorker
+  return waitingRegistration
+}
+const waitingMonitor = monitorServiceWorkerUpdates(waitingRegistration, {
+  windowObject: waitingWindow,
+  documentObject: waitingDocument,
+  serviceWorker: waitingServiceWorker,
+  currentRelease: releaseA,
+  discoverRelease: async () => ({ release: releaseB }),
+  queryWorkerRelease: async (worker) => worker?.release || null,
+  navigateToRelease: () => {
+    waitingNavigations++
+    return true
+  }
+})
+await waitingMonitor.checkForUpdate(true)
+check(
+  'PWA registers the immutable worker URL and activates an already-waiting release',
+  immutableRegistration.url === '/sw-102-bbbbbbbbbbbbbbbbbb.js' &&
+    immutableRegistration.options.scope === '/' &&
+    immutableRegistration.options.updateViaCache === 'none' &&
+    waitingRegistration.active === nextWorker &&
+    waitingNavigations === 1
+)
+
+class FakeMessageChannel {
+  constructor() {
+    this.port1 = { onmessage: null, close: () => {}, start: () => {} }
+    this.port2 = {
+      postMessage: (data) => queueMicrotask(() => this.port1.onmessage?.({ data }))
+    }
+  }
+}
+const queriedRelease = await queryServiceWorkerRelease(
+  {
+    postMessage: (_message, ports) => ports[0].postMessage({
+      type: 'ANCIENT_LEXICON_RELEASE',
+      release: releaseB
+    })
+  },
+  { MessageChannelObject: FakeMessageChannel }
+)
+check(
+  'PWA identifies the active worker release through a MessageChannel handshake',
+  queriedRelease.releaseId === releaseB.releaseId
+)
+
+const replaceStorage = memoryStorage()
+let replacedUrl
+const replaceWindow = {
+  location: {
+    href: 'https://example.test/ancient-lexicon/?keep=yes',
+    replace: (url) => { replacedUrl = url }
+  },
+  sessionStorage: replaceStorage
+}
+check(
+  'PWA update navigation is release-specific and guarded against a tight loop',
+  replaceWithRelease(replaceWindow, releaseB, { now: () => 1000 }) &&
+    new URL(replacedUrl).searchParams.get('__al_release') === releaseB.releaseId &&
+    new URL(replacedUrl).searchParams.get('keep') === 'yes' &&
+    !replaceWithRelease(replaceWindow, releaseB, { now: () => 2000 })
+)
+
+let cleanedUrl
+const markerWindow = {
+  location: {
+    href: `https://example.test/ancient-lexicon/?keep=yes&__al_release=${releaseB.releaseId}`
+  },
+  history: {
+    state: { retained: true },
+    replaceState: (_state, _title, url) => { cleanedUrl = url }
+  },
+  sessionStorage: replaceStorage
+}
+check(
+  'PWA removes its update marker only after the matching release boots',
+  clearReleaseNavigationMarker({ windowObject: markerWindow, currentRelease: releaseB }) &&
+    !new URL(cleanedUrl).searchParams.has('__al_release') &&
+    new URL(cleanedUrl).searchParams.get('keep') === 'yes'
+)
+
+const immutableAssetUrls = releaseAssetUrls('dicts/example.json', {
+  baseUrl: '/ancient-lexicon/',
+  releasePrefix: `release-${releaseB.releaseId}/`
+})
+const assetFetchUrls = []
+const fallbackAsset = await fetchReleaseAsset('dicts/example.json', {
+  baseUrl: '/ancient-lexicon/',
+  releasePrefix: `release-${releaseB.releaseId}/`,
+  fetchImpl: async (url) => {
+    assetFetchUrls.push(url)
+    if (url === immutableAssetUrls[0]) throw new Error('offline cache miss')
+    return { ok: true, marker: 'legacy-cache' }
+  }
+})
+check(
+  'release data uses an immutable URL and falls back to the prior offline cache',
+  immutableAssetUrls[0] === `/ancient-lexicon/release-${releaseB.releaseId}/dicts/example.json` &&
+    immutableAssetUrls[1] === '/ancient-lexicon/dicts/example.json' &&
+    assetFetchUrls.join('|') === immutableAssetUrls.join('|') &&
+    fallbackAsset.marker === 'legacy-cache'
+)
 
 const registrationWindow = new EventTarget()
 const registrationDocument = new EventTarget()
 const serviceWorker = new EventTarget()
 let registeredWorker
 let reloadCalls = 0
-registrationDocument.visibilityState = 'visible'
-registrationWindow.location = { reload: () => reloadCalls++ }
+registrationDocument.visibilityState = 'hidden'
+registrationWindow.location = {
+  href: 'https://example.test/ancient-lexicon/',
+  hostname: 'example.test',
+  replace: () => {},
+  reload: () => reloadCalls++
+}
 registrationWindow.navigator = { onLine: true, serviceWorker }
 registrationWindow.setInterval = () => 1
+registrationWindow.setTimeout = () => 1
+registrationWindow.localStorage = memoryStorage()
+registrationWindow.sessionStorage = memoryStorage()
 serviceWorker.controller = {}
 serviceWorker.register = async (url, options) => {
   registeredWorker = { url, options }
-  return { installing: null, update: async () => {} }
+  return { active: null, waiting: null, installing: null, update: async () => {} }
 }
 await registerServiceWorkerUpdates({
   windowObject: registrationWindow,
   documentObject: registrationDocument,
-  baseUrl: '/ancient-lexicon/'
+  currentRelease: releaseA,
+  baseUrl: '/ancient-lexicon/',
+  queryWorkerRelease: async () => null
 })
 check(
-  'PWA worker registration bypasses HTTP caches and preserves project scope',
-  registeredWorker.url === '/ancient-lexicon/sw.js' &&
+  'PWA worker registration uses the immutable release URL, bypasses caches, and preserves scope',
+  registeredWorker.url === '/ancient-lexicon/sw-101-aaaaaaaaaaaaaaaaaa.js' &&
     registeredWorker.options.scope === '/ancient-lexicon/' &&
     registeredWorker.options.updateViaCache === 'none'
 )
 serviceWorker.dispatchEvent(new Event('controllerchange'))
 serviceWorker.dispatchEvent(new Event('controllerchange'))
-check('PWA reloads exactly once when an updated worker takes control', reloadCalls === 1)
+await Promise.resolve()
+await Promise.resolve()
+check('PWA fallback reload runs exactly once for a legacy worker without a release handshake', reloadCalls === 1)
 
 const firstInstallWindow = new EventTarget()
 const firstInstallDocument = new EventTarget()
 const firstInstallWorker = new EventTarget()
-let firstInstallReloads = 0
-firstInstallDocument.visibilityState = 'visible'
-firstInstallWindow.location = { reload: () => firstInstallReloads++ }
+let registrationAttempts = 0
+let retryRegistration
+firstInstallDocument.visibilityState = 'hidden'
+firstInstallWindow.location = {
+  href: 'https://example.test/ancient-lexicon/',
+  hostname: 'example.test',
+  replace: () => {},
+  reload: () => {}
+}
 firstInstallWindow.navigator = { onLine: true, serviceWorker: firstInstallWorker }
 firstInstallWindow.setInterval = () => 1
+firstInstallWindow.setTimeout = (callback) => {
+  retryRegistration = callback
+  return 1
+}
+firstInstallWindow.localStorage = memoryStorage()
+firstInstallWindow.sessionStorage = memoryStorage()
 firstInstallWorker.controller = null
-firstInstallWorker.register = async () => ({ installing: null, update: async () => {} })
-await registerServiceWorkerUpdates({
+firstInstallWorker.register = async () => {
+  registrationAttempts++
+  if (registrationAttempts === 1) throw new Error('WebKit not ready')
+  return { active: null, waiting: null, installing: null, update: async () => {} }
+}
+const firstRegistration = await registerServiceWorkerUpdates({
   windowObject: firstInstallWindow,
-  documentObject: firstInstallDocument
+  documentObject: firstInstallDocument,
+  currentRelease: releaseA,
+  retryMs: 10,
+  queryWorkerRelease: async () => null
 })
-firstInstallWorker.dispatchEvent(new Event('controllerchange'))
-firstInstallWorker.dispatchEvent(new Event('controllerchange'))
-check('PWA reloads only once when its first worker claims the page', firstInstallReloads === 1)
+check('PWA launch survives a transient service-worker registration failure', firstRegistration === null)
+await retryRegistration()
+check('PWA retries service-worker registration in the same app session', registrationAttempts === 2)
 
 // --- Script mappers ---------------------------------------------------------
 
