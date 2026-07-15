@@ -1,15 +1,18 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
-  ROOTS,
   DOUBLETS,
   CLUSTERS,
   rootKey,
-  uniquePermutations,
-  findRoot,
-  findRootById
+  uniquePermutations
 } from '../data/roots.js'
 import { getLanguage } from '../data/languages.js'
 import { searchRoots } from '../lib/search.js'
+import {
+  CURATED_ROOT_CATALOG,
+  findAttestedRoot,
+  findAttestedRootById,
+  loadAttestedRootCatalog
+} from '../lib/attestedRootCatalog.js'
 
 const MAQAF = '־'
 
@@ -23,6 +26,10 @@ const METATHESIS_LABEL =
   'Same word, reordered consonants — a fact of the attested text.'
 const VARIANT_LABEL = 'Consonant-variant pair, not a permutation.'
 const GHOST_LABEL = 'not an attested root here'
+const CATALOG_LOADING =
+  'Loading the complete published-root catalog before checking reorderings…'
+const CATALOG_UNAVAILABLE =
+  'The complete published-root catalog is unavailable. Permutation results are hidden so an uncached root is never mislabeled as unattested.'
 
 function lettersLabel(letters) {
   const arr = Array.isArray(letters) ? letters : Array.from(letters)
@@ -32,22 +39,37 @@ function lettersLabel(letters) {
 const LONG_ROOT_NOTE =
   'For roots of more than three letters only the reorderings attested as roots are shown ({found} of {all} possible orderings).'
 
-function RootDetail({ root, onSelectRoot }) {
+function sourceLabel(source) {
+  return source === 'strongs' ? 'Strong’s' : source === 'bdb' ? 'BDB' : source
+}
+
+function languageLabel(language) {
+  return language === 'biblical-aramaic' ? 'Biblical Aramaic' : 'Hebrew'
+}
+
+function languageTag(language) {
+  return language === 'biblical-aramaic' ? 'arc' : 'he'
+}
+
+export function RootDetail({ root, catalog, catalogStatus, onSelectRoot }) {
   const key = rootKey(root.letters)
   const allPerms = uniquePermutations(root.letters)
   // A 4-letter root has 24 orderings and a 5-letter one 120 — showing every
   // ghost tile would drown the attested ones, so long roots list only found
   // permutations, with an honest count of what was omitted.
   const longRoot = root.letters.length > 3
-  const perms = longRoot
-    ? allPerms.filter((p) => findRoot(root.lang, p))
+  const perms = longRoot && catalogStatus === 'ready'
+    ? allPerms.filter((p) => findAttestedRoot(catalog, root.lang, p))
     : allPerms
-  const doublets = DOUBLETS.filter((d) =>
-    d.roots.some((r) => rootKey(r) === key)
-  )
-  const clusters = CLUSTERS.filter((c) =>
-    c.members.some((m) => rootKey(m) === key)
-  )
+  // DOUBLETS and CLUSTERS are reviewed Hebrew datasets. A Biblical-Aramaic
+  // card can share the same consonants without inheriting those Hebrew-only
+  // claims or citations.
+  const doublets = root.lang === 'hebrew'
+    ? DOUBLETS.filter((d) => d.roots.some((r) => rootKey(r) === key))
+    : []
+  const clusters = root.lang === 'hebrew'
+    ? CLUSTERS.filter((c) => c.members.some((m) => rootKey(m) === key))
+    : []
 
   return (
     <section>
@@ -55,20 +77,50 @@ function RootDetail({ root, onSelectRoot }) {
         ‹ All roots
       </button>
 
-      <div className="root-letters-large" dir="rtl" lang="he">
+      <div className="root-letters-large" dir="rtl" lang={languageTag(root.lang)}>
         {lettersLabel(root.letters)}
       </div>
       <div className="root-gloss">{root.gloss}</div>
 
-      <div className="section-label">Attested words</div>
-      {root.attested.map((a) => (
-        <div className="attested-word" key={a.word}>
-          <span className="w" dir="rtl" lang="he">
+      <div className="section-label">
+        {root.catalogKind === 'source-derived'
+          ? 'Published lexicon attestations'
+          : 'Attested words'}
+      </div>
+      {root.attested.map((a, index) => (
+        <div
+          className="attested-word"
+          key={`${a.source || 'curated'}:${a.sourceId || index}:${a.word}`}
+        >
+          <span className="w" dir="rtl" lang={languageTag(a.sourceLanguage || root.lang)}>
             {a.word}
           </span>
-          <span className="g">{a.gloss}</span>
+          <span className="g">
+            {a.gloss}
+            {a.citation && ` — ${a.citation}`}
+          </span>
         </div>
       ))}
+
+      {root.catalogKind === 'source-derived' && (
+        <div className="note-block root-provenance" data-root-provenance="source-derived">
+          <div className="doublet-label">Published-lexicon root card</div>
+          <div>
+            Languages: {root.sourceLanguages.map(languageLabel).join(', ')}.
+          </div>
+          <div>
+            Sources:{' '}
+            {root.sources
+              .map((source) => `${sourceLabel(source.source)} ${source.sourceId}`)
+              .join('; ')}.
+          </div>
+          <div>
+            A lexicon headword records the dictionary’s root heading; it is not
+            a claim that this uninflected citation form occurs in the biblical
+            text. Direct biblical wording and citations are labeled separately.
+          </div>
+        </div>
+      )}
 
       {root.homographNote && (
         <div className="note-block">{root.homographNote}</div>
@@ -103,7 +155,13 @@ function RootDetail({ root, onSelectRoot }) {
 
       <div className="section-label">Permutation explorer</div>
       <p className="fixed-line">{PERM_DISCLAIMER}</p>
-      {longRoot && (
+      {catalogStatus === 'loading' && <p role="status">{CATALOG_LOADING}</p>}
+      {catalogStatus === 'error' && (
+        <div className="note-block" role="alert">
+          {CATALOG_UNAVAILABLE}
+        </div>
+      )}
+      {catalogStatus === 'ready' && longRoot && (
         <p className="fixed-line">
           {LONG_ROOT_NOTE.replace('{found}', String(perms.length)).replace(
             '{all}',
@@ -111,9 +169,9 @@ function RootDetail({ root, onSelectRoot }) {
           )}
         </p>
       )}
-      <div className="perm-grid">
+      {catalogStatus === 'ready' && <div className="perm-grid">
         {perms.map((p) => {
-          const found = findRoot(root.lang, p)
+          const found = findAttestedRoot(catalog, root.lang, p)
           if (found) {
             return (
               <button
@@ -121,7 +179,7 @@ function RootDetail({ root, onSelectRoot }) {
                 className="perm-tile found"
                 onClick={() => onSelectRoot(found.id)}
               >
-                <div className="letters" dir="rtl" lang="he">
+                <div className="letters" dir="rtl" lang={languageTag(found.lang)}>
                   {lettersLabel(p)}
                 </div>
                 <div className="g">{found.gloss}</div>
@@ -130,14 +188,14 @@ function RootDetail({ root, onSelectRoot }) {
           }
           return (
             <div key={p} className="perm-tile ghost" aria-disabled="true">
-              <div className="letters" dir="rtl" lang="he">
+              <div className="letters" dir="rtl" lang={languageTag(root.lang)}>
                 {lettersLabel(p)}
               </div>
               <div className="g">{GHOST_LABEL}</div>
             </div>
           )
         })}
-      </div>
+      </div>}
 
       {doublets.length > 0 && (
         <>
@@ -172,7 +230,7 @@ function RootDetail({ root, onSelectRoot }) {
               <div>{c.title}</div>
               <div className="cluster-chips">
                 {c.members.map((m) => {
-                  const memberRoot = findRoot('hebrew', m)
+                  const memberRoot = findAttestedRoot(catalog, 'hebrew', m)
                   return (
                     <button
                       key={m}
@@ -199,13 +257,41 @@ function RootDetail({ root, onSelectRoot }) {
 
 export default function RootsView({ selectedRootId, onSelectRoot }) {
   const [query, setQuery] = useState('')
-  const selected = selectedRootId ? findRootById(selectedRootId) : null
+  const [catalog, setCatalog] = useState(CURATED_ROOT_CATALOG)
+  const [catalogStatus, setCatalogStatus] = useState('loading')
+
+  useEffect(() => {
+    let cancelled = false
+    loadAttestedRootCatalog()
+      .then((loaded) => {
+        if (cancelled) return
+        setCatalog(loaded)
+        setCatalogStatus('ready')
+      })
+      .catch(() => {
+        if (!cancelled) setCatalogStatus('error')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const selected = selectedRootId
+    ? findAttestedRootById(catalog, selectedRootId)
+    : null
 
   if (selected) {
-    return <RootDetail root={selected} onSelectRoot={onSelectRoot} />
+    return (
+      <RootDetail
+        root={selected}
+        catalog={catalog}
+        catalogStatus={catalogStatus}
+        onSelectRoot={onSelectRoot}
+      />
+    )
   }
 
-  const results = searchRoots(ROOTS, query)
+  const results = searchRoots(catalog.roots, query)
 
   return (
     <section>
@@ -241,16 +327,31 @@ export default function RootsView({ selectedRootId, onSelectRoot }) {
         </p>
       </details>
 
+      {catalogStatus === 'loading' && <p role="status">{CATALOG_LOADING}</p>}
+      {catalogStatus === 'error' && (
+        <div className="note-block" role="alert">
+          {CATALOG_UNAVAILABLE} The hand-curated root cards remain searchable.
+        </div>
+      )}
+
       {results.map((root) => (
         <button
           key={root.id}
           className="rootlist-item"
           onClick={() => onSelectRoot(root.id)}
         >
-          <span className="rootlist-letters" dir="rtl" lang="he">
+          <span className="rootlist-letters" dir="rtl" lang={languageTag(root.lang)}>
             {lettersLabel(root.letters)}
           </span>
           <span className="rootlist-gloss">{root.gloss}</span>
+          {root.catalogKind === 'source-derived' && (
+            <span
+              className="rootlist-source"
+              data-root-language={root.lang}
+            >
+              {languageLabel(root.lang)} · published lexicon
+            </span>
+          )}
         </button>
       ))}
       {results.length === 0 && <p>No roots match this search.</p>}

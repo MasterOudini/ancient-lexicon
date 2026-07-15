@@ -66,10 +66,19 @@ export default defineConfig({
         // The default 2 MiB limit would silently skip larger assets.
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         // Large reference dictionaries, the legacy meaning index, and the
-        // universal Hebrew catalog/shards are not precached (that would bloat
-        // installation). They check the network first and fall back to their
-        // runtime caches while offline.
+        // universal Hebrew/root catalogs and shards are not precached (that
+        // would bloat installation). They check the network first and fall
+        // back to their runtime caches while offline.
         runtimeCaching: [
+          {
+            urlPattern: /\/dicts\/attested-roots-2026-07-v1\.json$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'attested-root-catalog',
+              expiration: { maxEntries: 1, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          },
           {
             urlPattern: /\/dicts\/hebrew-catalog-2026-07-v1\.json$/,
             handler: 'NetworkFirst',

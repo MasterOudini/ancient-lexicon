@@ -501,6 +501,7 @@ details.infobox ul {
 
 .rootlist-item {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 14px;
   width: 100%;
@@ -556,6 +557,7 @@ details.infobox ul {
 
 .attested-word {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 12px;
   padding: 4px 0;
@@ -580,6 +582,18 @@ details.infobox ul {
   border-radius: 10px;
   padding: 8px 12px;
   margin: 8px 0;
+}
+
+.rootlist-source {
+  margin-left: auto;
+  color: var(--faience);
+  font-size: 0.7rem;
+  font-variant-caps: small-caps;
+  letter-spacing: 0.06em;
+}
+
+.root-provenance {
+  overflow-wrap: anywhere;
 }
 
 .fixed-line {
