@@ -91,6 +91,7 @@ const catalogByKey = new Map(catalog.entries.map((entry) => [entry.sourceKey, en
 let exactRawRoundTrip = catalogByKey.size === rawHebrew.size
 let sensesComplete = true
 let searchFieldsNormalized = true
+let rootReferencesComplete = true
 for (const entry of catalog.entries) {
   const raw = rawHebrew.get(entry.sourceKey)
   if (
@@ -116,10 +117,19 @@ for (const entry of catalog.entries) {
     !entry.searchText.includes(normalize(entry.definition)) ||
     !entry.searchText.includes(normalize(getDictionary(entry.source)?.label))
   ) searchFieldsNormalized = false
+  const root = entry.rootReference
+  const sourceRoot = root && rawHebrew.get(root.sourceKey)
+  if (
+    !root ||
+    !sourceRoot ||
+    root.headword !== sourceRoot.lemma ||
+    root.definition !== sourceRoot.def
+  ) rootReferencesComplete = false
 }
 check('all catalog keys are unique', catalogByKey.size === 18_992)
 check('every catalog row round-trips its exact raw source fields', exactRawRoundTrip)
 check('every catalog row has stable, complete display senses and a shard ID', sensesComplete)
+check('every catalog row has a source-backed lexical root destination', rootReferencesComplete)
 check('catalog search fields preserve normalized headword, ID, definition, and source label', searchFieldsNormalized)
 
 const bdbFieldPayload = JSON.stringify(
@@ -752,6 +762,12 @@ check(
     uiText.includes('Open comparison') && uiText.includes('Close comparison') &&
     stylesText.includes('.hebrew-row-action') &&
     stylesText.includes('flex: 1 0 100%')
+)
+check(
+  'every Hebrew result exposes its yellow source-root control',
+  uiText.includes('className="rootchip hebrew-row-root"') &&
+    uiText.includes('data-root-source={entry.rootReference.sourceKey}') &&
+    uiText.includes('onRootClick?.(entry.rootReference)')
 )
 check(
   'expanded mobile rows remain renderable and failed shard loads can retry',

@@ -34,7 +34,7 @@ try {
   } = await server.ssrLoadModule('/src/components/HebrewComparative.jsx')
   const { default: AboutView } = await server.ssrLoadModule('/src/components/AboutView.jsx')
   const { default: TabIcon } = await server.ssrLoadModule('/src/components/TabIcon.jsx')
-  const { RootDetail } = await server.ssrLoadModule('/src/components/RootsView.jsx')
+  const { RootDetail, RootReferenceDetail } = await server.ssrLoadModule('/src/components/RootsView.jsx')
   const {
     findAttestedRoot,
     mergeAttestedRootCatalog
@@ -49,18 +49,38 @@ try {
     transliteration: 'chashab',
     definition: 'think, count, weave',
     partOfSpeech: 'verb',
-    shard: '00'
+    shard: '00',
+    rootReference: {
+      source: 'strongs',
+      sourceLabel: 'Strongâ€™s',
+      id: 'H2803',
+      sourceKey: 'strongs:H2803',
+      headword: '×—Ö¸×©×Ö·×‘',
+      definition: 'think, count, weave'
+    }
   }
   const openRow = renderToStaticMarkup(
     React.createElement(HebrewEntryRow, {
       entry,
       initiallyOpen: true,
-      promotionKey: 'H2803:strongs:H2803'
+      promotionKey: 'H2803:strongs:H2803',
+      onRootClick: () => {}
     })
   )
   assert.match(openRow, /^<details[^>]*\sopen=""[^>]*>/)
   assert.match(openRow, /data-source-key="strongs:H2803"/)
   assert.match(openRow, /Close comparison/)
+  assert.match(openRow, /class="rootchip hebrew-row-root"/)
+  assert.match(openRow, /data-root-source="strongs:H2803"/)
+
+  const lexicalRoot = renderToStaticMarkup(
+    React.createElement(RootReferenceDetail, {
+      reference: entry.rootReference,
+      onSelectRoot: () => {}
+    })
+  )
+  assert.match(lexicalRoot, /Published lexical root entry/)
+  assert.match(lexicalRoot, /Strong/)
 
   const languages = ['akkadian', 'sumerian', 'egyptian', 'hittite', 'aramaic', 'osa']
   const senses = [{

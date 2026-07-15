@@ -12,6 +12,7 @@ import { REFERENCE_DICTIONARIES } from '../src/data/referenceDictionaries.js'
 import { englishKeywords, GLOSS_STOP_WORDS } from '../src/lib/glossSearch.js'
 import { normalize } from '../src/lib/search.js'
 import { toImperialAramaic, toMusnad } from '../src/lib/scripts.js'
+import { isDirectStrongsRoot } from './build-attested-roots.mjs'
 
 export const BUILD_ID = '2026-07-v1'
 export const SHARD_COUNT = 64
@@ -720,7 +721,42 @@ function publicSense(sense) {
   return [sense.key, sense.label, sense.sourceText, sense.matchable, sense.terms]
 }
 
-function makeCatalogEntry(sourceIndex, entry, shardId, senses) {
+function referencedStrongsIds(entry) {
+  return [...new Set((entry.deriv || '').match(/\bH\d+\b/g) || [])]
+}
+
+function strongsRootEntry(entry, strongsById, seen = new Set()) {
+  if (!entry || seen.has(entry.id)) return entry
+  seen.add(entry.id)
+  if (isDirectStrongsRoot(entry) && !/\(Aramaic\)/i.test(entry.deriv || '')) return entry
+
+  for (const id of referencedStrongsIds(entry)) {
+    const root = strongsRootEntry(strongsById.get(id), strongsById, seen)
+    if (root && isDirectStrongsRoot(root) && !/\(Aramaic\)/i.test(root.deriv || '')) return root
+  }
+
+  // Proper names, particles, and unanalysed lexical entries do not all have
+  // an explicit verbal derivation in Strong's. Their own published heading is
+  // still the honest lexical destination for the root button.
+  return entry
+}
+
+function bdbGroupKey(id) {
+  return String(id).replace(/\.[^.]+$/, '')
+}
+
+function publicRootReference(sourceIndex, entry) {
+  return [sourceIndex, String(entry.id)]
+}
+
+function rootReferenceFor(sourceIndex, entry, strongsById, bdbRootsByGroup) {
+  if (HEBREW_SOURCES[sourceIndex] === 'strongs') {
+    return publicRootReference(sourceIndex, strongsRootEntry(entry, strongsById))
+  }
+  return publicRootReference(sourceIndex, bdbRootsByGroup.get(bdbGroupKey(entry.id)) || entry)
+}
+
+function makeCatalogEntry(sourceIndex, entry, shardId, senses, rootReference) {
   const source = HEBREW_SOURCES[sourceIndex]
   const translit = entry.xlit || null
   return [
@@ -732,7 +768,8 @@ function makeCatalogEntry(sourceIndex, entry, shardId, senses) {
     entry.pos || null,
     shardId,
     senses.map(publicSense),
-    catalogSearch(source, String(entry.id), entry.lemma, translit, entry.def, senses)
+    catalogSearch(source, String(entry.id), entry.lemma, translit, entry.def, senses),
+    rootReference
   ]
 }
 
@@ -751,6 +788,12 @@ export function buildArtifacts() {
 
   const targetIndex = buildTargetIndex()
   const curatedHeads = buildCuratedHeadIndex()
+  const strongsById = new Map(strongs.entries.map((entry) => [entry.id, entry]))
+  const bdbRootsByGroup = new Map(
+    hebrewBdb
+      .filter((entry) => entry.id.endsWith('.aa'))
+      .map((entry) => [bdbGroupKey(entry.id), entry])
+  )
   const shards = Array.from({ length: SHARD_COUNT }, (_, index) => ({
     id: index.toString(16).padStart(2, '0'),
     records: {},
@@ -771,7 +814,15 @@ export function buildArtifacts() {
       shard.records[sourceKey] = senses.map((sense) =>
         slotsForSense(source, String(entry.id), entry.lemma, sense, shard, targetIndex, curatedHeads)
       )
-      catalogEntries.push(makeCatalogEntry(sourceIndex, entry, shardId, senses))
+      catalogEntries.push(
+        makeCatalogEntry(
+          sourceIndex,
+          entry,
+          shardId,
+          senses,
+          rootReferenceFor(sourceIndex, entry, strongsById, bdbRootsByGroup)
+        )
+      )
       senseCount += senses.length
     }
   }
