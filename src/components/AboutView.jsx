@@ -33,10 +33,11 @@ export default function AboutView() {
         </p>
         <p>
           The curated comparative database holds {LEXICON.length} concepts and{' '}
-          {ROOTS.length} Hebrew roots. The Dictionary tab&rsquo;s Reference
-          dictionaries mode adds both published lexicons and clearly labeled
-          smaller open wordlists. They load on demand and are then available
-          offline.
+          {ROOTS.length} hand-curated Hebrew root cards. The root permutation
+          explorer overlays a separate catalog of more than 1,300 Hebrew and
+          Biblical-Aramaic verbal-root records derived from published BDB and
+          Strong&rsquo;s entries. Source-derived cards retain their dictionary
+          IDs and are labeled separately from the curated cards.
         </p>
         <p>
           Comparative also has an &lsquo;All Hebrew&rsquo; layer containing every
@@ -47,10 +48,11 @@ export default function AboutView() {
         </p>
         <p>
           There is no backend, no account, and no analytics; your settings and
-          custom entries never leave this device. The curated dictionary, the
-          root explorer, and Strong&rsquo;s are precached and work offline from
-          the first load. The other reference dictionaries download once, the
-          first time you open each, and are then available offline too.
+          custom entries never leave this device. The curated dictionary,
+          curated root cards, and Strong&rsquo;s are precached and work offline
+          from the first load. The complete root lookup catalog and the other
+          reference dictionaries download once, the first time you open them,
+          and are then available offline too.
           The compact All Hebrew catalog and each comparison shard you open are
           likewise cached after their first online load. A complete source
           dictionary downloads only if you expand its source details.
@@ -64,6 +66,12 @@ export default function AboutView() {
           labeled conventions; interpretations are labeled interpretations;
           unknowns are stated as unknown. No reconstructed proto-forms are
           shown or implied anywhere in the app.
+        </p>
+        <p>
+          Source-derived root cards distinguish a published dictionary
+          headword from a directly cited biblical surface word. A headword is
+          evidence that the lexicon files that consonant root; it is not a
+          claim that the uninflected citation form occurs in the text.
         </p>
         <p>
           A form tagged &lsquo;verify against corpus&rsquo; is conventional or

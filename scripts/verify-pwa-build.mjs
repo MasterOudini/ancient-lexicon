@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -18,6 +18,11 @@ const appModule = moduleFile
 const packageVersion = JSON.parse(
   readFileSync(join(projectRoot, 'package.json'), 'utf8')
 ).version
+const rootDatasetUrl = 'dicts/attested-roots-2026-07-v1.json'
+const rootDatasetPath = join(distDir, ...rootDatasetUrl.split('/'))
+const rootDatasetFormat = 'ancient-lexicon-attested-roots-v1'
+const rootDatasetPayloadMarker = 'attested-root-payload-only-2026-07-v1'
+const rootDatasetPayloadProbe = 'attested-root-records-only-2026-07-v1'
 
 function verify(condition, message) {
   if (!condition) throw new Error(`PWA build verification failed: ${message}`)
@@ -52,8 +57,46 @@ verify(
 )
 verify(
   worker.includes('hebrew-comparison-catalog') &&
-    worker.includes('hebrew-comparison-shards'),
-  'the generated worker does not keep separate offline caches for the Hebrew catalog and shards'
+    worker.includes('hebrew-comparison-shards') &&
+    worker.includes('attested-root-catalog'),
+  'the generated worker does not keep separate offline caches for Hebrew comparisons and roots'
+)
+verify(existsSync(rootDatasetPath), 'the attested-root catalog was not copied to dist')
+const rootDataset = JSON.parse(readFileSync(rootDatasetPath, 'utf8'))
+verify(
+  rootDataset.format === rootDatasetFormat &&
+    rootDataset.payloadMarker === rootDatasetPayloadMarker &&
+    rootDataset.payloadProbe === rootDatasetPayloadProbe &&
+    rootDataset.count === rootDataset.roots.length,
+  'the built attested-root catalog is malformed'
+)
+
+const precacheMatch = worker.match(/precacheAndRoute\((\[[\s\S]*?\]),\{\}\)/)
+verify(precacheMatch, 'the generated precache manifest cannot be inspected')
+const precacheUrls = [...precacheMatch[1].matchAll(/\burl:"([^"]+)"/g)]
+  .map((match) => match[1])
+verify(
+  !precacheUrls.includes(rootDatasetUrl),
+  'the on-demand attested-root catalog entered the precache'
+)
+verify(
+  !precacheUrls.some((url) => /^dicts\/.*\.json$/.test(url)),
+  'a reference dictionary entered the precache'
+)
+verify(
+  worker.includes('attested-roots-2026-07-v1') &&
+    worker.includes('NetworkFirst') &&
+    worker.includes('attested-root-catalog'),
+  'the attested-root catalog is not runtime-cached with NetworkFirst'
+)
+
+const javascriptPayload = readdirSync(join(distDir, 'assets'))
+  .filter((file) => file.endsWith('.js'))
+  .map((file) => readFileSync(join(distDir, 'assets', file), 'utf8'))
+  .join('\n')
+verify(
+  !javascriptPayload.includes(rootDatasetPayloadProbe),
+  'the attested-root payload marker was bundled into precached JavaScript'
 )
 verify(
   manifest.start_url === expectedBase && manifest.scope === expectedBase,

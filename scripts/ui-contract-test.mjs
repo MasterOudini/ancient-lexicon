@@ -2,6 +2,7 @@
 // transform. This catches broken prop wiring without adding a DOM test runtime.
 
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -33,6 +34,11 @@ try {
   } = await server.ssrLoadModule('/src/components/HebrewComparative.jsx')
   const { default: AboutView } = await server.ssrLoadModule('/src/components/AboutView.jsx')
   const { default: TabIcon } = await server.ssrLoadModule('/src/components/TabIcon.jsx')
+  const { RootDetail } = await server.ssrLoadModule('/src/components/RootsView.jsx')
+  const {
+    findAttestedRoot,
+    mergeAttestedRootCatalog
+  } = await server.ssrLoadModule('/src/lib/attestedRootCatalog.js')
 
   const entry = {
     sourceKey: 'strongs:H2803',
@@ -101,7 +107,83 @@ try {
     assert.match(icon, /focusable="false"/)
   }
 
-  console.log('verified search-gated, exact-row, six-plaque, installed-version, and tab-icon UI contracts')
+  const rootPayload = JSON.parse(
+    readFileSync(
+      join(root, 'public', 'dicts', 'attested-roots-2026-07-v1.json'),
+      'utf8'
+    )
+  )
+  const completeRoots = mergeAttestedRootCatalog(rootPayload)
+  const noop = () => {}
+  const shmr = findAttestedRoot(completeRoots, 'hebrew', 'שמר')
+  const rshm = findAttestedRoot(completeRoots, 'hebrew', 'רשמ')
+  const abr = findAttestedRoot(completeRoots, 'hebrew', 'עבר')
+  const aramaicZaq = completeRoots.byKey.get('biblical-aramaic:זעק')
+  const aramaicPrs = completeRoots.byKey.get('biblical-aramaic:פרס')
+
+  const shmrDetail = renderToStaticMarkup(
+    React.createElement(RootDetail, {
+      root: shmr,
+      catalog: completeRoots,
+      catalogStatus: 'ready',
+      onSelectRoot: noop
+    })
+  )
+  assert.match(shmrDetail, /Sharing letters is not evidence of a connection/)
+  assert.match(shmrDetail, /<button[^>]*class="perm-tile found"[^>]*>[\s\S]*ר־ש־מ/)
+
+  const rshmDetail = renderToStaticMarkup(
+    React.createElement(RootDetail, {
+      root: rshm,
+      catalog: completeRoots,
+      catalogStatus: 'ready',
+      onSelectRoot: noop
+    })
+  )
+  assert.match(rshmDetail, /data-root-provenance="source-derived"/)
+  assert.match(rshmDetail, /BDB t\.es\.aa/)
+  assert.match(rshmDetail, /Strong’s H7559/)
+  assert.match(rshmDetail, /Daniel 10:21/)
+
+  const abrDetail = renderToStaticMarkup(
+    React.createElement(RootDetail, {
+      root: abr,
+      catalog: completeRoots,
+      catalogStatus: 'ready',
+      onSelectRoot: noop
+    })
+  )
+  assert.equal((abrDetail.match(/class="perm-tile found"/g) || []).length, 5)
+  assert.equal((abrDetail.match(/class="perm-tile ghost"/g) || []).length, 1)
+  assert.match(abrDetail, /not an attested root here/)
+
+  const unavailable = renderToStaticMarkup(
+    React.createElement(RootDetail, {
+      root: shmr,
+      catalog: completeRoots,
+      catalogStatus: 'error',
+      onSelectRoot: noop
+    })
+  )
+  assert.match(unavailable, /Permutation results are hidden/)
+  assert.doesNotMatch(unavailable, /not an attested root here/)
+
+  for (const aramaicRoot of [aramaicZaq, aramaicPrs]) {
+    assert.ok(aramaicRoot)
+    const aramaicDetail = renderToStaticMarkup(
+      React.createElement(RootDetail, {
+        root: aramaicRoot,
+        catalog: completeRoots,
+        catalogStatus: 'ready',
+        onSelectRoot: noop
+      })
+    )
+    assert.doesNotMatch(aramaicDetail, /Attested metathesis|Attested variant/)
+    assert.doesNotMatch(aramaicDetail, /Interpretive root cluster/)
+    assert.doesNotMatch(aramaicDetail, /1 Samuel 8:18/)
+  }
+
+  console.log('verified comparison, installed-version, tab-icon, and complete root-permutation UI contracts')
 } finally {
   await server.close()
 }

@@ -38,6 +38,16 @@ import {
   registerServiceWorkerUpdates,
   UPDATE_CHECK_INTERVAL_MS
 } from '../src/lib/pwaUpdates.js'
+import {
+  clearAttestedRootCatalogCache,
+  findAttestedRoot,
+  loadAttestedRootCatalog,
+  mergeAttestedRootCatalog
+} from '../src/lib/attestedRootCatalog.js'
+import {
+  CATALOG_FILE,
+  CATALOG_FORMAT
+} from './build-attested-roots.mjs'
 
 let failures = 0
 function check(name, cond) {
@@ -217,6 +227,371 @@ check(
 check(
   'rootKey folds finals: מלך and מלכ share a key',
   rootKey('מלך') === rootKey(['מ', 'ל', 'כ'])
+)
+
+// --- Complete published-root catalog --------------------------------------
+
+const rootProjectPath = join(dirname(fileURLToPath(import.meta.url)), '..')
+const catalogPath = join(rootProjectPath, 'public', 'dicts', CATALOG_FILE)
+const catalogText = readFileSync(catalogPath, 'utf8')
+const publishedCatalog = JSON.parse(catalogText)
+const strongsSource = JSON.parse(
+  readFileSync(join(rootProjectPath, 'src', 'data', 'strongs.json'), 'utf8')
+)
+const bdbSource = JSON.parse(
+  readFileSync(join(rootProjectPath, 'public', 'dicts', 'bdb.json'), 'utf8')
+)
+const independentRootLetters = (lemma) => {
+  const word = (lemma || '').match(/[א-ת](?:[\u0591-\u05c7]*[א-ת])*[\u0591-\u05c7]*/u)?.[0] || ''
+  const letters = foldFinals(
+    word.normalize('NFKD').replace(/[\u0591-\u05c7]/gu, '')
+  )
+  return /^[אבגדהוזחטיכלמנסעפצקרשת]{2,5}$/u.test(letters)
+    ? Array.from(letters)
+    : null
+}
+const independentlyDirectStrongs = (entry) =>
+  /\ba primitive root\b/i.test(entry.deriv || '') &&
+  !/\bfrom a primitive root\b/i.test(entry.deriv || '') &&
+  !/unused root/i.test(entry.deriv || '')
+const strongsBySourceId = new Map(
+  strongsSource.entries.map((entry) => [entry.id, entry])
+)
+const independentlyCorrespondingAramaic = (entry) => {
+  const match = (entry.deriv || '').match(/^\(Aramaic\)\s+corresponding to (H\d+)\b/i)
+  return Boolean(match && independentlyDirectStrongs(strongsBySourceId.get(match[1]) || {}))
+}
+const independentlyAlternateStrongs = (entry) => {
+  const derivation = (entry.deriv || '').replace(/\s+/g, ' ').trim()
+  const rootMarker = derivation.search(/\ba primitive root\b/i)
+  if (rootMarker < 0) return []
+  return derivation
+    .slice(0, rootMarker)
+    .split(';')
+    .filter((clause) => /^\s*(?:or|also)\b/i.test(clause))
+    .map(
+      (clause) =>
+        clause.match(/[א-ת](?:[\u0591-\u05c7]*[א-ת])*[\u0591-\u05c7]*/u)?.[0] || ''
+    )
+    .filter(Boolean)
+}
+const independentlyPointedRoot = (word) =>
+  /[\u05b0-\u05bb\u05c7]|\u05d5\u05bc/u.test(word)
+const sourceCandidates = []
+for (const entry of strongsSource.entries) {
+  const directRoot = independentlyDirectStrongs(entry)
+  const correspondingAramaic = independentlyCorrespondingAramaic(entry)
+  if (!directRoot && !correspondingAramaic) continue
+  const lemmas = directRoot
+    ? [entry.lemma, ...independentlyAlternateStrongs(entry)]
+    : [entry.lemma]
+  for (const lemma of lemmas) {
+    const letters = independentRootLetters(lemma)
+    if (!letters || !independentlyPointedRoot(lemma)) continue
+    sourceCandidates.push({
+      source: 'strongs',
+      sourceId: entry.id,
+      sourceLanguage: /^\(Aramaic\)/i.test((entry.deriv || '').trim())
+        ? 'biblical-aramaic'
+        : 'hebrew',
+      letters
+    })
+  }
+}
+for (const entry of bdbSource.entries) {
+  if (
+    !entry.id.endsWith('.aa') ||
+    !/^vb(?:\.|$)/i.test(entry.pos || '') ||
+    !independentlyPointedRoot(entry.lemma)
+  ) continue
+  const letters = independentRootLetters(entry.lemma)
+  if (!letters) continue
+  sourceCandidates.push({
+    source: 'bdb',
+    sourceId: entry.id,
+    sourceLanguage: entry.id.startsWith('x') ? 'biblical-aramaic' : 'hebrew',
+    letters
+  })
+}
+const completeCatalog = mergeAttestedRootCatalog(publishedCatalog)
+
+let requestedRootCatalog
+const loadedRootCatalog = await loadAttestedRootCatalog({
+  baseUrl: '/ancient-lexicon/',
+  fetchImpl: async (url, options) => {
+    requestedRootCatalog = { url, options }
+    return { ok: true, json: async () => publishedCatalog }
+  }
+})
+check(
+  'published-root loader bypasses the HTTP cache and respects project base paths',
+  requestedRootCatalog.url ===
+    '/ancient-lexicon/dicts/attested-roots-2026-07-v1.json' &&
+    requestedRootCatalog.options.cache === 'no-cache' &&
+    loadedRootCatalog.sourceCount === publishedCatalog.count
+)
+clearAttestedRootCatalogCache()
+
+check('published-root catalog has the expected versioned format', publishedCatalog.format === CATALOG_FORMAT)
+check(
+  'published-root catalog count matches its records and exceeds the curated set',
+  publishedCatalog.count === publishedCatalog.roots.length &&
+    publishedCatalog.count > ROOTS.length
+)
+check(
+  'published-root catalog candidate count is independently reproducible',
+  publishedCatalog.candidateCount === sourceCandidates.length
+)
+
+const publishedIds = publishedCatalog.roots.map((root) => root.id)
+const publishedKeys = publishedCatalog.roots.map(
+  (root) => `${root.lang}:${rootKey(root.letters)}`
+)
+check('published-root ids are unique', new Set(publishedIds).size === publishedIds.length)
+check('published-root consonant keys are unique', new Set(publishedKeys).size === publishedKeys.length)
+check(
+  'every published root has non-final letters, an attestation, and exact source provenance',
+  publishedCatalog.roots.every((root) =>
+    ['hebrew', 'biblical-aramaic'].includes(root.lang) &&
+    root.sourceDerived === true &&
+    Array.isArray(root.letters) &&
+    root.letters.length >= 2 &&
+    root.letters.length <= 5 &&
+    root.letters.every((letter) => !/[ךםןףץ]/u.test(letter)) &&
+    Array.isArray(root.attested) &&
+    root.attested.length > 0 &&
+    root.attested.some((attestation) => independentlyPointedRoot(attestation.word)) &&
+    root.attested.every((attestation) =>
+      /[א-ת]/u.test(attestation.word) &&
+      attestation.gloss &&
+      attestation.source &&
+      attestation.sourceId &&
+      attestation.sourceLanguage === root.lang
+    ) &&
+    Array.isArray(root.sources) &&
+    root.sources.length > 0 &&
+    root.sources.every((source) =>
+      source.source &&
+      source.sourceId &&
+      source.headword &&
+      independentlyPointedRoot(source.headword) &&
+      source.sourceLanguage === root.lang
+    )
+  )
+)
+
+const publishedByKey = new Map(
+  publishedCatalog.roots.map((root) => [
+    `${root.lang}:${rootKey(root.letters)}`,
+    root
+  ])
+)
+check(
+  'every eligible pinned-dictionary record is represented in the generated catalog',
+  sourceCandidates.every((candidate) => {
+    const root = publishedByKey.get(
+      `${candidate.sourceLanguage}:${rootKey(candidate.letters)}`
+    )
+    return root?.sources.some(
+      (source) =>
+        source.source === candidate.source &&
+        source.sourceId === candidate.sourceId &&
+        source.sourceLanguage === candidate.sourceLanguage
+    )
+  })
+)
+const alternateRootRegressions = new Map([
+  ['סוט', 'H7750'],
+  ['גול', 'H1523'],
+  ['עמש', 'H6006'],
+  ['סכר', 'H7936']
+])
+check(
+  'explicit Strong’s alternate primitive-root headings remain source-backed roots',
+  [...alternateRootRegressions].every(([letters, sourceId]) =>
+    publishedByKey
+      .get(`hebrew:${rootKey(letters)}`)
+      ?.sources.some(
+        (source) => source.source === 'strongs' && source.sourceId === sourceId
+      )
+  )
+)
+check(
+  'Strong’s related and erroneous references are not imported as alternate headings',
+  !publishedByKey
+    .get(`hebrew:${rootKey('ילכ')}`)
+    ?.sources.some((source) => source.sourceId === 'H1980') &&
+    !publishedByKey
+      .get(`hebrew:${rootKey('שבר')}`)
+      ?.attested.some(
+        (attestation) =>
+          attestation.sourceId === 'H7663' && attestation.word === 'שָׁבַר'
+      )
+)
+check('generated root catalog contains no asterisked forms', !catalogText.includes('*'))
+check('generated root catalog contains no reconstructed-form labels', !/proto-/i.test(catalogText))
+
+const completeByKey = completeCatalog.byUnionKey
+const signature = (root) =>
+  Array.from(foldFinals(root.letters.join(''))).sort().join('')
+const groups = new Map()
+for (const root of completeByKey.values()) {
+  const groupKey = signature(root)
+  if (!groups.has(groupKey)) groups.set(groupKey, [])
+  groups.get(groupKey).push(root)
+}
+
+let exactPermutationResolution = true
+let symmetricPermutationResolution = true
+let directedPermutationPairs = 0
+for (const group of groups.values()) {
+  const expected = new Set(group.map((root) => rootKey(root.letters)))
+  const neighbors = new Map()
+
+  for (const root of group) {
+    const foundKeys = new Set()
+    for (const permutation of uniquePermutations(root.letters)) {
+      const requestedKey = rootKey(permutation)
+      const expectedRoot = completeByKey.get(requestedKey)
+      const found = findAttestedRoot(completeCatalog, root.lang, permutation)
+      exactPermutationResolution &&= expectedRoot
+        ? Boolean(found) && rootKey(found.letters) === requestedKey
+        : found === null
+      if (found) foundKeys.add(rootKey(found.letters))
+    }
+    exactPermutationResolution &&=
+      foundKeys.size === expected.size &&
+      [...expected].every((expectedKey) => foundKeys.has(expectedKey))
+    neighbors.set(rootKey(root.letters), foundKeys)
+  }
+
+  for (const first of group) {
+    for (const second of group) {
+      if (first === second) continue
+      directedPermutationPairs++
+      symmetricPermutationResolution &&=
+        neighbors.get(rootKey(first.letters)).has(rootKey(second.letters)) &&
+        neighbors.get(rootKey(second.letters)).has(rootKey(first.letters))
+    }
+  }
+}
+
+check(
+  'attested permutation resolution is exact for every root and every possible ordering',
+  exactPermutationResolution
+)
+check(
+  'every attested anagram relationship is mutual and the invariant is non-vacuous',
+  directedPermutationPairs > 0 && symmetricPermutationResolution
+)
+
+// Repeat the invariant from every language-specific card, not only the
+// preferred record in each consonant-key bucket. Hebrew and Biblical-Aramaic
+// cards can share an exact spelling, but every distinct reordering must still
+// resolve from both cards to the requested consonant key.
+let everyCatalogCardResolution = true
+let catalogCardDirectedPairs = 0
+for (const root of completeCatalog.roots) {
+  const expectedKeys = new Set(
+    (groups.get(signature(root)) || []).map((member) => rootKey(member.letters))
+  )
+  const foundKeys = new Set()
+  for (const permutation of uniquePermutations(root.letters)) {
+    const requestedKey = rootKey(permutation)
+    const expectedRoot = completeByKey.get(requestedKey)
+    const found = findAttestedRoot(completeCatalog, root.lang, permutation)
+    everyCatalogCardResolution &&= expectedRoot
+      ? Boolean(found) && rootKey(found.letters) === requestedKey
+      : found === null
+    if (found) foundKeys.add(rootKey(found.letters))
+  }
+  everyCatalogCardResolution &&=
+    foundKeys.size === expectedKeys.size &&
+    [...expectedKeys].every((expectedKey) => foundKeys.has(expectedKey))
+  catalogCardDirectedPairs += Math.max(0, expectedKeys.size - 1)
+}
+check(
+  'every Hebrew and Biblical-Aramaic card resolves its complete mutual anagram set',
+  catalogCardDirectedPairs > 0 && everyCatalogCardResolution
+)
+
+const shmr = findAttestedRoot(completeCatalog, 'hebrew', 'שמר')
+const rshm = findAttestedRoot(completeCatalog, 'hebrew', 'רשמ')
+const aramaicRshm = findAttestedRoot(
+  completeCatalog,
+  'biblical-aramaic',
+  'רשמ'
+)
+check(
+  'שמר and רשמ resolve mutually through the comprehensive catalog',
+  shmr &&
+    rshm &&
+    uniquePermutations(shmr.letters).some((permutation) => rootKey(permutation) === rootKey(rshm.letters)) &&
+    uniquePermutations(rshm.letters).some((permutation) => rootKey(permutation) === rootKey(shmr.letters))
+)
+check(
+  'Hebrew and Biblical-Aramaic רשמ remain separate source cards',
+  rshm?.lang === 'hebrew' &&
+    aramaicRshm?.lang === 'biblical-aramaic' &&
+    rshm.id !== aramaicRshm.id &&
+    rshm.sources.every((source) => source.sourceLanguage === 'hebrew') &&
+    aramaicRshm.sources.every(
+      (source) => source.sourceLanguage === 'biblical-aramaic'
+    )
+)
+check(
+  'רשמ records the attested רָשׁוּם form and Daniel 10:21 citation',
+  rshm?.attested.some(
+    (attestation) =>
+      attestation.word === 'רָשׁוּם' && attestation.citation === 'Daniel 10:21'
+  )
+)
+
+const qrbComprehensive = uniquePermutations('קרב').filter((permutation) =>
+  findAttestedRoot(completeCatalog, 'hebrew', permutation)
+)
+check('the complete catalog preserves all six קרב roots', qrbComprehensive.length === 6)
+const expectedAbr = new Set(['עבר', 'ערב', 'בער', 'רעב', 'רבע'])
+const foundAbr = new Set(
+  uniquePermutations('עבר')
+    .filter((permutation) => findAttestedRoot(completeCatalog, 'hebrew', permutation))
+    .map((permutation) => rootKey(permutation))
+)
+check(
+  'the עבר grid resolves every source-attested member and keeps ברע as an honest ghost',
+  foundAbr.size === expectedAbr.size &&
+    [...expectedAbr].every((key) => foundAbr.has(key)) &&
+    findAttestedRoot(completeCatalog, 'hebrew', 'ברע') === null
+)
+check(
+  'derived BDB verb forms are not misclassified as roots',
+  ['התיחש', 'קיננ', 'שיזב', 'שיציא'].every(
+    (letters) => !completeCatalog.byUnionKey.has(rootKey(letters))
+  )
+)
+check(
+  'canonical roots behind audited derived forms remain present',
+  ['יחש', 'שזב', 'יצא'].every((letters) =>
+    completeCatalog.byUnionKey.has(rootKey(letters))
+  )
+)
+
+const reviewedBiconsonantals = new Set([
+  'בנ', 'אל', 'אב', 'אמ', 'יד', 'שמ', 'אח', 'עמ', 'שש', 'עז',
+  'דג', 'דב', 'פה', 'שנ', 'דמ', 'ימ', 'הר', 'אש', 'עצ', 'נר'
+])
+const actualBiconsonantals = new Set(
+  ROOTS.filter((root) => root.letters.length === 2).map((root) => rootKey(root.letters))
+)
+check(
+  'the reviewed attested biconsonantal inventory remains exact and source-backed',
+  actualBiconsonantals.size === reviewedBiconsonantals.size &&
+    [...reviewedBiconsonantals].every(
+      (key) =>
+        actualBiconsonantals.has(key) &&
+        completeCatalog.byUnionKey.has(key) &&
+        completeCatalog.byUnionKey.get(key).attested.length > 0
+    )
 )
 
 // --- Database integrity -----------------------------------------------------
