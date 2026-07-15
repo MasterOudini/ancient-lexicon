@@ -228,6 +228,11 @@ check(
   'rootKey folds finals: מלך and מלכ share a key',
   rootKey('מלך') === rootKey(['מ', 'ל', 'כ'])
 )
+check(
+  'rootKey strips Masoretic pointing and folds final forms',
+  rootKey('\u05e9\u05c1\u05b5\u05dd') === '\u05e9\u05de' &&
+    rootKey('\u05d2\u05bc\u05b8\u05e8\u05b7\u05e9\u05c1') === '\u05d2\u05e8\u05e9'
+)
 
 // --- Complete published-root catalog --------------------------------------
 
@@ -280,8 +285,11 @@ const independentlyPointedRoot = (word) =>
 const sourceCandidates = []
 for (const entry of strongsSource.entries) {
   const directRoot = independentlyDirectStrongs(entry)
+  const primitiveWord =
+    /\ba primitive word\b/i.test(entry.deriv || '') &&
+    !/\bfrom a primitive word\b/i.test(entry.deriv || '')
   const correspondingAramaic = independentlyCorrespondingAramaic(entry)
-  if (!directRoot && !correspondingAramaic) continue
+  if (!directRoot && !primitiveWord && !correspondingAramaic) continue
   const lemmas = directRoot
     ? [entry.lemma, ...independentlyAlternateStrongs(entry)]
     : [entry.lemma]
@@ -299,13 +307,13 @@ for (const entry of strongsSource.entries) {
   }
 }
 for (const entry of bdbSource.entries) {
+  const explicitUnpointedRoot = !/[\u0591-\u05c7]/u.test(entry.lemma || '')
   if (
     !entry.id.endsWith('.aa') ||
-    !/^vb(?:\.|$)/i.test(entry.pos || '') ||
-    !independentlyPointedRoot(entry.lemma)
+    (!/^vb(?:\.|$)/i.test(entry.pos || '') && !explicitUnpointedRoot)
   ) continue
   const letters = independentRootLetters(entry.lemma)
-  if (!letters) continue
+  if (!letters || (/[\u0591-\u05c7]/u.test(entry.lemma || '') && letters.length > 4)) continue
   sourceCandidates.push({
     source: 'bdb',
     sourceId: entry.id,
@@ -360,7 +368,6 @@ check(
     root.letters.every((letter) => !/[ךםןףץ]/u.test(letter)) &&
     Array.isArray(root.attested) &&
     root.attested.length > 0 &&
-    root.attested.some((attestation) => independentlyPointedRoot(attestation.word)) &&
     root.attested.every((attestation) =>
       /[א-ת]/u.test(attestation.word) &&
       attestation.gloss &&
@@ -374,7 +381,7 @@ check(
       source.source &&
       source.sourceId &&
       source.headword &&
-      independentlyPointedRoot(source.headword) &&
+      /[\u05d0-\u05ea]/u.test(source.headword) &&
       source.sourceLanguage === root.lang
     )
   )
