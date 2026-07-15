@@ -140,6 +140,17 @@ try {
     assert.match(icon, /focusable="false"/)
   }
 
+  const styles = readFileSync(join(root, 'src', 'styles.css'), 'utf8')
+  const tabbarRule = styles.match(/\.tabbar\s*\{([^}]+)\}/)?.[1] || ''
+  const tabbarSkirtRule = styles.match(/\.tabbar::after\s*\{([^}]+)\}/)?.[1] || ''
+  assert.match(tabbarRule, /bottom:\s*calc\(100svh - 100dvh\)/)
+  assert.match(tabbarRule, /padding:\s*6px 8px max\(6px, env\(safe-area-inset-bottom\)\)/)
+  assert.match(tabbarRule, /isolation:\s*isolate/)
+  assert.match(tabbarRule, /transform:\s*translateZ\(0\)/)
+  assert.match(tabbarSkirtRule, /top:\s*100%/)
+  assert.match(tabbarSkirtRule, /height:\s*100dvh/)
+  assert.match(tabbarSkirtRule, /background:\s*var\(--card\)/)
+
   const rootPayload = JSON.parse(
     readFileSync(
       join(root, 'public', 'dicts', 'attested-roots-2026-07-v1.json'),

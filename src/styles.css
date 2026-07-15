@@ -210,6 +210,11 @@ button {
 .tabbar {
   position: fixed;
   bottom: 0;
+  /* On iOS Safari the visual viewport grows when its browser chrome retracts.
+     Keep the fixed bar attached to that moving bottom edge instead of the
+     smaller initial viewport. Older browsers ignore the dynamic-unit line and
+     retain the bottom: 0 fallback above. */
+  bottom: calc(100svh - 100dvh);
   left: 0;
   right: 0;
   display: flex;
@@ -217,9 +222,27 @@ button {
   gap: 8px;
   background: var(--card);
   border-top: 1px solid var(--line);
-  padding: 6px 8px;
-  padding-bottom: env(safe-area-inset-bottom);
-  z-index: 10;
+  padding: 6px 8px max(6px, env(safe-area-inset-bottom));
+  z-index: 100;
+  isolation: isolate;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* WebKit can briefly composite a fixed footer at its previous visual-viewport
+   position during a long momentum scroll. This opaque extension covers any
+   transient space below the bar, so scrolled cards can never show through. */
+.tabbar::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  height: 100dvh;
+  background: var(--card);
+  pointer-events: none;
+  z-index: -1;
 }
 
 .tabbar button {
