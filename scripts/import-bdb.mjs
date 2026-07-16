@@ -144,10 +144,12 @@ const here = dirname(fileURLToPath(import.meta.url))
 export function importBdb(src, dest = join(here, '..', 'public', 'dicts', 'bdb.json')) {
   const text = readFileSync(src, 'utf8')
   const entries = []
-  const re = /<entry id="([^"]+)"[^>]*>([\s\S]*?)<\/entry>/g
+  const re = /<entry\s+([^>]*)>([\s\S]*?)<\/entry>/g
   let m
   while ((m = re.exec(text))) {
-    const id = m[1]
+    const entryAttrs = attrs(m[1])
+    const id = entryAttrs.id
+    if (!id) continue
     const body = m[2]
     const wMatch = body.match(/<w[^>]*>([\s\S]*?)<\/w>/)
     const lemma = wMatch ? strip(wMatch[1]) : ''
@@ -156,6 +158,18 @@ export function importBdb(src, dest = join(here, '..', 'public', 'dicts', 'bdb.j
     const def = strip(body.replace(/<status[\s\S]*?<\/status>/g, ''))
     const rec = { id, lemma, def }
     if (posMatch) rec.pos = strip(posMatch[1])
+    if (entryAttrs.type) rec.type = entryAttrs.type
+    if (entryAttrs.form) rec.form = entryAttrs.form
+    const headDefinitions = [...body.split(/<sense\b/i)[0].matchAll(/<def>([\s\S]*?)<\/def>/gi)]
+      .map((match) => strip(match[1]))
+      .filter(Boolean)
+    if (headDefinitions.length > 0) rec.headDefinitions = headDefinitions
+    const lexicalRefs = [...new Set(
+      [...body.matchAll(/<w\s+([^>]*)>/g)]
+        .map((match) => attrs(match[1]).src)
+        .filter(Boolean)
+    )]
+    if (lexicalRefs.length > 0) rec.lexicalRefs = lexicalRefs
     const senses = parseStructuredSenses(body)
     if (senses.length > 0) rec.senses = senses
     entries.push(rec)

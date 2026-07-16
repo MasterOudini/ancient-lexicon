@@ -3,6 +3,7 @@
 // runs under bare node. Expected glyph strings are built with
 // String.fromCodePoint so no astral literal can be silently corrupted.
 
+import { createHash } from 'node:crypto'
 import { readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
@@ -49,14 +50,17 @@ import {
 } from '../src/lib/releaseAssets.js'
 import {
   clearAttestedRootCatalogCache,
-  findAttestedRoot,
+  findAttestedRootExact,
   loadAttestedRootCatalog,
   mergeAttestedRootCatalog
 } from '../src/lib/attestedRootCatalog.js'
 import {
   CATALOG_FILE,
-  CATALOG_FORMAT
+  CATALOG_FORMAT,
+  extractAttestedRootCandidates,
+  isSourceDeclaredBdbVerb
 } from './build-attested-roots.mjs'
+import { referencedStrongsIds } from './build-hebrew-comparisons.mjs'
 
 let failures = 0
 function check(name, cond) {
@@ -650,6 +654,131 @@ check(
 // --- Complete published-root catalog --------------------------------------
 
 const rootProjectPath = join(dirname(fileURLToPath(import.meta.url)), '..')
+const compatibilitySha256 = (value) =>
+  createHash('sha256').update(value).digest('hex')
+const compatibilityFamilyHash = (directory) => {
+  const hash = createHash('sha256')
+  for (const file of readdirSync(directory).filter((name) => name.endsWith('.json')).sort()) {
+    hash.update(file)
+    hash.update(Buffer.from([0]))
+    hash.update(readFileSync(join(directory, file)))
+  }
+  return hash.digest('hex')
+}
+const legacyRootPath = join(
+  rootProjectPath,
+  'public',
+  'dicts',
+  'attested-roots-2026-07-v1.json'
+)
+const legacyHebrewCatalogPath = join(
+  rootProjectPath,
+  'public',
+  'dicts',
+  'hebrew-catalog-2026-07-v1.json'
+)
+const legacyHebrewShardDirectory = join(
+  rootProjectPath,
+  'public',
+  'dicts',
+  'hebrew-comparisons-2026-07-v1'
+)
+const legacyRootBytes = readFileSync(legacyRootPath)
+const legacyRootPayload = JSON.parse(legacyRootBytes.toString('utf8'))
+const legacyHebrewCatalogBytes = readFileSync(legacyHebrewCatalogPath)
+const legacyHebrewCatalogPayload = JSON.parse(legacyHebrewCatalogBytes.toString('utf8'))
+
+function legacyRootSchemaAccepts(payload) {
+  const roots = payload?.roots
+  if (!Array.isArray(roots)) return false
+  const ids = new Set()
+  const keys = new Set()
+  const bdb = payload?.sources?.find((source) => source.id === 'bdb')
+  return payload.format === 'ancient-lexicon-attested-roots-v1' &&
+    payload.payloadMarker === 'attested-root-payload-only-2026-07-v1' &&
+    payload.count === roots.length && payload.count > 1000 &&
+    bdb?.sourceRevision === 'b69f909233040133c03654945d7ed1a510d5ea37' &&
+    roots.every((root) => {
+      const key = `${root.lang}:${rootKey(root.letters)}`
+      const valid = !ids.has(root.id) && !keys.has(key) &&
+        ['hebrew', 'biblical-aramaic'].includes(root.lang) &&
+        Array.isArray(root.letters) && root.letters.length >= 2 && root.letters.length <= 5 &&
+        root.letters.every((letter) => /^[אבגדהוזחטיכלמנסעפצקרשת]$/u.test(letter)) &&
+        Array.isArray(root.attested) && root.attested.length > 0 &&
+        Array.isArray(root.sources) && root.sources.length > 0 &&
+        root.sources.every((source) => source.sourceLanguage === root.lang)
+      ids.add(root.id)
+      keys.add(key)
+      return valid
+    })
+}
+
+function legacyHebrewCatalogSchemaAccepts(payload) {
+  const sources = payload?.sources || []
+  return payload?.version === 1 && Array.isArray(payload.entries) &&
+    payload.entries.every((tuple) => {
+      const reference = tuple[9]
+      if (reference == null) return true
+      return Array.isArray(reference) && !Array.isArray(reference[0]) &&
+        Boolean(sources[reference[0]] && reference[1] && reference[2])
+    })
+}
+
+async function fetchAsLegacyClient(path, payload) {
+  const calls = []
+  const response = await fetchReleaseAsset(path, {
+    baseUrl: '/ancient-lexicon/',
+    releasePrefix: 'release-old-v1/',
+    cacheStorage: null,
+    options: { cache: 'no-cache' },
+    fetchImpl: async (url) => {
+      calls.push(String(url))
+      if (String(url).includes('/release-old-v1/')) {
+        return { ok: false, status: 404 }
+      }
+      return { ok: true, status: 200, json: async () => payload }
+    }
+  })
+  return { calls, payload: await response.json() }
+}
+
+const legacyRootFallback = await fetchAsLegacyClient(
+  'dicts/attested-roots-2026-07-v1.json',
+  legacyRootPayload
+)
+const legacyCatalogFallback = await fetchAsLegacyClient(
+  'dicts/hebrew-catalog-2026-07-v1.json',
+  legacyHebrewCatalogPayload
+)
+const legacyShardPayload = JSON.parse(
+  readFileSync(join(legacyHebrewShardDirectory, '00.json'), 'utf8')
+)
+const legacyShardFallback = await fetchAsLegacyClient(
+  'dicts/hebrew-comparisons-2026-07-v1/00.json',
+  legacyShardPayload
+)
+check(
+  'frozen v1 root and Hebrew comparison families remain byte-for-byte compatible',
+  compatibilitySha256(legacyRootBytes) ===
+    '581c21283b566af75b075bd78e485017f4a28e433b861e64f6fa24532c4299ee' &&
+    compatibilitySha256(legacyHebrewCatalogBytes) ===
+      'c6f10ac6c21406fbad33ae920220efc0bb71b66f7f23da48d162a84e9c3763fa' &&
+    compatibilityFamilyHash(legacyHebrewShardDirectory) ===
+      '04215850b0f70c110a25efa704c0ddc547beeceae46e94068d07ea068c25d415'
+)
+check(
+  'old loaders fall back to mutable v1 data and their schemas still accept it',
+  legacyRootFallback.calls.join('|') ===
+    '/ancient-lexicon/release-old-v1/dicts/attested-roots-2026-07-v1.json|/ancient-lexicon/dicts/attested-roots-2026-07-v1.json' &&
+    legacyCatalogFallback.calls.at(-1) ===
+      '/ancient-lexicon/dicts/hebrew-catalog-2026-07-v1.json' &&
+    legacyShardFallback.calls.at(-1) ===
+      '/ancient-lexicon/dicts/hebrew-comparisons-2026-07-v1/00.json' &&
+    legacyRootSchemaAccepts(legacyRootFallback.payload) &&
+    legacyHebrewCatalogSchemaAccepts(legacyCatalogFallback.payload) &&
+    legacyShardFallback.payload.version === 1 &&
+    legacyShardFallback.payload.shard === '00'
+)
 const catalogPath = join(rootProjectPath, 'public', 'dicts', CATALOG_FILE)
 const catalogText = readFileSync(catalogPath, 'utf8')
 const publishedCatalog = JSON.parse(catalogText)
@@ -658,6 +787,14 @@ const strongsSource = JSON.parse(
 )
 const bdbSource = JSON.parse(
   readFileSync(join(rootProjectPath, 'public', 'dicts', 'bdb.json'), 'utf8')
+)
+const jastrowSource = JSON.parse(
+  readFileSync(join(rootProjectPath, 'public', 'dicts', 'jastrow.json'), 'utf8')
+)
+const builtRootCandidates = extractAttestedRootCandidates(
+  strongsSource,
+  bdbSource,
+  jastrowSource
 )
 const independentRootLetters = (lemma) => {
   const word = (lemma || '').match(/[א-ת](?:[\u0591-\u05c7]*[א-ת])*[\u0591-\u05c7]*/u)?.[0] || ''
@@ -674,6 +811,36 @@ const independentlyDirectStrongs = (entry) =>
   !/unused root/i.test(entry.deriv || '')
 const strongsBySourceId = new Map(
   strongsSource.entries.map((entry) => [entry.id, entry])
+)
+const reviewedStrongsParentOracle = new Map([
+  ['H358', ['H356', 'H1004', 'H2603']],
+  ['H883', ['H875', 'H2416', 'H7203']],
+  ['H885', ['H875', 'H1121', 'H3292']],
+  ['H1842', ['H1835', 'H3282']],
+  ['H2910', ['H2909', 'H2902']],
+  ['H3060', ['H3068', 'H784']],
+  ['H3079', ['H3068', 'H6965']],
+  ['H3115', ['H3068', 'H3513']],
+  ['H4105', ['H3190', 'H410']],
+  ['H7619', ['H7617', 'H7725', 'H410']],
+  ['H8287', ['H8281', 'H2580']],
+  ['H8423', ['H2986', 'H7014']]
+])
+const matchesStrongParentOracle = (id, expected) => {
+  const actual = referencedStrongsIds(strongsBySourceId.get(id))
+  return actual.length === expected.length &&
+    actual.every((parentId, index) => parentId === expected[index])
+}
+check(
+  'Strong\'s parent parser preserves independently reviewed compound chains',
+  [...reviewedStrongsParentOracle].every(([id, expected]) =>
+    matchesStrongParentOracle(id, expected)
+  )
+)
+check(
+  'Strong\'s parent parser keeps contextual comparisons out of compound roots',
+  matchesStrongParentOracle('H8453', ['H3427']) &&
+    matchesStrongParentOracle('H7014', ['H7013'])
 )
 const independentlyCorrespondingAramaic = (entry) => {
   const match = (entry.deriv || '').match(/^\(Aramaic\)\s+corresponding to (H\d+)\b/i)
@@ -695,6 +862,36 @@ const independentlyAlternateStrongs = (entry) => {
 }
 const independentlyPointedRoot = (word) =>
   /[\u05b0-\u05bb\u05c7]|\u05d5\u05bc/u.test(word)
+const independentlySourceDeclaredBdbVerb = (entry) => {
+  if (/^vb(?:\.|\s|$)/i.test((entry.pos || '').trim())) return true
+  if (
+    ['h.gt.aa', 'k.de.aa', 'p.df.aa', 'p.gd.aa'].includes(entry.id) &&
+    entry.type === 'root' &&
+    entry.headDefinitions?.length > 0
+  ) return true
+  const lemma = (entry.lemma || '').trim()
+  const definition = (entry.def || '').replace(/\s+/g, ' ').trim()
+  return Boolean(
+    lemma &&
+      definition.startsWith(lemma) &&
+      /^vb(?:\.|\s|$)/i.test(definition.slice(lemma.length).trimStart())
+  )
+}
+const independentlyBareBdbRootHeading = (entry) => {
+  const compact = (value) => String(value || '').replace(/[\[\]\s]/g, '')
+  return entry.type === 'root' && compact(entry.def) === compact(entry.lemma)
+}
+const independentlyExplicitBdbRootSignal = (entry) =>
+  /(?:√\s*(?:of|assumed)|\broot\s+of\b)/i.test(entry.def || '')
+const independentlyNonRootBdbLexeme = (entry) => {
+  const remainder = String(entry.def || '')
+    .replace(entry.lemma || '', '')
+    .replace(/^[\s[\](),.;:—-]+/, '')
+  return /^(?:interrog(?:ative)?\.?\s+)?(?:adv|adj|conj|interj|n\.|noun|prep|pron|particle)\b/i.test(remainder)
+}
+const referencedBdbSourceIds = new Set(
+  bdbSource.entries.flatMap((entry) => entry.lexicalRefs || [])
+)
 const sourceCandidates = []
 for (const entry of strongsSource.entries) {
   const directRoot = independentlyDirectStrongs(entry)
@@ -723,10 +920,22 @@ for (const entry of bdbSource.entries) {
   // Shin/sin dots identify the consonant; they are not lexical pointing.
   const hasLexicalPointing = independentlyPointedRoot(entry.lemma || '')
   const explicitUnpointedRoot = !hasLexicalPointing
-  if (
-    !entry.id.endsWith('.aa') ||
-    (!/^vb(?:\.|$)/i.test(entry.pos || '') && !explicitUnpointedRoot)
-  ) continue
+  const sourceDeclaredVerb = independentlySourceDeclaredBdbVerb(entry)
+  const bareRootHeading = independentlyBareBdbRootHeading(entry)
+  const explicitRootSignal = independentlyExplicitBdbRootSignal(entry)
+  const unattestedRootHeading =
+    entry.form === 'false' && !independentlyNonRootBdbLexeme(entry)
+  const sourceRoot =
+    entry.type === 'root' && (
+      sourceDeclaredVerb ||
+      explicitUnpointedRoot ||
+      bareRootHeading ||
+      explicitRootSignal ||
+      unattestedRootHeading
+    )
+  const referencedLexicalBase =
+    referencedBdbSourceIds.has(entry.id) && sourceDeclaredVerb
+  if (!sourceRoot && !referencedLexicalBase) continue
   const letters = independentRootLetters(entry.lemma)
   if (!letters || (/[\u0591-\u05c7]/u.test(entry.lemma || '') && letters.length > 4)) continue
   sourceCandidates.push({
@@ -734,6 +943,41 @@ for (const entry of bdbSource.entries) {
     sourceId: entry.id,
     sourceLanguage: entry.id.startsWith('x') ? 'biblical-aramaic' : 'hebrew',
     letters
+  })
+}
+const jastrowHebrewLanguageCodes = new Set(['he', 'bh', 'ar+he', 'he+ar', 'ar+bh'])
+for (const entry of jastrowSource.entries) {
+  const roots = entry.sourceRoots?.length
+    ? entry.sourceRoots
+    : entry.root ? [entry.root] : []
+  const seen = new Set()
+  for (const sourceRoot of roots) {
+    const sourceLanguage = sourceRoot.languageCode === 'he' || sourceRoot.languageCode === 'bh'
+      ? 'hebrew'
+      : sourceRoot.languageCode === 'und' || jastrowHebrewLanguageCodes.has(sourceRoot.languageCode)
+        ? 'hebrew-aramaic-unclassified'
+        : null
+    if (!sourceLanguage) continue
+    const letters = independentRootLetters(sourceRoot?.letters)
+    const key = `${sourceLanguage}:${letters?.join('')}`
+    if (!letters || seen.has(key)) continue
+    seen.add(key)
+    sourceCandidates.push({
+      source: 'jastrow',
+      sourceId: entry.id,
+      sourceLanguage,
+      letters
+    })
+  }
+}
+const reviewedBachash = jastrowSource.entries.find((entry) => entry.id === 'B00486')
+const reviewedBachashLetters = independentRootLetters('\u05d1\u05d7\u05e9')
+if (reviewedBachash && reviewedBachashLetters) {
+  sourceCandidates.push({
+    source: 'academy-hebrew-terms',
+    sourceId: 'term-28_2',
+    sourceLanguage: 'hebrew',
+    letters: reviewedBachashLetters
   })
 }
 const completeCatalog = mergeAttestedRootCatalog(publishedCatalog)
@@ -749,9 +993,12 @@ const loadedRootCatalog = await loadAttestedRootCatalog({
 check(
   'published-root loader bypasses the HTTP cache and respects project base paths',
   requestedRootCatalog.url ===
-    '/ancient-lexicon/dicts/attested-roots-2026-07-v1.json' &&
+    '/ancient-lexicon/dicts/attested-roots-2026-07-v2.json' &&
     requestedRootCatalog.options.cache === 'no-cache' &&
-    loadedRootCatalog.sourceCount === publishedCatalog.count
+    loadedRootCatalog.sourceCount === publishedCatalog.count &&
+    loadedRootCatalog.roots.some(
+      (root) => root.lang === 'hebrew-aramaic-unclassified'
+    )
 )
 clearAttestedRootCatalogCache()
 
@@ -765,6 +1012,33 @@ check(
   'published-root catalog candidate count is independently reproducible',
   publishedCatalog.candidateCount === sourceCandidates.length
 )
+check(
+  'published-root catalog pins the complete Jastrow source revision',
+  publishedCatalog.sources?.find((source) => source.id === 'jastrow')?.sourceRevision ===
+    '2d20f977d628c455f66175e6d0a2dfb528c6d7ba'
+)
+const jastrowRootCounts = jastrowSource.explicitRootCounts || {}
+check(
+  'the exhaustive Jastrow root-marker and typed-relation audit stays pinned',
+  jastrowRootCounts.printedMarkers === 223 &&
+    jastrowRootCounts.languageInfoPrintedMarkers === 101 &&
+    jastrowRootCounts.sensePrintedMarkers === 122 &&
+    jastrowRootCounts.expandedAlternatives === 22 &&
+    jastrowRootCounts.relationValidDirectRoots === 337 &&
+    jastrowRootCounts.comparisonOnlyRoots === 6 &&
+    jastrowRootCounts.printedComparisonOnlyRoots === 5 &&
+    jastrowRootCounts.reviewedStemComparisonRoots === 1 &&
+    jastrowRootCounts.sourceRootAssignments === 384 &&
+    jastrowRootCounts.exactTargetAssignments === 48 &&
+    jastrowRootCounts.directRootUsageAssignments === 30 &&
+    jastrowRootCounts.rootInLexemeAssignments === 1 &&
+    jastrowRootCounts.stemDeclarationAssignments === 2 &&
+    jastrowRootCounts.outOfModelDirectRoots === 3 &&
+    jastrowSource.rootRelationInventory?.['secondary-root']?.outcomes?.['explicit-exclusion'] === 4 &&
+    jastrowSource.rootRelationInventory?.['verbal-stem']?.outcomes?.['exact-target'] === 15 &&
+    jastrowSource.rootRelationInventory?.['stem-declaration']?.outcomes?.['direct-root'] === 1 &&
+    jastrowSource.rootRelationInventory?.['conjectural-stem-derivation']?.outcomes?.['manual-review'] === 1
+)
 
 const publishedIds = publishedCatalog.roots.map((root) => root.id)
 const publishedKeys = publishedCatalog.roots.map(
@@ -775,7 +1049,7 @@ check('published-root consonant keys are unique', new Set(publishedKeys).size ==
 check(
   'every published root has non-final letters, an attestation, and exact source provenance',
   publishedCatalog.roots.every((root) =>
-    ['hebrew', 'biblical-aramaic'].includes(root.lang) &&
+    ['hebrew', 'biblical-aramaic', 'hebrew-aramaic-unclassified'].includes(root.lang) &&
     root.sourceDerived === true &&
     Array.isArray(root.letters) &&
     root.letters.length >= 2 &&
@@ -828,6 +1102,164 @@ check(
     .get(`hebrew:${rootKey('\u05e8\u05e9\u05e3')}`)
     ?.sources.some((source) => source.source === 'bdb' && source.sourceId === 't.eu.aa')
 )
+const b00242Entry = jastrowSource.entries.find((entry) => entry.id === 'B00242')
+const b00242Candidates = builtRootCandidates.filter(
+  (candidate) => candidate.source === 'jastrow' && candidate.sourceId === 'B00242'
+)
+const b00242RootCards = ['\u05d1\u05d5', '\u05d1\u05d4'].map((letters) =>
+  publishedByKey.get(`hebrew:${rootKey(letters)}`)
+)
+check(
+  'B00242 remains an Aramaic row while its inline Biblical-Hebrew markers stay source-honest',
+  b00242Entry?.languageCode === 'ar' &&
+    b00242Candidates.length === 2 &&
+    b00242Candidates.every((candidate) =>
+      candidate.sourceLanguage === 'hebrew' &&
+      candidate.word === candidate.letters.join('') &&
+      candidate.word !== b00242Entry.lemma &&
+      candidate.gloss === 'explicit Biblical Hebrew root marker in Jastrow entry' &&
+      candidate.evidence === 'explicit Biblical Hebrew root marker in Jastrow entry' &&
+      candidate.sourceHeadword === b00242Entry.lemma &&
+      candidate.sourceHeadwordLanguageCode === 'ar'
+    ) &&
+    b00242RootCards.every((root) =>
+      root?.sources.some((source) =>
+        source.source === 'jastrow' &&
+        source.sourceId === 'B00242' &&
+        source.sourceLanguage === 'hebrew' &&
+        source.headword === b00242Entry.lemma &&
+        source.headwordLanguageCode === 'ar'
+      ) &&
+      root.attested.every((attestation) =>
+        attestation.source !== 'jastrow' ||
+        attestation.sourceId !== 'B00242' ||
+        (
+          attestation.word === root.letters.join('') &&
+          attestation.word !== b00242Entry.lemma &&
+          attestation.gloss === 'explicit Biblical Hebrew root marker in Jastrow entry' &&
+          attestation.evidence === 'explicit Biblical Hebrew root marker in Jastrow entry'
+        )
+      )
+    )
+)
+check(
+  'mixed Jastrow root evidence stays on the unclassified card',
+  publishedByKey
+    .get(`hebrew-aramaic-unclassified:${rootKey('\u05de\u05dc')}`)
+    ?.sources.some((source) => source.source === 'jastrow' && source.sourceId === 'A01200') &&
+    !publishedByKey
+      .get(`hebrew:${rootKey('\u05de\u05dc')}`)
+      ?.sources.some((source) => source.source === 'jastrow' && source.sourceId === 'A01200')
+)
+const u01959Entry = jastrowSource.entries.find((entry) => entry.id === 'U01959')
+check(
+  'U01959 retains its source-declared Biblical-Hebrew root-in-lexeme relationship',
+  u01959Entry?.languageCode === 'bh' &&
+    u01959Entry.sourceRoots?.some((root) =>
+      root.languageCode === 'bh' &&
+      rootKey(root.letters) === rootKey('\u05e9\u05e8\u05d9') &&
+      root.evidence?.some((evidence) => evidence.type === 'root-in-lexeme')
+    ) &&
+    u01959Entry.rootRelations?.some((relation) =>
+      relation.type === 'root-in-lexeme' &&
+      relation.sourceLocation === 'language-info' &&
+      relation.resolution === 'direct-root'
+    ) &&
+    publishedByKey
+      .get(`hebrew:${rootKey('\u05e9\u05e8\u05d9')}`)
+      ?.sources.some((source) => source.source === 'jastrow' && source.sourceId === 'U01959')
+)
+const i00138Entry = jastrowSource.entries.find((entry) => entry.id === 'I00138')
+check(
+  'I00138 retains direct stems טה and טו while comparison-only טהר stays excluded',
+  i00138Entry?.languageCode === 'und' &&
+    ['\u05d8\u05d4', '\u05d8\u05d5'].every((letters) =>
+      i00138Entry.sourceRoots?.some((root) =>
+        root.languageCode === 'und' &&
+        rootKey(root.letters) === rootKey(letters) &&
+        root.evidence?.some((evidence) => evidence.type === 'stem-declaration')
+      ) &&
+      publishedByKey
+        .get(`hebrew-aramaic-unclassified:${rootKey(letters)}`)
+        ?.sources.some((source) => source.source === 'jastrow' && source.sourceId === 'I00138')
+    ) &&
+    i00138Entry.sourceRootMentions?.some((mention) =>
+      mention.relation === 'comparison' && rootKey(mention.letters) === rootKey('\u05d8\u05d4\u05e8')
+    ) &&
+    !i00138Entry.sourceRoots?.some((root) => rootKey(root.letters) === rootKey('\u05d8\u05d4\u05e8')) &&
+    !publishedByKey
+      .get(`hebrew-aramaic-unclassified:${rootKey('\u05d8\u05d4\u05e8')}`)
+      ?.sources.some((source) => source.source === 'jastrow' && source.sourceId === 'I00138')
+)
+const h01295Entry = jastrowSource.entries.find((entry) => entry.id === 'H01295')
+check(
+  'H01295 conjectural stem חסס remains typed and excluded',
+  h01295Entry?.rootRelations?.some((relation) =>
+    relation.type === 'conjectural-stem-derivation' &&
+    relation.resolution === 'manual-review' &&
+    relation.exclusionReason === 'conjectural-root-prose'
+  ) &&
+    !h01295Entry.sourceRoots?.some((root) => rootKey(root.letters) === rootKey('\u05d7\u05e1\u05e1')) &&
+    !publishedByKey
+      .get(`hebrew-aramaic-unclassified:${rootKey('\u05d7\u05e1\u05e1')}`)
+      ?.sources.some((source) => source.source === 'jastrow' && source.sourceId === 'H01295')
+)
+check(
+  'cross-language Jastrow attestations display root evidence, not a relabeled entry headword',
+  publishedByKey
+    .get(`hebrew:${rootKey('\u05e6\u05de')}`)
+    ?.attested.some((attestation) =>
+      attestation.source === 'jastrow' &&
+      attestation.sourceId === 'A01445' &&
+      attestation.word === '\u05e6\u05de' &&
+      attestation.gloss === 'explicit Hebrew root marker in Jastrow entry' &&
+      attestation.evidence === 'explicit Hebrew root marker in Jastrow entry'
+    )
+)
+const bdbSourceById = new Map(bdbSource.entries.map((entry) => [entry.id, entry]))
+check(
+  'BDB definitions preserve a source-declared verb when the XML pos element is absent',
+  isSourceDeclaredBdbVerb(bdbSourceById.get('v.bs.aa')) &&
+    !bdbSourceById.get('v.bs.aa')?.pos &&
+    publishedByKey
+      .get(`hebrew:${rootKey('שוט')}`)
+      ?.sources.some((source) => source.source === 'bdb' && source.sourceId === 'v.bs.aa')
+)
+check(
+  'exact BDB lexical-reference targets labeled as verbs remain source-backed roots',
+  referencedBdbSourceIds.has('o.ck.ac') &&
+    publishedByKey
+      .get(`hebrew:${rootKey('ספר')}`)
+      ?.sources.some((source) => source.source === 'bdb' && source.sourceId === 'o.ck.ac')
+)
+const explicitBdbRootRegressions = [
+  ['i.an.aa', 'טור'],
+  ['t.ci.aa', 'רטה'],
+  ['n.df.aa', 'ניא'],
+  ['u.ac.aa', 'שבך'],
+  ['v.bx.aa', 'שוק'],
+  ['n.cq.aa', 'נחל'],
+  ['p.di.aa', 'עמם'],
+  ['h.gt.aa', 'חשך'],
+  ['k.de.aa', 'כרע'],
+  ['p.df.aa', 'עמד'],
+  ['p.gd.aa', 'עשק']
+]
+check(
+  'all audited pointed BDB type-root headings remain source-backed',
+  explicitBdbRootRegressions.every(([sourceId, letters]) =>
+    publishedByKey
+      .get(`hebrew:${rootKey(letters)}`)
+      ?.sources.some((source) => source.source === 'bdb' && source.sourceId === sourceId)
+  )
+)
+check(
+  'BDB form metadata is retained without admitting an interrogative adverb as a root',
+  bdbSourceById.get('t.ci.aa')?.form === 'false' &&
+    !publishedCatalog.roots.some((root) =>
+      root.sources?.some((source) => source.source === 'bdb' && source.sourceId === 'a.cu.aa')
+    )
+)
 check(
   'the pointed five-consonant Aramaic derivative remains excluded from roots',
   !publishedCatalog.roots.some((root) =>
@@ -865,12 +1297,11 @@ check(
 check('generated root catalog contains no asterisked forms', !catalogText.includes('*'))
 check('generated root catalog contains no reconstructed-form labels', !/proto-/i.test(catalogText))
 
-const completeByKey = completeCatalog.byUnionKey
 const signature = (root) =>
   Array.from(foldFinals(root.letters.join(''))).sort().join('')
 const groups = new Map()
-for (const root of completeByKey.values()) {
-  const groupKey = signature(root)
+for (const root of completeCatalog.roots) {
+  const groupKey = `${root.lang}:${signature(root)}`
   if (!groups.has(groupKey)) groups.set(groupKey, [])
   groups.get(groupKey).push(root)
 }
@@ -886,8 +1317,8 @@ for (const group of groups.values()) {
     const foundKeys = new Set()
     for (const permutation of uniquePermutations(root.letters)) {
       const requestedKey = rootKey(permutation)
-      const expectedRoot = completeByKey.get(requestedKey)
-      const found = findAttestedRoot(completeCatalog, root.lang, permutation)
+      const expectedRoot = completeCatalog.byKey.get(`${root.lang}:${requestedKey}`)
+      const found = findAttestedRootExact(completeCatalog, root.lang, permutation)
       exactPermutationResolution &&= expectedRoot
         ? Boolean(found) && rootKey(found.letters) === requestedKey
         : found === null
@@ -927,13 +1358,15 @@ let everyCatalogCardResolution = true
 let catalogCardDirectedPairs = 0
 for (const root of completeCatalog.roots) {
   const expectedKeys = new Set(
-    (groups.get(signature(root)) || []).map((member) => rootKey(member.letters))
+    (groups.get(`${root.lang}:${signature(root)}`) || []).map((member) =>
+      rootKey(member.letters)
+    )
   )
   const foundKeys = new Set()
   for (const permutation of uniquePermutations(root.letters)) {
     const requestedKey = rootKey(permutation)
-    const expectedRoot = completeByKey.get(requestedKey)
-    const found = findAttestedRoot(completeCatalog, root.lang, permutation)
+    const expectedRoot = completeCatalog.byKey.get(`${root.lang}:${requestedKey}`)
+    const found = findAttestedRootExact(completeCatalog, root.lang, permutation)
     everyCatalogCardResolution &&= expectedRoot
       ? Boolean(found) && rootKey(found.letters) === requestedKey
       : found === null
@@ -945,13 +1378,13 @@ for (const root of completeCatalog.roots) {
   catalogCardDirectedPairs += Math.max(0, expectedKeys.size - 1)
 }
 check(
-  'every Hebrew and Biblical-Aramaic card resolves its complete mutual anagram set',
+  'every language-specific card resolves its complete mutual anagram set',
   catalogCardDirectedPairs > 0 && everyCatalogCardResolution
 )
 
-const shmr = findAttestedRoot(completeCatalog, 'hebrew', 'שמר')
-const rshm = findAttestedRoot(completeCatalog, 'hebrew', 'רשמ')
-const aramaicRshm = findAttestedRoot(
+const shmr = findAttestedRootExact(completeCatalog, 'hebrew', 'שמר')
+const rshm = findAttestedRootExact(completeCatalog, 'hebrew', 'רשמ')
+const aramaicRshm = findAttestedRootExact(
   completeCatalog,
   'biblical-aramaic',
   'רשמ'
@@ -981,27 +1414,64 @@ check(
   )
 )
 
+const exactHebrewAv = findAttestedRootExact(completeCatalog, 'hebrew', 'אב')
+const exactUnclassifiedAv = findAttestedRootExact(
+  completeCatalog,
+  'hebrew-aramaic-unclassified',
+  'אב'
+)
+check(
+  'exact root lookup never crosses Hebrew, Aramaic, or unclassified language cards',
+  exactHebrewAv?.lang === 'hebrew' &&
+    exactUnclassifiedAv?.lang === 'hebrew-aramaic-unclassified' &&
+    exactHebrewAv.id !== exactUnclassifiedAv.id &&
+    findAttestedRootExact(completeCatalog, 'biblical-aramaic', 'בח') === null
+)
+
 const qrbComprehensive = uniquePermutations('קרב').filter((permutation) =>
-  findAttestedRoot(completeCatalog, 'hebrew', permutation)
+  findAttestedRootExact(completeCatalog, 'hebrew', permutation)
 )
 check('the complete catalog preserves all six קרב roots', qrbComprehensive.length === 6)
 const expectedAbr = new Set(['עבר', 'ערב', 'בער', 'רעב', 'רבע'])
 const foundAbr = new Set(
   uniquePermutations('עבר')
-    .filter((permutation) => findAttestedRoot(completeCatalog, 'hebrew', permutation))
+    .filter((permutation) => findAttestedRootExact(completeCatalog, 'hebrew', permutation))
     .map((permutation) => rootKey(permutation))
 )
 check(
   'the עבר grid resolves every source-attested member and keeps ברע as an honest ghost',
   foundAbr.size === expectedAbr.size &&
     [...expectedAbr].every((key) => foundAbr.has(key)) &&
-    findAttestedRoot(completeCatalog, 'hebrew', 'ברע') === null
+    findAttestedRootExact(completeCatalog, 'hebrew', 'ברע') === null
 )
 check(
-  'derived BDB verb forms are not misclassified as roots',
-  ['התיחש', 'קיננ', 'שיזב', 'שיציא'].every(
+  'BDB derived forms outside exact lexical references are not misclassified as roots',
+  ['התיחש', 'קיננ', 'שיציא'].every(
     (letters) => !completeCatalog.byUnionKey.has(rootKey(letters))
   )
+)
+check(
+  'every relation-valid in-model Jastrow root marker remains source-backed in its exact language class',
+  sourceCandidates
+    .filter((candidate) => candidate.source === 'jastrow')
+    .every((candidate) =>
+      publishedByKey
+        .get(`${candidate.sourceLanguage}:${rootKey(candidate.letters)}`)
+        ?.sources.some((source) =>
+          source.source === 'jastrow' &&
+          source.sourceId === candidate.sourceId &&
+          source.sourceLanguage === candidate.sourceLanguage
+        )
+    )
+)
+const reviewedBachashRoot = publishedByKey.get(`hebrew:${rootKey('\u05d1\u05d7\u05e9')}`)
+check(
+  'the reviewed modern bachash mapping retains Academy evidence and the Jastrow caveat',
+  reviewedBachashRoot?.sources.some((source) =>
+    source.source === 'academy-hebrew-terms' && source.sourceId === 'term-28_2'
+  ) &&
+    reviewedBachashRoot.reviewedMapping?.status === 'reviewed modern Hebrew mapping' &&
+    /does not explicitly label/i.test(reviewedBachashRoot.reviewedMapping?.caveat || '')
 )
 check(
   'canonical roots behind audited derived forms remain present',
@@ -1330,9 +1800,17 @@ for (const file of urlDicts) {
       dict.entries.length >= (reviewedSmallDictionaryMinimums.get(file) || 101) &&
       dict.count === dict.entries.length
   )
+  const emptyDefinitions = dict.entries.filter(
+    (entry) => typeof entry.def !== 'string' || entry.def.length === 0
+  )
+  const expectedEmptyDefinitions = file === 'jastrow.json'
+    ? dict.entriesWithoutDefinition
+    : 0
   check(
-    `${file}: every entry has an id, a headword, and a definition`,
-    dict.entries.every((e) => e.id && e.lemma && typeof e.def === 'string' && e.def.length > 0)
+    `${file}: every row has an id and headword, and source-empty definitions are exactly accounted for`,
+    dict.entries.every((entry) => entry.id && entry.lemma) &&
+      emptyDefinitions.length === expectedEmptyDefinitions &&
+      emptyDefinitions.every((entry) => Array.isArray(entry.senses))
   )
   check(
     `${file}: ids are unique`,
@@ -1615,7 +2093,7 @@ const glossIndexLoaderText = readFileSync(
 )
 check(
   'meaning search uses the matching versioned index and guards unknown sources',
-  glossIndexLoaderText.includes("export const GLOSS_INDEX_PATH = 'dicts/gloss-index-2026-07.json'") &&
+  glossIndexLoaderText.includes("export const GLOSS_INDEX_PATH = 'dicts/gloss-index-2026-07-v2.json'") &&
     meaningSearchText.includes("import { loadGlossIndex } from '../lib/glossIndexLoader.js'") &&
     meaningSearchText.includes('loadGlossIndex()') &&
     meaningSearchText.includes('resolution.direct.filter((result) => getDictionary(result.d))') &&
@@ -1630,7 +2108,7 @@ check(
 let glossIndex
 try {
   glossIndex = JSON.parse(
-    readFileSync(join(dictsDir, 'gloss-index-2026-07.json'), 'utf8')
+    readFileSync(join(dictsDir, 'gloss-index-2026-07-v2.json'), 'utf8')
   )
   check('gloss index is present and valid JSON', true)
 } catch {
@@ -2022,9 +2500,14 @@ if (glossIndex) {
   check('Hebrew אב pivots to father across at least 3 languages', fatherHebrew.curatedIds[0] === 'father' && languageCount(fatherHebrew) >= 3)
   check('Hebrew מים pivots to water across at least 3 languages', waterHebrew.curatedIds.includes('water') && languageCount(waterHebrew) >= 3)
   check(
-    'real father head senses rank above incidental BDB prose',
+    'real father head senses rank above incidental proper-name prose in each provenance group',
     fatherEnglish.groups.Hebrew[0]?.i === 'H1' &&
-      !fatherEnglish.groups.Hebrew.slice(0, 3).some((posting) => posting.i === 'd.ao.ac')
+      !fatherEnglish.groups.Hebrew.slice(0, 4).some((posting) =>
+        posting.i === 'd.ao.ac' || /^(?:the\s+)?father of\b/i.test(posting.g)
+      ) &&
+      fatherEnglish.groups['Hebrew/Aramaic (unclassified)'].slice(0, 2).every(
+        (posting) => posting.d === 'jastrow' && posting.g === 'father'
+      )
   )
   const firstUnmatchedFatherHead = fatherHebrew.direct.findIndex((posting) => !posting.matchedKeyword)
   check(

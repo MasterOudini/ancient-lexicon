@@ -1173,6 +1173,13 @@ details.langfields summary {
   white-space: nowrap;
 }
 
+.hebrew-row-roots {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
 .hebrew-row-action-close {
   display: none;
 }

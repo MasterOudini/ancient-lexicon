@@ -10,7 +10,7 @@ import TabIcon from './components/TabIcon.jsx'
 import { LANGUAGES, HEBREW_CAVEAT } from './data/languages.js'
 import { LEXICON } from './data/lexicon.js'
 import { findRoot } from './data/roots.js'
-import { findAttestedRoot, loadAttestedRootCatalog } from './lib/attestedRootCatalog.js'
+import { findAttestedRootExact, loadAttestedRootCatalog } from './lib/attestedRootCatalog.js'
 import { searchEntries } from './lib/search.js'
 import {
   getJSON,
@@ -191,7 +191,11 @@ export default function App() {
 
     loadAttestedRootCatalog()
       .then((catalog) => {
-        const root = findAttestedRoot(catalog, 'hebrew', reference.letters)
+        const root = findAttestedRootExact(
+          catalog,
+          reference.language || 'hebrew',
+          reference.letters
+        )
         if (!root) return
         setSelectedRootId(root.id)
         setActiveTab('roots')

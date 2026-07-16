@@ -6,14 +6,14 @@
   "scripts": {
     "roots:build": "node scripts/build-attested-roots.mjs",
     "gloss:index": "node scripts/build-gloss-index.mjs",
-    "data:build": "node scripts/build-hebrew-comparisons.mjs",
+    "data:build": "node scripts/build-hebrew-comparisons.mjs && node scripts/build-jastrow-hebrew-comparisons.mjs",
     "prebuild": "npm run roots:build && npm run gloss:index && npm run data:build",
     "dev": "vite",
     "build": "vite build",
     "postbuild": "node scripts/verify-pwa-build.mjs",
     "preview": "vite preview",
     "test:pwa-update": "node scripts/pwa-update-e2e.mjs",
-    "test": "node scripts/build-attested-roots.mjs --check && node scripts/smoke-test.mjs && node scripts/release-assets-test.mjs && node scripts/validate-hebrew-comparisons.mjs && node scripts/ui-contract-test.mjs && node scripts/build-hebrew-comparisons.mjs --check"
+    "test": "node scripts/build-attested-roots.mjs --check && node scripts/smoke-test.mjs && node scripts/release-assets-test.mjs && node scripts/validate-hebrew-comparisons.mjs && node scripts/validate-jastrow-hebrew-comparisons.mjs && node scripts/ui-contract-test.mjs && node scripts/build-hebrew-comparisons.mjs --check && node scripts/build-jastrow-hebrew-comparisons.mjs --check"
   },
   "dependencies": {
     "react": "^19.2.7",

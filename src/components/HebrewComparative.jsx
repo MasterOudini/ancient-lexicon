@@ -195,6 +195,12 @@ export function UniversalComparisonCard({ entry, senses }) {
   )
 }
 
+function entryLanguageTag(languageCode) {
+  if (languageCode === 'und') return 'und-Hebr'
+  if (languageCode === 'ar+he' || languageCode === 'ar+bh') return 'arc'
+  return 'he'
+}
+
 export function HebrewEntryRow({ entry, initiallyOpen = false, promotionKey = '', onRootClick }) {
   const [senses, setSenses] = useState(null)
   const [status, setStatus] = useState('idle')
@@ -237,28 +243,37 @@ export function HebrewEntryRow({ entry, initiallyOpen = false, promotionKey = ''
       onToggle={toggleEntry}
     >
       <summary>
-        <span className="lex-lemma" dir="rtl" lang="he">{entry.headword}</span>
+        <span className="lex-lemma" dir="rtl" lang={entryLanguageTag(entry.languageCode)}>
+          {entry.headword}
+        </span>
         {entry.transliteration && <span className="lex-xlit">{entry.transliteration}</span>}
         <span className="lex-id">{entry.id}</span>
         <span className="lex-id">{entry.sourceLabel}</span>
+        {entry.languageLabel && <span className="lex-id">{entry.languageLabel}</span>}
         {entry.partOfSpeech && <span className="lex-id">{entry.partOfSpeech}</span>}
         <span className="lex-def">{entry.definition}</span>
-        {entry.rootReference ? (
-          <button
-            type="button"
-            className="rootchip hebrew-row-root"
-            dir="rtl"
-            lang="he"
-            onClick={(event) => {
-              event.preventDefault()
-              event.stopPropagation()
-              onRootClick?.(entry.rootReference)
-            }}
-            aria-label={`Open root ${entry.rootReference.letters}`}
-            data-root-source={entry.rootReference.sourceKey}
-          >
-            {entry.rootReference.letters}
-          </button>
+        {entry.rootReferences?.length ? (
+          <span className="hebrew-row-roots">
+            {entry.rootReferences.map((reference) => (
+              <button
+                type="button"
+                className="rootchip hebrew-row-root"
+                dir="rtl"
+                lang={reference.language === 'hebrew-aramaic-unclassified' ? 'und-Hebr' : 'he'}
+                onClick={(event) => {
+                  event.preventDefault()
+                  event.stopPropagation()
+                  onRootClick?.(reference)
+                }}
+                aria-label={`Open root ${reference.letters}`}
+                data-root-source={reference.sourceKey}
+                data-root-language={reference.language}
+                key={`${reference.language}:${reference.letters}`}
+              >
+                {reference.letters}
+              </button>
+            ))}
+          </span>
         ) : (
           <span className="root-unavailable" data-root-status="unresolved">
             Root not identified by source

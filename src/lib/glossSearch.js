@@ -31,6 +31,7 @@ export const GLOSS_STOP_WORDS = new Set([
 export const MEANING_LANGUAGE_ORDER = [
   'Hebrew',
   'Aramaic',
+  'Hebrew/Aramaic (unclassified)',
   'Egyptian',
   'Sumerian',
   'Akkadian',

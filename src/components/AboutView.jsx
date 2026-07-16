@@ -34,17 +34,30 @@ export default function AboutView() {
         <p>
           The curated comparative database holds {LEXICON.length} concepts and{' '}
           {ROOTS.length} hand-curated Hebrew root cards. The root permutation
-          explorer overlays a separate catalog of more than 1,300 Hebrew and
-          Biblical-Aramaic verbal-root records derived from published BDB and
-          Strong&rsquo;s entries. Source-derived cards retain their dictionary
-          IDs and are labeled separately from the curated cards.
+          explorer overlays a separate catalog of more than 2,000 Hebrew,
+          Biblical-Aramaic, and unclassified Hebrew/Aramaic root records
+          recovered from pinned source metadata. Jastrow comparison mentions
+          are excluded from entry roots: four printed comparison root symbols
+          expand to five excluded root mentions. Two printed out-of-model root
+          symbols expand to three one-radical direct mentions, which remain
+          outside the app&rsquo;s two-to-five-radical model.
+          Source-derived cards retain their source IDs. A separately labeled
+          reviewed mapping is added only when named evidence supports it, as
+          with Jastrow B00486 and the Academy of the Hebrew Language.
         </p>
         <p>
-          Comparative also has an &lsquo;All Hebrew&rsquo; layer containing every
-          Hebrew entry from Strong&rsquo;s and Brown&ndash;Driver&ndash;Briggs. Each
-          source-distinct entry opens a sense-specific card with fixed slots for
-          the same six ancient languages as the curated cards. English is shown
-          only as explanatory bridge metadata, not as a comparison language.
+          Comparative also has an &lsquo;All Hebrew&rsquo; layer containing all 18,992
+          strictly Hebrew Strong&rsquo;s and Brown&ndash;Driver&ndash;Briggs records,
+          plus 29,605 Jastrow records whose printed origin fragment includes
+          Hebrew or whose row has no machine-readable origin marker. Unmarked
+          rows are visibly labeled Hebrew/Aramaic (unmarked), not asserted to
+          be Hebrew. Explicit Aramaic-only rows stay in their correctly labeled
+          reference and meaning-search areas; Arabic-marked rows stay available
+          in the Jastrow reference dictionary. Each
+          source-distinct entry opens a sense-specific card with fixed slots
+          for the same six ancient languages as the curated cards. English is
+          shown only as explanatory bridge metadata, not as a comparison
+          language.
         </p>
         <p>
           There is no backend, no account, and no analytics; your settings and
@@ -53,9 +66,10 @@ export default function AboutView() {
           from the first load. The complete root lookup catalog and the other
           reference dictionaries download once, the first time you open them,
           and are then available offline too.
-          The compact All Hebrew catalog and each comparison shard you open are
-          likewise cached after their first online load. A complete source
-          dictionary downloads only if you expand its source details.
+          The compact Strong&rsquo;s/BDB and Jastrow Hebrew catalogs, and each
+          comparison shard you open, are likewise cached after their first
+          online load. A complete source dictionary downloads only if you open
+          that reference work or expand its source details.
         </p>
       </div>
 
@@ -69,9 +83,11 @@ export default function AboutView() {
         </p>
         <p>
           Source-derived root cards distinguish a published dictionary
-          headword from a directly cited biblical surface word. A headword is
-          evidence that the lexicon files that consonant root; it is not a
-          claim that the uninflected citation form occurs in the text.
+          headword or explicit source marker from a directly cited biblical
+          surface word. The root pipeline admits exact source classifications,
+          lexical references, and explicit markers; it does not guess a root
+          from spelling alone. &lsquo;Root not identified by source&rsquo; therefore
+          records an unresolved source relationship, not an invented answer.
         </p>
         <p>
           A form tagged &lsquo;verify against corpus&rsquo; is conventional or
@@ -88,6 +104,9 @@ export default function AboutView() {
           equivalent&rsquo; is a responsible semantic lead, not a cognacy claim.
           Results marked &lsquo;Verified/curated comparison&rsquo; come from the
           authoritative hand-curated card, including its intentional gaps.
+          Jastrow rows without a printed origin fragment stay in their own
+          &lsquo;Hebrew/Aramaic (unclassified)&rsquo; meaning group; the reviewed B00486
+          bridge is the narrow, evidence-labeled exception shown under Hebrew.
         </p>
         <p>{HEBREW_CAVEAT}</p>
         {LANGUAGES.map((l) => (

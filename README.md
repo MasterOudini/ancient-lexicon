@@ -11,8 +11,9 @@ body, animals, nature, agriculture, food, tools, the household, buildings,
 places, time, numbers, colors, verbs, faith and law, emotions, and
 qualities, resolved against ~240 hand-curated Hebrew roots with attested
 doublets and interpretive clusters. The root permutation explorer overlays a
-separate on-demand catalog of more than 1,300 published Hebrew and
-Biblical-Aramaic verbal-root records so every source-attested reordering can
+separate on-demand catalog of more than 2,000 published Hebrew,
+Biblical-Aramaic, and unclassified Hebrew/Aramaic source-root records plus
+explicitly labeled reviewed mappings, so every source-attested reordering can
 resolve mutually without treating shared letters as proof of etymology.
 
 Alongside it, the Dictionary tab's "Reference dictionaries" mode is a shelf
@@ -21,7 +22,11 @@ source keeps its own coverage label, loads on demand, and is then available
 offline:
 
 - **Hebrew** — Strong's Concise Dictionary (1894, public domain); Brown-Driver-Briggs (1906, public domain, with Biblical Aramaic).
-- **Aramaic** — Jastrow's Dictionary of the Targumim (1903, public domain), ~32,000 entries.
+- **Hebrew & Aramaic** — Jastrow's Dictionary of the Targumim (1903),
+  32,512 rows from a CC BY-NC 4.0 Sefaria digitization of the public-domain
+  work. Printed origin fragments are retained when present; 26,670 rows lack
+  one and are explicitly labeled Hebrew/Aramaic (unmarked), not inferred as
+  Hebrew or Aramaic.
 - **Egyptian** — the Thesaurus Linguae Aegyptiae word list (CC BY-SA 4.0), ~35,000 entries.
 - **Sumerian** — ePSD2 / ORACC (CC BY-SA 3.0), ~9,800 entries with cuneiform.
 - **Akkadian** — the RINAP glossary / ORACC (CC BY-SA 3.0).
@@ -48,14 +53,35 @@ source, version, transformation, and license.
 The **Comparative** mode has two deliberately separate layers. **All Hebrew**
 contains all 18,992 strictly Hebrew source records from Strong's and
 Brown-Driver-Briggs, including source-only cross-reference rows that do not
-yield a responsible semantic match. Opening any row shows its exact source
-definition and individual senses, then one fixed plaque each for Akkadian,
+yield a responsible semantic match, plus 29,605 Jastrow rows whose printed
+origin fragment includes Hebrew or whose row has no machine-readable origin
+marker. Those unmarked rows are visibly labeled Hebrew/Aramaic (unmarked), not
+asserted to be Hebrew. Explicit Aramaic-only rows remain in their correctly
+labeled reference and meaning-search areas; Arabic-marked rows remain available
+in the Jastrow reference dictionary. Opening any row shows its
+source-authored lexical senses, then one fixed plaque each for Akkadian,
 Sumerian, Egyptian, Hittite, Imperial Aramaic, and Old South Arabian. English
 is internal bridge metadata, never a seventh comparison language. Each plaque
-is labeled curated, automatic, or explicitly empty; curated matches control all
-six slots, including intentional gaps. Automatic Imperial Aramaic matching is
-disabled. **Curated & saved** retains the 252 hand-curated cards plus any cards
-added locally by the user.
+is labeled curated, automatic, or explicitly empty; curated matches control
+all six slots, including intentional gaps. Automatic Imperial Aramaic matching
+is disabled. **Curated & saved** retains the 252 hand-curated cards plus any
+cards added locally by the user.
+
+The generated `attested-roots-2026-07-v2.json` root catalog uses pinned source
+metadata rather than guessing from consonants: Strong's primitive roots and
+lexical bases, BDB type-root and
+exact lexical-reference targets, and relation-valid Jastrow source-root
+markers and typed root relationships. The pinned Jastrow scan accounts for all
+223 printed `√` occurrences (101 in origin notes and 122 in senses). Four
+printed comparison occurrences expand to five comparison-only root mentions
+and are never reclassified as entry roots. Two printed out-of-model occurrences
+expand to three one-radical direct mentions; they remain preserved in the
+reference data but sit outside the app's two-to-five-radical root model.
+Finite source-declared stem/root statements are reviewed explicitly; conjectural
+stem derivations remain typed exclusions rather than being promoted to roots.
+Reviewed bridges that require judgment live in a separate
+named mapping table with evidence and caveats. A comparison row without one of
+those relationships says that its root is unresolved by the source.
 
 The third Dictionary mode, **By meaning**, searches every registered source
 together through shared English glosses. English input
@@ -67,9 +93,15 @@ is explicitly labeled "not a verified equivalent": these are suggestions
 gathered for the reader to judge, never claims of cognacy or scholarly
 equivalence.
 
+In meaning results, Jastrow rows without a printed origin fragment have their
+own **Hebrew/Aramaic (unclassified)** group. Explicit Aramaic-origin rows remain
+under Aramaic; the reviewed B00486 bridge is the narrow exception shown under
+Hebrew, with its source and caveat retained.
+
 `scripts/build-gloss-index.mjs` generates
-`public/dicts/gloss-index-2026-07.json` without changing any source dictionary.
-The earlier `gloss-index.json` remains immutable for rollout compatibility:
+`public/dicts/gloss-index-2026-07-v2.json` without changing any source dictionary.
+The earlier `gloss-index.json` and `gloss-index-2026-07.json` remain immutable
+for rollout compatibility:
 an already-open iPhone Home Screen app can keep its previous JavaScript alive
 briefly after a new service worker activates, so it must not receive source IDs
 that its older dictionary registry cannot render. The indexer indexes
@@ -77,23 +109,28 @@ conservative English senses and source renderings, skips Egyptian records that
 have only the German fallback, and caps very common postings at 40 in the
 non-Hebrew automatic language groups. Hebrew and curated comparative postings
 remain complete; every other truncation count is recorded in the artifact. The
-current compact record-and-sense-table encoding is about 9 MiB, above the
+current compact record-and-sense-table encoding is about 9.7 MiB, above the
 4–5 MiB app-shell target, so it is not precached; the existing `/dicts/*.json`
 service-worker rule caches it after first use, like the full reference
 dictionaries.
 
-`scripts/build-hebrew-comparisons.mjs` separately generates the compact
-`hebrew-catalog-2026-07-v1.json` and 64 deterministic comparison shards. The
-catalog plus the one shard named by an opened row is sufficient to render its
-card. Full reference dictionaries remain lazy and load only when source details
-are expanded. The two gloss-index files remain byte-for-byte immutable for
-installed-client compatibility.
+`scripts/build-hebrew-comparisons.mjs` generates the compact Strong's/BDB
+`hebrew-catalog-2026-07-v2.json` and 64 deterministic comparison shards in
+`hebrew-comparisons-2026-07-v2/`.
+`scripts/build-jastrow-hebrew-comparisons.mjs` generates a separate 5.9 MiB
+Hebrew-searchable Jastrow catalog and 128 smaller shards; the unmarked rows keep
+their unclassified label. Both catalogs load for All Hebrew search; only the
+one shard named by an opened row is fetched. Full reference dictionaries
+remain lazy. The v1 root and Strong's/BDB comparison artifacts and the older
+gloss-index files remain byte-for-byte immutable for installed-client
+compatibility. New clients use v2 because its root catalog adds an explicit
+unclassified language and its Hebrew rows can encode more than one root.
 
 ## Run
 
     npm install
     npm run dev        # development server
-    npm run data:build # regenerate the Hebrew catalog and 64 comparison shards
+    npm run data:build # regenerate both Hebrew catalogs and all 192 comparison shards
     npm run build      # regenerate both indexes, then build into dist/
     npm run preview    # serve the production build locally
     npm test           # smoke, full universal-card audit, and deterministic artifact check
@@ -154,9 +191,12 @@ device.
   (DOUBLETS), and interpretive clusters (CLUSTERS). Root letters are stored
   in non-final form only (מ not ם) so permutation keys match.
 - `scripts/build-attested-roots.mjs` — deterministically derives the separate
-  published-root lookup catalog from pinned BDB verb entries and direct
-  Strong's primitive-root entries. Its generated JSON loads on demand and is
-  runtime-cached; edit the builder or pinned sources, not the output.
+  published-root lookup catalog from pinned BDB and Strong's source signals,
+  relation-valid Jastrow root markers, and explicitly labeled reviewed mappings.
+  Its generated JSON loads on demand and is
+  runtime-cached as `attested-roots-2026-07-v2.json`; edit the builder or
+  pinned sources, not the output. The v1 artifact remains frozen for clients
+  that were already open during an update.
 - `src/data/strongs.json` — the imported Strong's lexicon, generated by
   `scripts/import-strongs.mjs` (which documents the source and license).
   Edit the script, not the JSON: the file is presented as published.
