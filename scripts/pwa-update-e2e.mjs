@@ -323,7 +323,8 @@ async function waitForRelease(page, release) {
       })()`)
       lastStatus = status
       const workerName = `sw-${release.releaseId}.js`
-      return status.release === release.releaseId &&
+      return status.body.includes('Dictionary') &&
+        status.release === release.releaseId &&
         status.worker.endsWith(workerName) &&
         status.controller.endsWith(workerName)
         ? status
@@ -345,6 +346,108 @@ function assertReleaseRequests(requests, release) {
       `${release.name} did not request ${artifact}`
     )
   }
+}
+
+async function assertBottomNavigationShell(page, viewport, label) {
+  await page.send('Emulation.setDeviceMetricsOverride', {
+    width: viewport.width,
+    height: viewport.height,
+    deviceScaleFactor: viewport.mobile ? 3 : 1,
+    mobile: viewport.mobile,
+    screenWidth: viewport.width,
+    screenHeight: viewport.height
+  })
+  await page.send('Emulation.setSafeAreaInsetsOverride', {
+    insets: {
+      top: viewport.safeAreaTop || 0,
+      topMax: viewport.safeAreaTop || 0,
+      left: 0,
+      leftMax: 0,
+      bottom: viewport.safeAreaBottom || 0,
+      bottomMax: viewport.safeAreaBottom || 0,
+      right: 0,
+      rightMax: 0
+    }
+  })
+
+  const geometry = await evaluate(page, `(async () => {
+    const comparisonButtons = document.querySelectorAll('.comparison-scope button');
+    comparisonButtons[1]?.click();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    const scrolling = document.scrollingElement;
+    const appScroll = document.querySelector('[data-app-scroll]');
+    const tabbar = document.querySelector('.tabbar');
+    if (!scrolling || !appScroll || !tabbar) return null;
+
+    const before = tabbar.getBoundingClientRect();
+    appScroll.scrollTop = appScroll.scrollHeight;
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    const after = tabbar.getBoundingClientRect();
+    const scrollRect = appScroll.getBoundingClientRect();
+    const visibleBottom = window.visualViewport
+      ? window.visualViewport.offsetTop + window.visualViewport.height
+      : window.innerHeight;
+    const hit = document.elementFromPoint(
+      Math.floor(window.innerWidth / 2),
+      Math.max(0, Math.min(window.innerHeight, visibleBottom) - 1)
+    );
+
+    return {
+      bodyOverflow: getComputedStyle(document.body).overflow,
+      documentClientHeight: scrolling.clientHeight,
+      documentOverflow: getComputedStyle(document.documentElement).overflow,
+      documentScrollHeight: scrolling.scrollHeight,
+      documentScrollTop: scrolling.scrollTop,
+      hitTabbar: Boolean(hit?.closest('.tabbar')),
+      navBottom: after.bottom,
+      navPaddingBottom: Number.parseFloat(getComputedStyle(tabbar).paddingBottom),
+      navPosition: getComputedStyle(tabbar).position,
+      navTop: after.top,
+      navTopBeforeScroll: before.top,
+      scrollBottom: scrollRect.bottom,
+      scrollerClientHeight: appScroll.clientHeight,
+      scrollerOverflowY: getComputedStyle(appScroll).overflowY,
+      scrollerScrollHeight: appScroll.scrollHeight,
+      scrollerScrollTop: appScroll.scrollTop,
+      visibleBottom
+    };
+  })()`)
+
+  assert.ok(geometry, `${label}: app shell was not rendered`)
+  assert.equal(geometry.documentOverflow, 'hidden', `${label}: document must not scroll`)
+  assert.equal(geometry.bodyOverflow, 'hidden', `${label}: body must not scroll`)
+  assert.ok(
+    geometry.documentScrollHeight <= geometry.documentClientHeight + 1,
+    `${label}: root document exceeds the viewport: ${JSON.stringify(geometry)}`
+  )
+  assert.equal(geometry.documentScrollTop, 0, `${label}: root document moved`)
+  assert.equal(geometry.scrollerOverflowY, 'auto', `${label}: content is not the scroll owner`)
+  assert.ok(
+    geometry.scrollerScrollHeight > geometry.scrollerClientHeight + 1,
+    `${label}: fixture content is not scrollable: ${JSON.stringify(geometry)}`
+  )
+  assert.ok(geometry.scrollerScrollTop > 0, `${label}: content pane did not scroll`)
+  assert.equal(geometry.navPosition, 'relative', `${label}: tab bar became a fixed overlay`)
+  assert.ok(
+    Math.abs(geometry.navPaddingBottom - Math.max(6, viewport.safeAreaBottom || 0)) <= 1,
+    `${label}: tab bar does not fill its safe area: ${JSON.stringify(geometry)}`
+  )
+  assert.ok(
+    Math.abs(geometry.navTopBeforeScroll - geometry.navTop) <= 1,
+    `${label}: tab bar moved while content scrolled: ${JSON.stringify(geometry)}`
+  )
+  assert.ok(
+    Math.abs(geometry.scrollBottom - geometry.navTop) <= 1,
+    `${label}: content pane does not end flush against the tab bar: ${JSON.stringify(geometry)}`
+  )
+  assert.ok(
+    Math.abs(geometry.navBottom - geometry.visibleBottom) <= 1,
+    `${label}: tab bar does not reach the visible bottom edge: ${JSON.stringify(geometry)}`
+  )
+  assert.ok(geometry.hitTabbar, `${label}: scrolled content is exposed below the tab bar`)
+  console.log(`Verified bottom navigation shell at ${viewport.width}x${viewport.height} (${label})`)
 }
 
 async function closeServer(server) {
@@ -467,6 +570,22 @@ async function main() {
     assert.match(cStatus.body, /Dictionary/)
     assertReleaseRequests(deployment.requests, releases[2])
     console.log(`Automatically migrated B -> ${releases[2].releaseId}`)
+    await assertBottomNavigationShell(
+      page,
+      {
+        width: 390,
+        height: 844,
+        mobile: true,
+        safeAreaTop: 47,
+        safeAreaBottom: 34
+      },
+      'online phone viewport'
+    )
+    await assertBottomNavigationShell(
+      page,
+      { width: 1440, height: 900, mobile: false },
+      'online desktop viewport'
+    )
 
     page.close()
     await chrome.browser.send('Target.closeTarget', { targetId: connected.targetId })
@@ -487,8 +606,19 @@ async function main() {
     for (const label of ['Dictionary', 'Roots', 'About', 'Settings']) {
       assert.match(offlineStatus.body, new RegExp(label))
     }
+    await assertBottomNavigationShell(
+      offlinePage,
+      {
+        width: 390,
+        height: 844,
+        mobile: true,
+        safeAreaTop: 47,
+        safeAreaBottom: 34
+      },
+      'offline phone viewport'
+    )
     console.log(`Offline relaunch rendered ${releases[2].releaseId}`)
-    console.log('PWA migration e2e passed: same-tab A -> B -> C and offline relaunch.')
+    console.log('PWA migration e2e passed: same-tab A -> B -> C, bottom navigation shell, and offline relaunch.')
   } finally {
     page?.close()
     offlinePage?.close()

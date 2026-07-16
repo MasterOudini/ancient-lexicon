@@ -230,7 +230,9 @@ export default function App() {
   }
 
   return (
-    <div className="app">
+    <div className="app-shell">
+      <div className="app-scroll" data-app-scroll>
+        <div className="app">
       <header className="header">
         <div className="brand">{CONFIG.appName}</div>
         <p className="header-subtitle">{CONFIG.subtitle}</p>
@@ -370,6 +372,8 @@ export default function App() {
           onImport={importBackup}
         />
       )}
+        </div>
+      </div>
 
       <nav className="tabbar" aria-label="Tabs">
         <button
