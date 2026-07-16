@@ -32,9 +32,11 @@ try {
     HebrewEntryRow,
     UniversalComparisonCard
   } = await server.ssrLoadModule('/src/components/HebrewComparative.jsx')
+  const { default: ConceptCard } = await server.ssrLoadModule('/src/components/ConceptCard.jsx')
   const { default: AboutView } = await server.ssrLoadModule('/src/components/AboutView.jsx')
   const { default: TabIcon } = await server.ssrLoadModule('/src/components/TabIcon.jsx')
   const { RootDetail } = await server.ssrLoadModule('/src/components/RootsView.jsx')
+  const { LANGUAGES } = await server.ssrLoadModule('/src/data/languages.js')
   const {
     findAttestedRoot,
     mergeAttestedRootCatalog
@@ -114,6 +116,47 @@ try {
   for (const language of languages) assert.match(card, new RegExp(`data-language="${language}"`))
   assert.doesNotMatch(card, /data-language="(?:hebrew|english)"/)
 
+  const scriptForms = Object.fromEntries(
+    languages.map((languageId) => [languageId, { script: `${languageId}-script`, translit: languageId }])
+  )
+  const conceptCard = renderToStaticMarkup(
+    React.createElement(ConceptCard, {
+      entry: {
+        id: 'script-layout-contract',
+        hebrew: { word: '\u05d0\u05b8\u05d1', translit: 'av' },
+        english: ['father'],
+        forms: scriptForms
+      },
+      languages: LANGUAGES,
+      onRootClick: () => {},
+      strings: { notInDatabase: 'Not in database', verifyTag: 'Verify' }
+    })
+  )
+  assert.equal((conceptCard.match(/class="plaque-body plaque-body-script"/g) || []).length, 6)
+
+  const scriptCard = renderToStaticMarkup(
+    React.createElement(UniversalComparisonCard, {
+      entry,
+      senses: [{
+        ...senses[0],
+        slots: languages.map((languageId) => ({
+          languageId,
+          status: 'verified',
+          primary: {
+            dictionaryId: 'curated',
+            entryId: `${languageId}-entry`,
+            script: `${languageId}-script`,
+            transliteration: languageId,
+            meaning: 'test meaning',
+            bridge: 'test'
+          },
+          alternatives: []
+        }))
+      }]
+    })
+  )
+  assert.equal((scriptCard.match(/class="comparison-candidate-main plaque-body-script"/g) || []).length, 6)
+
   const idleComparative = renderToStaticMarkup(
     React.createElement(HebrewComparative, {
       query: '   ',
@@ -167,6 +210,8 @@ try {
   assert.doesNotMatch(tabbarRule, /\bbottom\s*:/)
   assert.doesNotMatch(tabbarRule, /transform\s*:/)
   assert.doesNotMatch(styles, /\.tabbar::after\s*\{/)
+  assert.doesNotMatch(styles, /plaque-body-egyptian/)
+  assert.match(styles, /\.plaque-body-script\s*\{\s*display:\s*block/)
 
   const rootPayload = JSON.parse(
     readFileSync(
