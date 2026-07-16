@@ -46,6 +46,7 @@ const CROSS_REFERENCE = /^(?:v\.?|q\.?\s*v\.?|see|compare|cf\.?)\b/i
 const MAX_CATALOG_BYTES = 8 * 1024 * 1024
 const MAX_SHARD_BYTES = 1024 * 1024
 const MAX_PREVIEW_LENGTH = 180
+const SOURCE_FORM_TYPES = ['alternate', 'plural', 'stem']
 
 const here = dirname(fileURLToPath(import.meta.url))
 const projectRoot = join(here, '..')
@@ -182,33 +183,45 @@ function rootReferences(entry) {
   })
 }
 
-function catalogSearch(entry, senses) {
+function catalogSearch(entry, senses, aliases) {
   return normalize(unique([
     entry.id,
     entry.lemma,
-    ...(entry.aliases || []),
+    ...aliases,
+    ...(entry.forms || []).map((form) => form.word),
     ...senses.flatMap((sense) => sense.terms)
   ]).join(' '))
 }
 
 function makeCatalogEntry(entry, shardId, senses) {
-  const aliases = entry.aliases || []
+  const reviewed = reviewedById.get(entry.id)
+  const aliases = unique([
+    ...(entry.aliases || []),
+    ...(reviewed?.aliases || [])
+  ])
+  const displayTransliteration = reviewed?.displayTransliteration || aliases[0] || null
   const roots = rootReferences(entry)
+  const forms = (entry.forms || []).map((form) => [
+    SOURCE_FORM_TYPES.indexOf(form.type),
+    form.word,
+    form.label || null
+  ])
   return [
     0,
     String(entry.id),
     entry.lemma,
-    aliases[0] || null,
+    displayTransliteration,
     truncate(senses.map((sense) => sense.sourceText).join('; ')),
     null,
     shardId,
     senses.map(publicSense),
-    catalogSearch(entry, senses),
+    catalogSearch(entry, senses, unique([displayTransliteration, ...aliases])),
     roots.length > 0
       ? roots.map((root) => [0, String(entry.id), root.letters, root.language])
       : null,
     aliases,
-    entry.languageCode
+    entry.languageCode,
+    forms.length > 0 ? forms : null
   ]
 }
 

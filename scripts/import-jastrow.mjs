@@ -34,6 +34,27 @@ const EXPECTED_TOP_LEVEL_SENSES = 43428
 const EXPECTED_NESTED_SENSES = 5703
 const EXPECTED_SOURCE_GLOSSES = 28330
 const EXPECTED_SENSE_LANGUAGE_MARKERS = 3
+const EXPECTED_SOURCE_FORM_COUNTS = Object.freeze({
+  alternate: 11_076,
+  plural: 10_275,
+  stem: 4_913,
+  total: 26_264
+})
+const EXPECTED_HEBREW_SEARCHABLE_FORM_COUNTS = Object.freeze({
+  alternate: 9_280,
+  plural: 8_271,
+  stem: 3_229,
+  total: 20_780
+})
+const EXPECTED_LEXICAL_REFERENCE_EDGES = 66_169
+const EXPECTED_HEBREW_SEARCHABLE_REFERENCE_EDGES = 57_240
+const EXPECTED_HEBREW_SEARCHABLE_INTERNAL_REFERENCE_EDGES = 51_497
+const EXPECTED_UNRESOLVED_HEADWORD_LINK_OCCURRENCES = 85
+const EXPECTED_RETAINED_UNRESOLVED_HEADWORD_LINKS = 84
+const EXPECTED_ENTRIES_WITH_UNRESOLVED_HEADWORD_LINKS = 83
+const EXPECTED_HEBREW_SEARCHABLE_UNRESOLVED_HEADWORD_LINK_OCCURRENCES = 84
+const EXPECTED_HEBREW_SEARCHABLE_RETAINED_UNRESOLVED_HEADWORD_LINKS = 83
+const EXPECTED_HEBREW_SEARCHABLE_ENTRIES_WITH_UNRESOLVED_HEADWORD_LINKS = 82
 const ROOT_SYMBOL = /√/gu
 const SECONDARY_ROOT = /\bsec\.?\s+r\.?\s+of\b/gi
 const ROOT_MODEL = /^[\u05d0-\u05ea]{2,5}$/u
@@ -201,6 +222,106 @@ function importSense(source) {
   }
   if (children.length > 0) sense.senses = children
   return sense
+}
+
+// The PWA source stores additional searchable Hebrew spellings outside the
+// printed headword: alternate heads (`ah`), plural forms (`pf`), and verbal
+// stem forms (`g.bf`) attached to a sense. Preserve their source role instead
+// of flattening them into an invented transliteration or root relationship.
+function sourceForms(source) {
+  const forms = []
+  const seen = new Set()
+
+  function add(type, value, label = null) {
+    const word = toText(value)
+    if (!word || !/[\u0590-\u05ff]/u.test(word)) return
+    const key = `${type}\u0000${word}\u0000${label || ''}`
+    if (seen.has(key)) return
+    seen.add(key)
+    forms.push({ type, word, ...(label ? { label } : {}) })
+  }
+
+  for (const value of source.ah || []) add('alternate', value)
+  for (const value of source.pf || []) add('plural', value)
+
+  function visit(senses) {
+    for (const sense of senses || []) {
+      const label = toText(sense.g?.vs)
+      for (const value of sense.g?.bf || []) add('stem', value, label)
+      visit(sense.s)
+    }
+  }
+  visit(source.c?.s)
+  return forms
+}
+
+function sourceLexicalReferences(source) {
+  const references = []
+  const seen = new Set()
+
+  function scan(value) {
+    for (const match of String(value || '').matchAll(/href=["']#rid:([A-Za-z]\d{5})["']/gi)) {
+      const targetId = match[1]
+      if (seen.has(targetId)) continue
+      seen.add(targetId)
+      references.push(targetId)
+    }
+  }
+
+  function visit(senses) {
+    for (const sense of senses || []) {
+      scan(sense.d)
+      visit(sense.s)
+    }
+  }
+
+  scan(source.li)
+  visit(source.c?.s)
+  return references
+}
+
+// A small legacy subset uses a Hebrew hash plus `word-link` instead of the
+// stable `#rid:ENTRY_ID` links used by the rest of the pinned source. Retain
+// the source target/display labels, but keep them explicitly unresolved: a
+// spelling match is not enough evidence to invent a target entry or root.
+function sourceUnresolvedHeadwordLinks(source) {
+  const links = []
+  const seen = new Set()
+  let occurrenceCount = 0
+
+  function scan(value) {
+    // Do not terminate the start-tag scan at the first `>`: two pinned legacy
+    // href values themselves contain malformed `</a>` fragments. The closing
+    // quote plus word-link class are the trustworthy boundaries here.
+    const pattern = /<a\b[^"']*?\bhref=["']#(?!rid:)([^"']+)["'][^>]*\bclass=["'][^"']*\bword-link\b[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi
+    for (const match of String(value || '').matchAll(pattern)) {
+      const target = match[1]
+      occurrenceCount++
+
+      const targetLabel = toText(target).replace(/<[^>]*$/u, '').trim()
+      const displayLabel = toText(match[2])
+      if (!targetLabel && !displayLabel) continue
+      const key = `${targetLabel}\u0000${displayLabel}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      links.push({
+        targetLabel,
+        displayLabel,
+        status: 'source-unresolved-headword-link'
+      })
+    }
+  }
+
+  function visit(senses) {
+    for (const sense of senses || []) {
+      scan(sense.d)
+      visit(sense.s)
+    }
+  }
+
+  scan(source.li)
+  visit(source.c?.s)
+  return { links, occurrenceCount }
 }
 
 function normalizeLanguageCode(value) {
@@ -676,6 +797,8 @@ const sourceLanguageCodeCounts = {}
 const seenSourceHashes = new Set()
 let senseLanguageMarkers = 0
 let entriesWithoutDefinition = 0
+let unresolvedHeadwordLinkOccurrences = 0
+let hebrewSearchableUnresolvedHeadwordLinkOccurrences = 0
 for (const f of files) {
   const sourceBuffer = readFileSync(f)
   const sourceHash = createHash('sha256').update(sourceBuffer).digest('hex')
@@ -718,6 +841,19 @@ for (const f of files) {
       lang: language.lang,
       languageClassification: sourceLanguageCode ? 'printed-origin-marker' : 'unmarked'
     }
+    const forms = sourceForms(o)
+    if (forms.length > 0) rec.forms = forms
+    const lexicalRefs = sourceLexicalReferences(o)
+    if (lexicalRefs.length > 0) rec.lexicalRefs = lexicalRefs
+    const {
+      links: unresolvedHeadwordLinks,
+      occurrenceCount: unresolvedHeadwordLinkOccurrenceCount
+    } = sourceUnresolvedHeadwordLinks(o)
+    unresolvedHeadwordLinkOccurrences += unresolvedHeadwordLinkOccurrenceCount
+    if (languageCode === 'und' || HEBREW_ORIGIN_CODES.has(languageCode)) {
+      hebrewSearchableUnresolvedHeadwordLinkOccurrences += unresolvedHeadwordLinkOccurrenceCount
+    }
+    if (unresolvedHeadwordLinks.length > 0) rec.unresolvedHeadwordLinks = unresolvedHeadwordLinks
     const sourceAudit = scanSourceEntry(o, languageCode)
     const rootMentions = dedupeRootMentions([
       ...sourceAudit.markerMentions,
@@ -942,6 +1078,121 @@ if (entries.length !== EXPECTED_ENTRY_COUNT) {
   throw new Error(`expected ${EXPECTED_ENTRY_COUNT} pinned Jastrow entries, found ${entries.length}`)
 }
 const byId = new Map(entries.map((entry) => [entry.id, entry]))
+const missingLexicalReferences = entries.flatMap((entry) =>
+  (entry.lexicalRefs || [])
+    .filter((targetId) => !byId.has(targetId))
+    .map((targetId) => `${entry.id}:${targetId}`)
+)
+if (missingLexicalReferences.length > 0) {
+  throw new Error(`Jastrow contains unresolved #rid links: ${missingLexicalReferences.slice(0, 10).join(', ')}`)
+}
+const entriesWithUnresolvedHeadwordLinks = entries.filter(
+  (entry) => entry.unresolvedHeadwordLinks?.length > 0
+)
+const unresolvedHeadwordLinkEdges = entriesWithUnresolvedHeadwordLinks.reduce(
+  (count, entry) => count + entry.unresolvedHeadwordLinks.length,
+  0
+)
+if (
+  unresolvedHeadwordLinkOccurrences !== EXPECTED_UNRESOLVED_HEADWORD_LINK_OCCURRENCES ||
+  unresolvedHeadwordLinkEdges !== EXPECTED_RETAINED_UNRESOLVED_HEADWORD_LINKS ||
+  entriesWithUnresolvedHeadwordLinks.length !== EXPECTED_ENTRIES_WITH_UNRESOLVED_HEADWORD_LINKS ||
+  entriesWithUnresolvedHeadwordLinks.some((entry) =>
+    new Set(entry.unresolvedHeadwordLinks.map((link) =>
+      `${link.targetLabel}\u0000${link.displayLabel}`
+    )).size !== entry.unresolvedHeadwordLinks.length ||
+    entry.unresolvedHeadwordLinks.some((link) =>
+      link.status !== 'source-unresolved-headword-link' ||
+      (!link.targetLabel && !link.displayLabel)
+    )
+  )
+) {
+  throw new Error(
+    `retained unresolved Jastrow headword-link inventory changed: ` +
+    JSON.stringify({
+      occurrences: unresolvedHeadwordLinkOccurrences,
+      edges: unresolvedHeadwordLinkEdges,
+      entries: entriesWithUnresolvedHeadwordLinks.length
+    })
+  )
+}
+
+function countSourceForms(records) {
+  const counts = { alternate: 0, plural: 0, stem: 0, total: 0 }
+  for (const entry of records) {
+    for (const form of entry.forms || []) {
+      if (form.type in counts && form.type !== 'total') counts[form.type]++
+      counts.total++
+    }
+  }
+  return counts
+}
+
+const hebrewSearchableEntries = entries.filter(
+  (entry) => entry.languageCode === 'und' || HEBREW_ORIGIN_CODES.has(entry.languageCode)
+)
+const sourceFormCounts = countSourceForms(entries)
+const hebrewSearchableFormCounts = countSourceForms(hebrewSearchableEntries)
+const lexicalReferenceEdges = entries.reduce(
+  (count, entry) => count + (entry.lexicalRefs?.length || 0),
+  0
+)
+const hebrewSearchableIds = new Set(hebrewSearchableEntries.map((entry) => entry.id))
+const hebrewSearchableReferenceEdges = hebrewSearchableEntries.reduce(
+  (count, entry) => count + (entry.lexicalRefs?.length || 0),
+  0
+)
+const hebrewSearchableInternalReferenceEdges = hebrewSearchableEntries.reduce(
+  (count, entry) => count + (entry.lexicalRefs || []).filter((targetId) => hebrewSearchableIds.has(targetId)).length,
+  0
+)
+const hebrewSearchableUnresolvedHeadwordLinks = hebrewSearchableEntries.reduce(
+  (count, entry) => count + (entry.unresolvedHeadwordLinks?.length || 0),
+  0
+)
+const hebrewSearchableEntriesWithUnresolvedHeadwordLinks = hebrewSearchableEntries.filter(
+  (entry) => entry.unresolvedHeadwordLinks?.length > 0
+).length
+if (
+  hebrewSearchableUnresolvedHeadwordLinkOccurrences !==
+    EXPECTED_HEBREW_SEARCHABLE_UNRESOLVED_HEADWORD_LINK_OCCURRENCES ||
+  hebrewSearchableUnresolvedHeadwordLinks !==
+    EXPECTED_HEBREW_SEARCHABLE_RETAINED_UNRESOLVED_HEADWORD_LINKS ||
+  hebrewSearchableEntriesWithUnresolvedHeadwordLinks !==
+    EXPECTED_HEBREW_SEARCHABLE_ENTRIES_WITH_UNRESOLVED_HEADWORD_LINKS
+) {
+  throw new Error(
+    `retained Hebrew-searchable unresolved Jastrow headword-link inventory changed: ` +
+    JSON.stringify({
+      occurrences: hebrewSearchableUnresolvedHeadwordLinkOccurrences,
+      edges: hebrewSearchableUnresolvedHeadwordLinks,
+      entries: hebrewSearchableEntriesWithUnresolvedHeadwordLinks
+    })
+  )
+}
+if (JSON.stringify(sourceFormCounts) !== JSON.stringify(EXPECTED_SOURCE_FORM_COUNTS)) {
+  throw new Error(`retained Jastrow source-form inventory changed: ${JSON.stringify(sourceFormCounts)}`)
+}
+if (JSON.stringify(hebrewSearchableFormCounts) !== JSON.stringify(EXPECTED_HEBREW_SEARCHABLE_FORM_COUNTS)) {
+  throw new Error(
+    `retained Hebrew-searchable Jastrow source-form inventory changed: ` +
+    JSON.stringify(hebrewSearchableFormCounts)
+  )
+}
+if (
+  lexicalReferenceEdges !== EXPECTED_LEXICAL_REFERENCE_EDGES ||
+  hebrewSearchableReferenceEdges !== EXPECTED_HEBREW_SEARCHABLE_REFERENCE_EDGES ||
+  hebrewSearchableInternalReferenceEdges !== EXPECTED_HEBREW_SEARCHABLE_INTERNAL_REFERENCE_EDGES
+) {
+  throw new Error(
+    `retained Jastrow lexical-reference inventory changed: ` +
+    JSON.stringify({
+      lexicalReferenceEdges,
+      hebrewSearchableReferenceEdges,
+      hebrewSearchableInternalReferenceEdges
+    })
+  )
+}
 const senseCounts = entries.reduce(
   (counts, entry) => countImportedSenses(entry.senses, 0, counts),
   { topLevel: 0, nested: 0, glosses: 0 }
@@ -1066,7 +1317,7 @@ if (!entries.some((entry) => entry.senses.some((sense) => sense.senses?.length))
 const out = {
   work: "A Dictionary of the Targumim, the Talmud Babli and Yerushalmi, and the Midrashic Literature (Marcus Jastrow, 1903; public domain)",
   conversion:
-    'Underlying 1903 work is public domain; Sefaria digitization distributed by the pinned Jastrow PWA under CC BY-NC 4.0. Display HTML is stripped to plain text while source sense boundaries, printed origin markers, unmarked state, and root-marker relations are retained by scripts/import-jastrow.mjs. Printed origin fragments are not treated as complete row-level language metadata.',
+    'Underlying 1903 work is public domain; Sefaria digitization distributed by the pinned Jastrow PWA under CC BY-NC 4.0. Display HTML is stripped to plain text while source sense boundaries, alternate/plural/stem forms, stable internal lexical references, unresolved legacy headword links, printed origin markers, unmarked state, and root-marker relations are retained by scripts/import-jastrow.mjs. Printed origin fragments are not treated as complete row-level language metadata.',
   source: 'https://github.com/UniquePixels/jastrow',
   sourceRevision: SOURCE_REVISION,
   license: 'CC BY-NC 4.0 digitization; underlying 1903 work public domain',
@@ -1075,6 +1326,22 @@ const out = {
   senseCounts: {
     ...senseCounts,
     total: senseCounts.topLevel + senseCounts.nested
+  },
+  sourceFormCounts,
+  hebrewSearchableFormCounts,
+  lexicalReferenceCounts: {
+    edges: lexicalReferenceEdges,
+    hebrewSearchableEdges: hebrewSearchableReferenceEdges,
+    hebrewSearchableInternalEdges: hebrewSearchableInternalReferenceEdges,
+    unresolvedTargets: missingLexicalReferences.length
+  },
+  unresolvedHeadwordLinkCounts: {
+    occurrences: unresolvedHeadwordLinkOccurrences,
+    edges: unresolvedHeadwordLinkEdges,
+    entries: entriesWithUnresolvedHeadwordLinks.length,
+    hebrewSearchableOccurrences: hebrewSearchableUnresolvedHeadwordLinkOccurrences,
+    hebrewSearchableEdges: hebrewSearchableUnresolvedHeadwordLinks,
+    hebrewSearchableEntries: hebrewSearchableEntriesWithUnresolvedHeadwordLinks
   },
   explicitRootCounts,
   rootRelationInventory: relationInventory,

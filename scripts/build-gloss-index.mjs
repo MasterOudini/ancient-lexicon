@@ -34,11 +34,12 @@ const HEBREW_SCRIPT_MEANING_LANGUAGES = new Set([
   'Aramaic',
   'Hebrew/Aramaic (unclassified)'
 ])
-const REVIEWED_HEBREW_ENTRY_KEYS = new Set(
+const REVIEWED_HEBREW_ENTRY_MAPPINGS = new Map(
   REVIEWED_HEBREW_SOURCE_MAPPINGS.map(
-    (mapping) => `${mapping.dictionaryId}\u0000${mapping.entryId}`
+    (mapping) => [`${mapping.dictionaryId}\u0000${mapping.entryId}`, mapping]
   )
 )
+const REVIEWED_HEBREW_ENTRY_KEYS = new Set(REVIEWED_HEBREW_ENTRY_MAPPINGS.keys())
 const STRONGS_GENERIC_FALLBACK_WORDS = new Set([
   'a', 'an', 'the', 'and', 'or', 'of', 'to', 'in', 'on', 'at', 'by', 'for',
   'from', 'as', 'with', 'without', 'into', 'onto', 'out', 'up', 'down', 'over',
@@ -306,9 +307,9 @@ const headKeysByCandidate = []
 const hebrewUnindexed = []
 const coverage = {}
 
-function addCandidate({ dictId, id, lemma, language, langCode, translit, script, variety, senses, heads }) {
+function addCandidate({ dictId, id, lemma, language, langCode, translit, script, variety, senses, heads, forms = [] }) {
   const index = candidates.length
-  candidates.push({ dictId, id, lemma, language, langCode, translit, script, variety, senses })
+  candidates.push({ dictId, id, lemma, language, langCode, translit, script, variety, senses, forms })
   headKeysByCandidate[index] = [...new Set(heads.flatMap(headAliases))]
 }
 
@@ -380,8 +381,16 @@ for (const dict of REFERENCE_DICTIONARIES) {
       continue
     }
     indexedEntries++
+    const reviewedMapping = REVIEWED_HEBREW_ENTRY_MAPPINGS.get(`${dict.id}\u0000${entry.id}`)
     const heads = HEBREW_SCRIPT_MEANING_LANGUAGES.has(language)
-      ? [entry.lemma, entry.xlit, ...(entry.aliases || [])]
+      ? [
+          entry.lemma,
+          entry.xlit,
+          entry.pron,
+          ...(entry.aliases || []),
+          ...(reviewedMapping?.aliases || []),
+          ...(entry.forms || []).map((form) => form.word)
+        ]
       : []
     addCandidate({
       dictId: dict.id,
@@ -389,11 +398,12 @@ for (const dict of REFERENCE_DICTIONARIES) {
       lemma: entry.lemma,
       language,
       langCode: entryLangCode(dict, entry, language),
-      translit: entry.xlit,
+      translit: reviewedMapping?.displayTransliteration || entry.xlit,
       script: dict.fields.script ? entry[dict.fields.script] : undefined,
       variety: entry.variety,
       senses,
-      heads
+      heads,
+      forms: (entry.forms || []).map((form) => form.word)
     })
   }
   coverage[dict.id] = {
@@ -447,12 +457,16 @@ const records = candidates.map((candidate, recordId) => {
   if (candidate.script) record[7] = candidate.script
   if (candidate.variety) record[8] = candidate.variety
   if (candidate.langCode) record[9] = candidate.langCode
+  if (candidate.forms.length > 0) record[10] = candidate.forms
   return record
 })
 const hebrewRecordIds = candidates.flatMap((candidate, recordId) =>
   HEBREW_CATALOG_SOURCES.has(candidate.dictId) && candidate.language === 'Hebrew'
     ? [recordId]
     : []
+)
+const hebrewSpellingRecordIds = candidates.flatMap((candidate, recordId) =>
+  HEBREW_SCRIPT_MEANING_LANGUAGES.has(candidate.language) ? [recordId] : []
 )
 
 const keywords = {}
@@ -513,6 +527,7 @@ const output = {
   heads,
   hebrew: {
     recordIds: hebrewRecordIds,
+    spellingRecordIds: hebrewSpellingRecordIds,
     unindexed: hebrewUnindexed
   },
   truncated,

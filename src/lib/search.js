@@ -10,6 +10,12 @@
 //     fold to plain digits for phone keyboards (s² and s2 search alike).
 
 import { foldFinals, toImperialAramaic, toMusnad } from './scripts.js'
+import {
+  hasConsonantSearchMatch,
+  hebrewConsonantSearchKeys,
+  isLatinConsonantSearchQuery,
+  latinConsonantSearchKeys
+} from './hebrewSearchSpelling.js'
 
 const HEBREW_POINTING = /[֑-ׇ]/g
 const COMBINING_MARKS = /\p{M}/gu
@@ -81,7 +87,7 @@ export function scoreEntry(entry, normalizedQuery) {
 export function searchRoots(roots, query) {
   const q = normalize(query || '')
   if (!q) return [...roots]
-  return roots.filter((root) => {
+  const matches = roots.filter((root) => {
     const fields = [
       root.letters.join(''),
       root.gloss,
@@ -90,6 +96,16 @@ export function searchRoots(roots, query) {
     ]
     return fields.some((f) => f && normalize(f).includes(q))
   })
+  if (matches.length > 0 || !isLatinConsonantSearchQuery(query)) return matches
+
+  const generatedKeys = latinConsonantSearchKeys(query)
+  return roots.filter((root) => hasConsonantSearchMatch(
+    [
+      root.letters.join(''),
+      ...(root.attested || []).map((attestation) => attestation.word)
+    ].flatMap(hebrewConsonantSearchKeys),
+    generatedKeys
+  ))
 }
 
 // Search a list of entries. Empty query lists all entries alphabetically by

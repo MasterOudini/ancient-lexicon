@@ -9,6 +9,12 @@ import {
 } from '../lib/hebrewComparisonLoader.js'
 import { loadReferenceEntry } from '../lib/referenceDictionaryLoader.js'
 
+const SOURCE_FORM_LABELS = {
+  alternate: 'Alternate headwords',
+  plural: 'Plural forms',
+  stem: 'Stem forms'
+}
+
 const PAGE = 60
 const EMPTY_SLOT = 'No reliable match found in the current dictionaries.'
 const VERIFIED_LABEL = 'Verified/curated comparison'
@@ -286,6 +292,18 @@ export function HebrewEntryRow({ entry, initiallyOpen = false, promotionKey = ''
         </span>
       </summary>
       <div className="lex-body universal-card-shell">
+        {Object.entries(SOURCE_FORM_LABELS).map(([type, label]) => {
+          const forms = (entry.forms || []).filter((form) => form.type === type)
+          if (forms.length === 0) return null
+          return (
+            <p className="lex-kjv" key={type}>
+              {label}:{' '}
+              <span dir="rtl" lang={entryLanguageTag(entry.languageCode)}>
+                {forms.map((form) => [form.word, form.label].filter(Boolean).join(' · ')).join(', ')}
+              </span>
+            </p>
+          )
+        })}
         {status === 'loading' && <p>Loading sense-specific comparisons…</p>}
         {status === 'failed' && (
           <p>Comparison data could not be loaded. Go online, then close and reopen this entry to retry.</p>

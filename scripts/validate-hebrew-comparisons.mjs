@@ -23,6 +23,11 @@ import {
   searchHebrewCatalog,
   selectAutoOpenSourceKey
 } from '../src/lib/hebrewComparisonLoader.js'
+import {
+  hasConsonantSearchMatch,
+  hebrewConsonantSearchKeys,
+  latinConsonantSearchKeys
+} from '../src/lib/hebrewSearchSpelling.js'
 import { normalize } from '../src/lib/search.js'
 import { findAttestedRootExact, mergeAttestedRootCatalog } from '../src/lib/attestedRootCatalog.js'
 import { toImperialAramaic, toMusnad } from '../src/lib/scripts.js'
@@ -912,7 +917,46 @@ check(
       getHebrewCatalogMatchTier(entry, entry.id) === HEBREW_CATALOG_MATCH_TIER.sourceId &&
       selectAutoOpenSourceKey([entry], entry.id) === entry.sourceKey &&
       selectAutoOpenSourceKey([entry], entry.headword) === entry.sourceKey
+  )
+)
+
+const includedStrongs = strongs.entries.filter((row) => !/\(Aramaic\)/i.test(row.deriv || ''))
+check(
+  'all 7,999 included Strong records preserve the source pronunciation as a searchable alias',
+  includedStrongs.length === 7_999 && includedStrongs.every((raw) => {
+    const entry = catalogByKey.get(`strongs:${raw.id}`)
+    const pronunciation = normalize(raw.pron)
+    return pronunciation && entry?.aliasSearches.includes(pronunciation) &&
+      entry.searchText.includes(pronunciation) &&
+      getHebrewCatalogMatchTier(entry, raw.pron) >=
+        HEBREW_CATALOG_MATCH_TIER.transliterationExactDisplayOnly &&
+      selectAutoOpenSourceKey([entry], raw.pron) === null
+  })
+)
+check(
+  'all 7,999 included Strong transliterations resolve to their own Hebrew spelling key',
+  includedStrongs.every((raw) => {
+    const entry = catalogByKey.get(`strongs:${raw.id}`)
+    return hasConsonantSearchMatch(
+      hebrewConsonantSearchKeys(entry?.headword),
+      latinConsonantSearchKeys(raw.xlit)
     )
+  })
+)
+const includedBdb = bdb.entries.filter((row) => !String(row.id).startsWith('x'))
+check(
+  'all 10,993 included BDB records have a hidden Hebrew spelling key',
+  includedBdb.length === 10_993 && includedBdb.every((raw) =>
+    hebrewConsonantSearchKeys(raw.lemma).length > 0
+  )
+)
+const adomdamFallback = searchHebrewCatalog(catalog, 'adomdam')
+check(
+  'a Latin phone-keyboard spelling can recover an otherwise unromanized BDB row without auto-opening it',
+  adomdamFallback.some((entry) => entry.sourceKey === 'bdb:a.bd.ah') &&
+    getHebrewCatalogMatchTier(catalogByKey.get('bdb:a.bd.ah'), 'adomdam') ===
+      HEBREW_CATALOG_MATCH_TIER.none &&
+    selectAutoOpenSourceKey(adomdamFallback, 'adomdam') === null
 )
 
 function exactHeadwordBlock(query) {

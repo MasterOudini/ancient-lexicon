@@ -975,15 +975,20 @@ for (const entry of jastrowSource.entries) {
     })
   }
 }
-const reviewedBachash = jastrowSource.entries.find((entry) => entry.id === 'B00486')
-const reviewedBachashLetters = independentRootLetters('\u05d1\u05d7\u05e9')
-if (reviewedBachash && reviewedBachashLetters) {
-  sourceCandidates.push({
-    source: 'academy-hebrew-terms',
-    sourceId: 'term-28_2',
-    sourceLanguage: 'hebrew',
-    letters: reviewedBachashLetters
-  })
+for (const [entryId, letters, sourceId] of [
+  ['B00486', '\u05d1\u05d7\u05e9', 'term-28_2'],
+  ['B00534', '\u05d1\u05d8\u05e9', 'term-26889_1']
+]) {
+  const sourceEntry = jastrowSource.entries.find((entry) => entry.id === entryId)
+  const reviewedLetters = independentRootLetters(letters)
+  if (sourceEntry && reviewedLetters) {
+    sourceCandidates.push({
+      source: 'academy-hebrew-terms',
+      sourceId,
+      sourceLanguage: 'hebrew',
+      letters: reviewedLetters
+    })
+  }
 }
 const completeCatalog = mergeAttestedRootCatalog(publishedCatalog)
 
@@ -1477,6 +1482,24 @@ check(
   ) &&
     reviewedBachashRoot.reviewedMapping?.status === 'reviewed modern Hebrew mapping' &&
     /does not explicitly label/i.test(reviewedBachashRoot.reviewedMapping?.caveat || '')
+)
+const reviewedBatashRoot = publishedByKey.get(`hebrew:${rootKey('\u05d1\u05d8\u05e9')}`)
+check(
+  'the reviewed modern batash mapping retains the attested word, hit sense, Academy evidence, and borrowing caveat',
+  reviewedBatashRoot?.attested.some((record) =>
+    record.word === '\u05d1\u05b8\u05bc\u05d8\u05b7\u05e9\u05c1' && /(?:strike|hit)/i.test(record.gloss)
+  ) &&
+    reviewedBatashRoot.sources.some((source) =>
+      source.source === 'academy-hebrew-terms' && source.sourceId === 'term-26889_1'
+    ) &&
+    reviewedBatashRoot.reviewedMapping?.status === 'reviewed modern Hebrew mapping' &&
+    /borrowed from Aramaic/i.test(reviewedBatashRoot.reviewedMapping?.caveat || '')
+)
+check(
+  "root search for 'batash' finds the reviewed \u05d1\u05d8\u05e9 root",
+  searchRoots(completeCatalog.roots, 'batash').some((root) =>
+    root.lang === 'hebrew' && rootKey(root.letters) === '\u05d1\u05d8\u05e9'
+  )
 )
 check(
   'canonical roots behind audited derived forms remain present',

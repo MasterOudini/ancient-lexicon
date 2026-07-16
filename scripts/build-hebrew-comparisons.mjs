@@ -703,7 +703,7 @@ export function slotsForSense(source, sourceId, lemma, sense, shard, targetIndex
   })
 }
 
-function catalogSearch(source, id, lemma, translit, definition, senses) {
+function catalogSearch(source, id, lemma, translit, aliases, definition, senses) {
   const sourceAliases = source === 'strongs'
     ? "Strong's Strong Strong’s"
     : 'BDB Brown-Driver-Briggs Brown Driver Briggs'
@@ -713,6 +713,7 @@ function catalogSearch(source, id, lemma, translit, definition, senses) {
     id,
     lemma,
     translit,
+    ...aliases,
     definition,
     ...senses.flatMap((sense) => [sense.label, ...sense.terms])
   ]).join(' '))
@@ -1075,6 +1076,7 @@ function rootReferenceFor(sourceIndex, entry, rootContext) {
 function makeCatalogEntry(sourceIndex, entry, shardId, senses, rootReference) {
   const source = HEBREW_SOURCES[sourceIndex]
   const translit = entry.xlit || null
+  const aliases = source === 'strongs' && entry.pron ? [entry.pron] : []
   return [
     sourceIndex,
     String(entry.id),
@@ -1084,8 +1086,9 @@ function makeCatalogEntry(sourceIndex, entry, shardId, senses, rootReference) {
     entry.pos || null,
     shardId,
     senses.map(publicSense),
-    catalogSearch(source, String(entry.id), entry.lemma, translit, entry.def, senses),
-    rootReference
+    catalogSearch(source, String(entry.id), entry.lemma, translit, aliases, entry.def, senses),
+    rootReference,
+    aliases.length > 0 ? aliases : null
   ]
 }
 

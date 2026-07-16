@@ -1,5 +1,11 @@
 import { getDictionary } from '../data/referenceDictionaries.js'
 import { normalize } from './search.js'
+import {
+  hasConsonantSearchMatch,
+  hebrewConsonantSearchKeys,
+  isLatinConsonantSearchQuery,
+  latinConsonantSearchKeys
+} from './hebrewSearchSpelling.js'
 import { fetchReleaseAsset } from './releaseAssets.js'
 
 export const HEBREW_CATALOG_PATH = 'dicts/hebrew-catalog-2026-07-v2.json'
@@ -25,18 +31,21 @@ export const HEBREW_CATALOG_MATCH_TIER = Object.freeze({
   metadata: 1,
   headwordSubstring: 2,
   prefix: 3,
-  transliterationExactDisplayOnly: 4,
-  transliterationExact: 5,
-  normalizedHeadwordDisplayOnly: 6,
-  normalizedHeadword: 7,
-  pointedHeadwordDisplayOnly: 8,
-  pointedHeadword: 9,
-  sourceId: 10
+  sourceFormExactDisplayOnly: 4,
+  sourceFormExact: 5,
+  transliterationExactDisplayOnly: 6,
+  transliterationExact: 7,
+  normalizedHeadwordDisplayOnly: 8,
+  normalizedHeadword: 9,
+  pointedHeadwordDisplayOnly: 10,
+  pointedHeadword: 11,
+  sourceId: 12
 })
 
 const AUTO_OPEN_MINIMUM_TIER = HEBREW_CATALOG_MATCH_TIER.normalizedHeadwordDisplayOnly
 const HEBREW_POINTING = /[\u05B0-\u05BD\u05BF-\u05C2\u05C4-\u05C7]/u
 const CANTILLATION_AND_EDITORIAL_MARKS = /[\u0591-\u05AF\u05BD\u05BF\u05C4-\u05C6]/gu
+const SOURCE_FORM_TYPES = ['alternate', 'plural', 'stem']
 
 // These source records have explicit reviewed overrides in the comparison
 // builder. H1 additionally owns the authoritative curated father card.
@@ -45,7 +54,10 @@ const REVIEWED_SOURCE_PRIORITY = new Map([
   ['strongs:H2803', 2],
   ['strongs:H2805', 1]
 ])
-const REVIEWED_TRANSLITERATION_AUTO_OPEN = new Set(['jastrow:B00486'])
+const REVIEWED_TRANSLITERATION_AUTO_OPEN = new Set([
+  'jastrow:B00486',
+  'jastrow:B00534'
+])
 
 function reviewedPriority(entry, tier) {
   return tier >= HEBREW_CATALOG_MATCH_TIER.normalizedHeadwordDisplayOnly &&
@@ -114,6 +126,14 @@ function decodeRootReferenceKey(tuple, sources) {
   }
 }
 
+function decodeSourceForms(value) {
+  return (value || []).map((tuple) => ({
+    type: SOURCE_FORM_TYPES[tuple[0]] || 'source',
+    word: tuple[1],
+    label: tuple[2] || null
+  })).filter((form) => form.word)
+}
+
 function decodeRootReferenceKeys(value, sources) {
   if (!Array.isArray(value)) return []
   const tuples = Array.isArray(value[0]) ? value : [value]
@@ -162,6 +182,7 @@ export function decodeHebrewCatalog(
     const source = sources[tuple[0]]
     const senses = (tuple[7] || []).map(decodeSense)
     const sourceKey = `${source}:${tuple[1]}`
+    const forms = decodeSourceForms(tuple[12])
     const searchText = tuple[8] || normalize([
       tuple[1],
       tuple[2],
@@ -184,6 +205,7 @@ export function decodeHebrewCatalog(
       aliases: tuple[10] || [],
       languageCode: tuple[11] || null,
       languageLabel: payload.originLabels?.[tuple[11]] || null,
+      forms,
       shard: tuple[6],
       shardDirectory,
       senses,
@@ -195,6 +217,8 @@ export function decodeHebrewCatalog(
       sourceKeySearch: normalize(sourceKey),
       transliterationSearch: normalize(tuple[3]),
       aliasSearches: (tuple[10] || []).map(normalize).filter(Boolean),
+      formSearches: forms.map((form) => normalize(form.word)).filter(Boolean),
+      pointedFormKeys: forms.map((form) => canonicalPointedHeadword(form.word)).filter(Boolean),
       hasMatchableSense: senses.some((sense) => sense.matchable)
     }
   }).sort(compareCatalogEntries)
@@ -275,6 +299,15 @@ function matchTier(entry, queryContext, searchTextMatched) {
   }
 
   if (
+    entry.formSearches.includes(normalizedQuery) ||
+    (queryContext.hasPointing && entry.pointedFormKeys.includes(queryContext.pointed))
+  ) {
+    return entry.hasMatchableSense
+      ? HEBREW_CATALOG_MATCH_TIER.sourceFormExact
+      : HEBREW_CATALOG_MATCH_TIER.sourceFormExactDisplayOnly
+  }
+
+  if (
     entry.transliterationSearch === normalizedQuery ||
     entry.aliasSearches.includes(normalizedQuery)
   ) {
@@ -285,6 +318,7 @@ function matchTier(entry, queryContext, searchTextMatched) {
 
   if (
     entry.sortKey.startsWith(normalizedQuery) ||
+    entry.formSearches.some((form) => form.startsWith(normalizedQuery)) ||
     entry.idSearch.startsWith(normalizedQuery) ||
     entry.transliterationSearch.startsWith(normalizedQuery) ||
     entry.aliasSearches.some((alias) => alias.startsWith(normalizedQuery))
@@ -294,6 +328,7 @@ function matchTier(entry, queryContext, searchTextMatched) {
 
   if (
     entry.sortKey.includes(normalizedQuery) ||
+    entry.formSearches.some((form) => form.includes(normalizedQuery)) ||
     entry.transliterationSearch.includes(normalizedQuery) ||
     entry.aliasSearches.some((alias) => alias.includes(normalizedQuery))
   ) {
@@ -342,7 +377,14 @@ export function searchHebrewCatalog(catalog, query) {
       results.push(...reviewed, ...bucket.filter((entry) => !reviewedKeys.has(entry.sourceKey)))
     }
   }
-  return results
+  if (results.length > 0 || !isLatinConsonantSearchQuery(query)) return results
+
+  const generatedKeys = latinConsonantSearchKeys(query)
+  return entries.filter((entry) => hasConsonantSearchMatch(
+    [entry.headword, ...entry.forms.map((form) => form.word)]
+      .flatMap(hebrewConsonantSearchKeys),
+    generatedKeys
+  ))
 }
 
 export function selectAutoOpenSourceKey(results, query) {
@@ -460,6 +502,7 @@ export function loadHebrewComparisonShard(shardId, shardDirectory = HEBREW_SHARD
       })
     shardPending.set(cacheKey, pending)
   }
+
   return shardPending.get(cacheKey)
 }
 
