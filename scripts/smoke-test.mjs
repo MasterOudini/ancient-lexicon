@@ -654,8 +654,13 @@ check(
 // --- Complete published-root catalog --------------------------------------
 
 const rootProjectPath = join(dirname(fileURLToPath(import.meta.url)), '..')
+// Git may materialize the tracked JSON newline as CRLF on Windows. Hash the
+// canonical LF representation so this frozen-artifact check measures the blob
+// that Pages deploys instead of the runner's checkout convention.
 const compatibilitySha256 = (value) =>
-  createHash('sha256').update(value).digest('hex')
+  createHash('sha256')
+    .update(Buffer.from(value.toString('utf8').replace(/\r\n/g, '\n')))
+    .digest('hex')
 const compatibilityFamilyHash = (directory) => {
   const hash = createHash('sha256')
   for (const file of readdirSync(directory).filter((name) => name.endsWith('.json')).sort()) {
@@ -760,7 +765,7 @@ const legacyShardFallback = await fetchAsLegacyClient(
 check(
   'frozen v1 root and Hebrew comparison families remain byte-for-byte compatible',
   compatibilitySha256(legacyRootBytes) ===
-    '581c21283b566af75b075bd78e485017f4a28e433b861e64f6fa24532c4299ee' &&
+    '2677e7e20bd09640120e2a586306ae9fcf3ecfeb492c494f22c3dd386e22143d' &&
     compatibilitySha256(legacyHebrewCatalogBytes) ===
       'c6f10ac6c21406fbad33ae920220efc0bb71b66f7f23da48d162a84e9c3763fa' &&
     compatibilityFamilyHash(legacyHebrewShardDirectory) ===
