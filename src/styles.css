@@ -210,11 +210,6 @@ button {
 .tabbar {
   position: fixed;
   bottom: 0;
-  /* On iOS Safari the visual viewport grows when its browser chrome retracts.
-     Keep the fixed bar attached to that moving bottom edge instead of the
-     smaller initial viewport. Older browsers ignore the dynamic-unit line and
-     retain the bottom: 0 fallback above. */
-  bottom: calc(100svh - 100dvh);
   left: 0;
   right: 0;
   display: flex;

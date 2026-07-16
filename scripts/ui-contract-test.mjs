@@ -143,7 +143,8 @@ try {
   const styles = readFileSync(join(root, 'src', 'styles.css'), 'utf8')
   const tabbarRule = styles.match(/\.tabbar\s*\{([^}]+)\}/)?.[1] || ''
   const tabbarSkirtRule = styles.match(/\.tabbar::after\s*\{([^}]+)\}/)?.[1] || ''
-  assert.match(tabbarRule, /bottom:\s*calc\(100svh - 100dvh\)/)
+  assert.match(tabbarRule, /bottom:\s*0/)
+  assert.doesNotMatch(tabbarRule, /bottom:\s*calc\(100svh - 100dvh\)/)
   assert.match(tabbarRule, /padding:\s*6px 8px max\(6px, env\(safe-area-inset-bottom\)\)/)
   assert.match(tabbarRule, /isolation:\s*isolate/)
   assert.match(tabbarRule, /transform:\s*translateZ\(0\)/)
