@@ -51,21 +51,22 @@ export const REFERENCE_DICTIONARIES = [
   {
     id: 'jastrow',
     label: 'Jastrow',
-    language: 'Aramaic',
+    language: 'Hebrew & Aramaic',
     dir: 'rtl',
     index: 'hebrew',
     source: { kind: 'url', url: 'dicts/jastrow.json' },
     fields: {
       head: 'lemma',
-      sub: null,
+      sub: 'languageLabel',
       ref: 'page',
       refPrefix: 'p. ',
       def: 'def',
       extra: []
     },
-    license: 'Public domain',
+    license: 'CC BY-NC 4.0 digitization; underlying 1903 work public domain',
+    licenseUrl: 'https://creativecommons.org/licenses/by-nc/4.0/',
     attribution:
-      'A Dictionary of the Targumim, the Talmud Babli and Yerushalmi, and the Midrashic Literature (Marcus Jastrow, 1903). Digitized by Sefaria.'
+      'A Dictionary of the Targumim, the Talmud Babli and Yerushalmi, and the Midrashic Literature (Marcus Jastrow, 1903). Sefaria digitization distributed by the pinned Jastrow PWA. Printed origin markers are retained when supplied; rows without one are labeled Hebrew/Aramaic (unmarked), not inferred as Hebrew or Aramaic.'
   },
   {
     id: 'egyptian',

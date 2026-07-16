@@ -15,7 +15,7 @@ import { normalize } from '../src/lib/search.js'
 import { toImperialAramaic, toMusnad } from '../src/lib/scripts.js'
 import { isDirectStrongsRoot, rootLettersFromLemma } from './build-attested-roots.mjs'
 
-export const BUILD_ID = '2026-07-v1'
+export const BUILD_ID = '2026-07-v2'
 export const SHARD_COUNT = 64
 export const TARGET_LANGUAGES = ['akkadian', 'sumerian', 'egyptian', 'hittite', 'aramaic', 'osa']
 export const HEBREW_SOURCES = ['strongs', 'bdb']
@@ -30,8 +30,8 @@ export const LEGACY_INDEX_HASHES = {
 
 const here = dirname(fileURLToPath(import.meta.url))
 const projectRoot = join(here, '..')
-const outputCatalog = join(projectRoot, 'public', 'dicts', 'hebrew-catalog-2026-07-v1.json')
-const outputShardDirectory = join(projectRoot, 'public', 'dicts', 'hebrew-comparisons-2026-07-v1')
+const outputCatalog = join(projectRoot, 'public', 'dicts', 'hebrew-catalog-2026-07-v2.json')
+const outputShardDirectory = join(projectRoot, 'public', 'dicts', 'hebrew-comparisons-2026-07-v2')
 const LEGACY_INDEX_LIMIT = 9_448_128
 const MAX_SHARD_BYTES = 1024 * 1024
 const MAX_ALTERNATIVES = 4
@@ -394,7 +394,7 @@ function targetSenseEligible(dict, entry, meaning) {
   return canonicalTerms(meaning).length > 0
 }
 
-function buildTargetIndex() {
+export function buildTargetIndex() {
   const senses = []
   const byTerm = new Map()
   const documentFrequency = new Map()
@@ -552,7 +552,7 @@ export function selectAutomaticCandidates(sourceSense, language, targetIndex) {
   return [primary, ...alternatives]
 }
 
-function buildCuratedHeadIndex() {
+export function buildCuratedHeadIndex() {
   const index = new Map()
   for (const entry of LEXICON) {
     const head = normalize(entry.hebrew.word)
@@ -683,7 +683,7 @@ function addCandidate(shard, tuple) {
   return index
 }
 
-function slotsForSense(source, sourceId, lemma, sense, shard, targetIndex, curatedHeads) {
+export function slotsForSense(source, sourceId, lemma, sense, shard, targetIndex, curatedHeads) {
   if (!sense.matchable) return emptySlots()
   const curated = selectCuratedEntry(source, sourceId, lemma, sense, curatedHeads)
   if (curated) {
@@ -722,8 +722,98 @@ function publicSense(sense) {
   return [sense.key, sense.label, sense.sourceText, sense.matchable, sense.terms]
 }
 
-function referencedStrongsIds(entry) {
-  return [...new Set((entry.deriv || '').match(/\bH\d+\b/g) || [])]
+const STRONGS_DERIVATIONAL_RELATION =
+  /\b(?:from|same(?:\s+\([^)]*\))?\s+as|same root as|corresponding to|identical(?:\s+\([^)]*\))?\s+with|corrected to|compounding|active part of|(?:root|base|equivalent|form|forms|variation|modification|contraction|derivative|participle|plural|dual|feminine|masculine|multiple|future|infinitive|construction|patronymic|patronymically)(?:\s+(?:[a-z]+|\([^)]*\))){0,4}\s+of|(?:shortened|fuller)\s+form(?:\s+of)?)\b/gi
+const STRONGS_NON_DERIVATIONAL_REFERENCE =
+  /\b(?:compare|comp\.?|cf\.?|see|in distinction from|differing from|distinguished from|affinity to|similar name with|(?:meaning|practically)\s+the same as|in(?:\s+(?:[a-z]+|\([^)]*\))){0,5}\s+sense\s*(?:\(\s*)?of|(?:mediating\s+)?idea of|in connection with|in lieu of|as in|alliteration with|akin(?:\s+\([^)]*\))?\s+to|similar to|equivalent to|formed (?:as|like)|not identical\)?\s+with|like)\b/gi
+
+// These pinned Strong's rows use coordinated source-parent syntax that the
+// conservative free-text parser intentionally does not generalize. The
+// intervening text includes comma lists, editorial qualifiers, or a comparison
+// note before returning to the main derivation. Keep the reviewed parent order
+// exactly as printed while excluding comparison-only IDs in the same notes.
+const REVIEWED_STRONGS_PARENT_CHAINS = new Map([
+  ['H358', ['H356', 'H1004', 'H2603']],
+  ['H883', ['H875', 'H2416', 'H7203']],
+  ['H885', ['H875', 'H1121', 'H3292']],
+  ['H1842', ['H1835', 'H3282']],
+  ['H2910', ['H2909', 'H2902']],
+  ['H3060', ['H3068', 'H784']],
+  ['H3079', ['H3068', 'H6965']],
+  ['H3115', ['H3068', 'H3513']],
+  ['H4105', ['H3190', 'H410']],
+  ['H7619', ['H7617', 'H7725', 'H410']],
+  ['H8287', ['H8281', 'H2580']],
+  ['H8423', ['H2986', 'H7014']]
+])
+
+export function referencedStrongsIds(entry) {
+  const reviewedParents = REVIEWED_STRONGS_PARENT_CHAINS.get(String(entry?.id))
+  if (reviewedParents) return [...reviewedParents]
+
+  const derivation = String(entry?.deriv || '').replace(/\s+/g, ' ').trim()
+  const ids = []
+
+  for (const match of derivation.matchAll(/\bH\d+\b/g)) {
+    const clauseStart = derivation.lastIndexOf(';', match.index) + 1
+    const contextStart = Math.max(clauseStart, match.index - 160)
+    const context = derivation.slice(contextStart, match.index)
+
+    STRONGS_NON_DERIVATIONAL_REFERENCE.lastIndex = 0
+    let allowedStart = 0
+    let lastBlocker = null
+    for (const blocker of context.matchAll(STRONGS_NON_DERIVATIONAL_REFERENCE)) {
+      allowedStart = blocker.index + blocker[0].length
+      lastBlocker = blocker
+    }
+
+    const allowedContext = context.slice(allowedStart)
+    if (/\bfor\s*$|\bfor\s+the\s+latter\s+name\)?\s*$/i.test(allowedContext)) {
+      ids.push(match[0])
+      continue
+    }
+    STRONGS_DERIVATIONAL_RELATION.lastIndex = 0
+    const relations = [...allowedContext.matchAll(STRONGS_DERIVATIONAL_RELATION)]
+    const relation = relations.at(-1)
+    if (relation) {
+      if (
+        /^corresponding to$/i.test(relation[0]) &&
+        /\(\s*corresponding to\s*$/i.test(allowedContext)
+      ) continue
+      const relationEnd = relation.index + relation[0].length
+      const trailingContext = allowedContext.slice(relationEnd)
+      const interveningIds = [...trailingContext.matchAll(/\bH\d+\b/g)]
+      const lastInterveningId = interveningIds.at(-1)
+      const coordinatedTail = lastInterveningId
+        ? trailingContext.slice(lastInterveningId.index + lastInterveningId[0].length)
+        : ''
+      const sameRelationContinues =
+        !lastInterveningId ||
+        /^\s*(?:\([^)]*\)\s*)?(?:and|or)\s*$/i.test(coordinatedTail)
+      if (allowedContext.length - relationEnd <= 96 && sameRelationContinues) {
+        ids.push(match[0])
+      }
+      continue
+    }
+
+    // A coordinated alternative can follow a parenthetical sense note without
+    // repeating the derivational phrase: "from H3522 (...) or H3554 (...)".
+    // Do not extend the relation when that sense note itself already cited an
+    // H-number, because those numbers are semantic comparisons, not parents.
+    if (
+      lastBlocker &&
+      /^in the sense of$/i.test(lastBlocker[0]) &&
+      !/\bH\d+\b/.test(allowedContext) &&
+      /\b(?:and|or)\s*$/i.test(allowedContext)
+    ) {
+      const priorContext = context.slice(0, lastBlocker.index)
+      STRONGS_DERIVATIONAL_RELATION.lastIndex = 0
+      const priorRelation = [...priorContext.matchAll(STRONGS_DERIVATIONAL_RELATION)].at(-1)
+      if (priorRelation) ids.push(match[0])
+    }
+  }
+
+  return [...new Set(ids)]
 }
 
 function strongsRootEntry(entry, strongsById, attestedRootKeys, seen = new Set()) {
@@ -741,7 +831,12 @@ function strongsRootEntry(entry, strongsById, attestedRootKeys, seen = new Set()
   // Strong's IDs later in the note can be contrasts or comparisons rather
   // than derivational parents (for example H3027 distinguishes itself from
   // H3709), so do not traverse them before honoring this declaration.
-  if (letters && attestedRootKeys.has(letters) && /\bprimitive word\b/i.test(entry.deriv || '')) {
+  if (
+    letters &&
+    attestedRootKeys.has(letters) &&
+    /\ba primitive word\b/i.test(entry.deriv || '') &&
+    !/\bfrom a primitive word\b/i.test(entry.deriv || '')
+  ) {
     return entry
   }
 
@@ -770,12 +865,6 @@ const REVIEWED_STRONGS_BDB_ROOTS = new Map([
   ['H7565', 't.eu.aa'],
   ['H7566', 't.eu.aa']
 ])
-// H4192 begins with a parenthetical Psalm citation containing H48 before its
-// actual derivation, "from H4191". The free-form citation number must not be
-// traversed as a lexical parent.
-const REVIEWED_STRONGS_ROOTS = new Map([
-  ['H4192', 'H4191']
-])
 const REVIEWED_BDB_ROOT_FAMILIES = new Map([
   ['t.eh.', 't.eh.aa'],
   ['t.ei.', 't.ei.aa'],
@@ -783,7 +872,9 @@ const REVIEWED_BDB_ROOT_FAMILIES = new Map([
   ['u.cj.', 'u.cj.aa']
 ])
 const REVIEWED_BDB_ROOT_ROWS = new Map([
-  ['m.dn.ad', 't.eh.aa']
+  ['m.dn.ad', 't.eh.aa'],
+  ['j.bi.ac', 'j.bi.aa'],
+  ['h.dr.ad', 'h.dr.aa']
 ])
 
 function reviewedBdbRootId(source, id) {
@@ -802,6 +893,95 @@ function publicRootReference(sourceIndex, entry) {
   return entry && letters ? [sourceIndex, String(entry.id), letters] : null
 }
 
+function directStrongsRootReference(entry, rootContext) {
+  const {
+    attestedRootKeys,
+    bdbRootsById
+  } = rootContext
+  const reviewedBdbRootId = REVIEWED_STRONGS_BDB_ROOTS.get(String(entry.id))
+  if (reviewedBdbRootId) {
+    const reviewedRoot = bdbRootsById.get(reviewedBdbRootId)
+    if (!reviewedRoot) throw new Error(`reviewed BDB root is missing: ${reviewedBdbRootId}`)
+    return publicRootReference(1, reviewedRoot)
+  }
+
+  const letters = rootLettersFromLemma(entry.lemma)?.join('')
+  const directPrimitive = isDirectStrongsRoot(entry)
+  const primitiveWord =
+    /\ba primitive word\b/i.test(entry.deriv || '') &&
+    !/\bfrom a primitive word\b/i.test(entry.deriv || '')
+  if (
+    letters &&
+    attestedRootKeys.has(letters) &&
+    (directPrimitive || primitiveWord) &&
+    !/\(Aramaic\)/i.test(entry.deriv || '')
+  ) {
+    return publicRootReference(0, entry)
+  }
+  return null
+}
+
+function uniqueRootReferences(references) {
+  const seen = new Set()
+  return references.filter((reference) => {
+    if (!reference) return false
+    const key = reference.join(':')
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+export function strongsRootReferences(
+  entry,
+  rootContext,
+  memo = new Map(),
+  resolving = new Set()
+) {
+  if (!entry) return []
+  if (memo.has(entry.id)) return memo.get(entry.id)
+  if (resolving.has(entry.id)) return []
+  resolving.add(entry.id)
+
+  let references = []
+  const direct = directStrongsRootReference(entry, rootContext)
+  if (direct) {
+    references = [direct]
+  } else {
+    for (const parentId of referencedStrongsIds(entry)) {
+      references.push(
+        ...strongsRootReferences(
+          rootContext.strongsById.get(parentId),
+          rootContext,
+          memo,
+          resolving
+        )
+      )
+    }
+    references = uniqueRootReferences(references)
+
+    // If Strong's gives no resolvable derivational parent, an exact BDB root
+    // heading with the same consonants remains the last source-backed route.
+    if (references.length === 0) {
+      const matchingBdbRoot = rootContext.bdbRootsByLetters.get(rootKey(entry.lemma))
+      const matchingReference = matchingBdbRoot
+        ? publicRootReference(1, matchingBdbRoot)
+        : null
+      if (matchingReference) references = [matchingReference]
+    }
+  }
+
+  resolving.delete(entry.id)
+  references = uniqueRootReferences(references)
+  memo.set(entry.id, references)
+  return references
+}
+
+function compactRootReferences(references) {
+  if (references.length === 0) return null
+  return references.length === 1 ? references[0] : references
+}
+
 function explicitBdbRootLetters(entry) {
   const match = String(entry.def || '').match(
     /\bv\.\s*([\u05d0-\u05ea][\u0591-\u05c7\u05d0-\u05ea]*)/u
@@ -817,17 +997,10 @@ function rootReferenceFor(sourceIndex, entry, rootContext) {
     bdbRootSourceIds,
     bdbRootsById,
     bdbRootsByGroup,
+    bdbRootCandidatesByLetters,
     bdbRootsByLetters
   } = rootContext
   const source = HEBREW_SOURCES[sourceIndex]
-  const reviewedStrongsRootId = source === 'strongs'
-    ? REVIEWED_STRONGS_ROOTS.get(String(entry.id))
-    : null
-  if (reviewedStrongsRootId) {
-    const reviewedRoot = strongsById.get(reviewedStrongsRootId)
-    if (!reviewedRoot) throw new Error(`reviewed Strong's root is missing: ${reviewedStrongsRootId}`)
-    return publicRootReference(0, reviewedRoot)
-  }
   const reviewedRootId = reviewedBdbRootId(source, entry.id)
   if (reviewedRootId) {
     const reviewedRoot = bdbRootsById.get(reviewedRootId)
@@ -856,8 +1029,28 @@ function rootReferenceFor(sourceIndex, entry, rootContext) {
 
   const explicitLetters = explicitBdbRootLetters(entry)
   if (explicitLetters) {
-    const explicitRoot = bdbRootsByLetters.get(explicitLetters)
-    if (explicitRoot) return publicRootReference(1, explicitRoot)
+    const referencedBdbRoots = unique((entry.lexicalRefs || [])
+      .map((id) => bdbRootsById.get(id))
+      .filter((root) => root && rootKey(root.lemma) === explicitLetters)
+      .map((root) => root.id))
+      .map((id) => bdbRootsById.get(id))
+    if (referencedBdbRoots.length === 1) {
+      return publicRootReference(1, referencedBdbRoots[0])
+    }
+
+    const matchingBdbRoots = bdbRootCandidatesByLetters.get(explicitLetters) || []
+    if (matchingBdbRoots.length === 1) {
+      return publicRootReference(1, matchingBdbRoots[0])
+    }
+
+    const matchingStrongsRoots = unique((strongsByLemma.get(explicitLetters) || [])
+      .map((match) => strongsRootEntry(match, strongsById, attestedRootKeys))
+      .filter((root) => root && rootKey(root.lemma) === explicitLetters)
+      .map((root) => root.id))
+      .map((id) => strongsById.get(id))
+    return matchingStrongsRoots.length === 1
+      ? publicRootReference(0, matchingStrongsRoots[0])
+      : null
   }
 
   const strongsMatches = strongsByLemma.get(rootKey(entry.lemma)) || []
@@ -919,7 +1112,7 @@ export function buildArtifacts() {
     strongsByLemma.get(key).push(entry)
   }
   const attestedRootPayload = readJson(
-    join(projectRoot, 'public', 'dicts', 'attested-roots-2026-07-v1.json')
+    join(projectRoot, 'public', 'dicts', 'attested-roots-2026-07-v2.json')
   )
   const attestedRootKeys = new Set([
     ...ROOTS.filter((root) => root.lang === 'hebrew').map((root) => rootKey(root.letters)),
@@ -942,6 +1135,12 @@ export function buildArtifacts() {
   const reusableBdbRootEntries = bdbRootEntries.filter((entry) =>
     /^vb(?:\.|$)/i.test(entry.pos || '') || !/[\u0591-\u05c7]/u.test(entry.lemma || '')
   )
+  const bdbRootCandidatesByLetters = new Map()
+  for (const entry of reusableBdbRootEntries) {
+    const letters = rootKey(entry.lemma)
+    if (!bdbRootCandidatesByLetters.has(letters)) bdbRootCandidatesByLetters.set(letters, [])
+    bdbRootCandidatesByLetters.get(letters).push(entry)
+  }
   const bdbRootsByLetters = new Map(
     reusableBdbRootEntries.map((entry) => [rootKey(entry.lemma), entry])
   )
@@ -956,8 +1155,10 @@ export function buildArtifacts() {
     bdbRootSourceIds,
     bdbRootsById,
     bdbRootsByGroup,
+    bdbRootCandidatesByLetters,
     bdbRootsByLetters
   }
+  const strongsRootMemo = new Map()
   const shards = Array.from({ length: SHARD_COUNT }, (_, index) => ({
     id: index.toString(16).padStart(2, '0'),
     records: {},
@@ -984,7 +1185,11 @@ export function buildArtifacts() {
           entry,
           shardId,
           senses,
-          rootReferenceFor(sourceIndex, entry, rootContext)
+          source === 'strongs'
+            ? compactRootReferences(
+                strongsRootReferences(entry, rootContext, strongsRootMemo)
+              )
+            : rootReferenceFor(sourceIndex, entry, rootContext)
         )
       )
       senseCount += senses.length
@@ -992,7 +1197,7 @@ export function buildArtifacts() {
   }
 
   const catalog = {
-    version: 1,
+    version: 2,
     build: BUILD_ID,
     revision: BUILD_ID,
     shardCount: SHARD_COUNT,
@@ -1012,7 +1217,7 @@ export function buildArtifacts() {
     entries: catalogEntries
   }
   const shardDocuments = shards.map((shard) => ({
-    version: 1,
+    version: 2,
     build: BUILD_ID,
     revision: BUILD_ID,
     shard: shard.id,
@@ -1037,7 +1242,8 @@ export function buildArtifacts() {
 
 function checkFile(path, expected) {
   if (!existsSync(path)) throw new Error(`missing generated artifact ${path}`)
-  if (readFileSync(path, 'utf8') !== expected) throw new Error(`generated artifact is stale: ${path}`)
+  const actual = readFileSync(path, 'utf8').replace(/\r\n?/g, '\n')
+  if (actual !== expected) throw new Error(`generated artifact is stale: ${path}`)
 }
 
 export function writeOrCheckArtifacts({ check = false } = {}) {

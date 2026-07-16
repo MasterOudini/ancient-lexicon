@@ -12,6 +12,7 @@ const CURATED_BY_ID = new Map(LEXICON.map((entry) => [entry.id, entry]))
 const LANGUAGE_TAGS = {
   Hebrew: 'he',
   Aramaic: 'arc',
+  'Hebrew/Aramaic (unclassified)': 'und-Hebr',
   Hittite: 'hit'
 }
 

@@ -4,7 +4,7 @@
 // client try to render dictionaries its registry does not know yet.
 import { fetchReleaseAsset } from './releaseAssets.js'
 
-export const GLOSS_INDEX_PATH = 'dicts/gloss-index-2026-07.json'
+export const GLOSS_INDEX_PATH = 'dicts/gloss-index-2026-07-v2.json'
 
 let pending
 

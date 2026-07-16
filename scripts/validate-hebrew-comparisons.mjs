@@ -24,20 +24,21 @@ import {
   selectAutoOpenSourceKey
 } from '../src/lib/hebrewComparisonLoader.js'
 import { normalize } from '../src/lib/search.js'
-import { findAttestedRoot, mergeAttestedRootCatalog } from '../src/lib/attestedRootCatalog.js'
+import { findAttestedRootExact, mergeAttestedRootCatalog } from '../src/lib/attestedRootCatalog.js'
 import { toImperialAramaic, toMusnad } from '../src/lib/scripts.js'
 import {
   canonicalTerms,
   compareRankedCandidates,
   normalizePos,
+  referencedStrongsIds,
   selectAutomaticCandidates
 } from './build-hebrew-comparisons.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const root = join(here, '..')
 const dicts = join(root, 'public', 'dicts')
-const catalogPath = join(dicts, 'hebrew-catalog-2026-07-v1.json')
-const shardsPath = join(dicts, 'hebrew-comparisons-2026-07-v1')
+const catalogPath = join(dicts, 'hebrew-catalog-2026-07-v2.json')
+const shardsPath = join(dicts, 'hebrew-comparisons-2026-07-v2')
 const REQUIRED_LANGUAGES = ['akkadian', 'sumerian', 'egyptian', 'hittite', 'aramaic', 'osa']
 const LEGACY_HASHES = {
   'gloss-index.json': 'e42c54c8c7bf6b1473c6e0dd63e1c26c3a6051ea143c2db8ffa3e9396173afef',
@@ -67,7 +68,7 @@ const candidatesForSense = (sense) => sense.slots.flatMap((slot) =>
 const strongs = json(join(root, 'src', 'data', 'strongs.json'))
 const bdb = json(join(dicts, 'bdb.json'))
 const catalogPayload = json(catalogPath)
-const catalog = decodeHebrewCatalog(catalogPayload)
+const catalog = decodeHebrewCatalog(catalogPayload, { expectedVersion: 2 })
 const rawHebrew = new Map()
 for (const entry of strongs.entries.filter((row) => !/\(Aramaic\)/i.test(row.deriv || ''))) {
   rawHebrew.set(sourceKey('strongs', entry.id), entry)
@@ -76,7 +77,7 @@ for (const entry of bdb.entries.filter((row) => !String(row.id).startsWith('x'))
   rawHebrew.set(sourceKey('bdb', entry.id), entry)
 }
 
-check('catalog version is 1', catalogPayload.version === 1)
+check('catalog version is 2', catalogPayload.version === 2)
 check('catalog declares exactly 64 shards', catalogPayload.shardCount === 64)
 check(
   'catalog and runtime use the six fixed language slots in order',
@@ -90,13 +91,22 @@ check('raw Hebrew source count is exactly 18,992', rawHebrew.size === 18_992, St
 check('decoded catalog count is exactly 18,992', catalog.entries.length === 18_992, String(catalog.entries.length))
 
 const catalogByKey = new Map(catalog.entries.map((entry) => [entry.sourceKey, entry]))
+const multiRootTuples = catalogPayload.entries.filter((tuple) => Array.isArray(tuple[9]?.[0]))
+check(
+  'the v2 catalog preserves every multi-root array that the v1 schema could not decode',
+  multiRootTuples.length > 600 && multiRootTuples.every((tuple) =>
+    catalogByKey.get(`${catalogPayload.sources[tuple[0]]}:${tuple[1]}`)?.rootReferences.length ===
+      tuple[9].length
+  ),
+  String(multiRootTuples.length)
+)
 let exactRawRoundTrip = catalogByKey.size === rawHebrew.size
 let sensesComplete = true
 let searchFieldsNormalized = true
 let rootReferencesValid = true
 let rootReferenceCount = 0
 const publishedRootMismatches = []
-const attestedRootPayload = json(join(dicts, 'attested-roots-2026-07-v1.json'))
+const attestedRootPayload = json(join(dicts, 'attested-roots-2026-07-v2.json'))
 const publishedRootKeysBySource = new Map()
 for (const root of attestedRootPayload.roots.filter((entry) => entry.lang === 'hebrew')) {
   for (const source of root.sources || []) {
@@ -134,11 +144,11 @@ for (const entry of catalog.entries) {
     !entry.searchText.includes(normalize(entry.definition)) ||
     !entry.searchText.includes(normalize(getDictionary(entry.source)?.label))
   ) searchFieldsNormalized = false
-  const root = entry.rootReference
-  if (root) {
+  const roots = entry.rootReferences || []
+  for (const root of roots) {
     rootReferenceCount++
     const sourceRoot = rawHebrew.get(root.sourceKey)
-    const attestedRoot = findAttestedRoot(completeRootCatalog, 'hebrew', root.letters)
+    const attestedRoot = findAttestedRootExact(completeRootCatalog, 'hebrew', root.letters)
     if (
       !sourceRoot ||
       root.headword !== sourceRoot.lemma ||
@@ -150,17 +160,17 @@ for (const entry of catalog.entries) {
     ) rootReferencesValid = false
   }
   const publishedRootKeys = publishedRootKeysBySource.get(entry.sourceKey)
+  const ownPublishedRoot = roots.find((root) =>
+    root.sourceKey === entry.sourceKey &&
+    root.letters === rootKey(entry.headword) &&
+    publishedRootKeys?.has(root.letters)
+  )
   if (
     publishedRootKeys &&
-    (
-      !root ||
-      root.sourceKey !== entry.sourceKey ||
-      root.letters !== rootKey(entry.headword) ||
-      !publishedRootKeys.has(root.letters)
-    )
+    !ownPublishedRoot
   ) {
     publishedRootMismatches.push(
-      `${entry.sourceKey}:${root?.letters || 'missing'}=>${[...publishedRootKeys].join('|')}`
+      `${entry.sourceKey}:${roots.map((root) => root.letters).join('|') || 'missing'}=>${[...publishedRootKeys].join('|')}`
     )
   }
 }
@@ -173,7 +183,7 @@ check(
 )
 check(
   'source-backed root buttons cover the Hebrew comparison catalog',
-  rootReferenceCount > 15_000,
+  rootReferenceCount > 17_000,
   String(rootReferenceCount)
 )
 check(
@@ -284,9 +294,152 @@ check(
 )
 const muthLabben = catalogByKey.get('strongs:H4192')
 check(
-  'Strong\'s H4192 follows its stated H4191 derivation instead of a Psalm citation number',
+  'Strong\'s H4192 follows both stated roots instead of the Psalm citation number',
   muthLabben?.rootReference?.sourceKey === 'strongs:H4191' &&
-    muthLabben.rootReference.letters === 'מות'
+    muthLabben.rootReference.letters === 'מות' &&
+    muthLabben.rootReferences.some(
+      (root) => root.sourceKey === 'strongs:H1129' && root.letters === 'בנה'
+    ) &&
+    muthLabben.rootReferences.every((root) => root.sourceKey !== 'strongs:H48')
+)
+const strongsById = new Map(strongs.entries.map((entry) => [entry.id, entry]))
+const reviewedStrongsParentOracle = new Map([
+  ['H358', ['H356', 'H1004', 'H2603']],
+  ['H883', ['H875', 'H2416', 'H7203']],
+  ['H885', ['H875', 'H1121', 'H3292']],
+  ['H1842', ['H1835', 'H3282']],
+  ['H2910', ['H2909', 'H2902']],
+  ['H3060', ['H3068', 'H784']],
+  ['H3079', ['H3068', 'H6965']],
+  ['H3115', ['H3068', 'H3513']],
+  ['H4105', ['H3190', 'H410']],
+  ['H7619', ['H7617', 'H7725', 'H410']],
+  ['H8287', ['H8281', 'H2580']],
+  ['H8423', ['H2986', 'H7014']]
+])
+const reviewedStrongsParentMismatches = [...reviewedStrongsParentOracle]
+  .filter(([id, expected]) =>
+    !sameArray(referencedStrongsIds(strongsById.get(id)), expected)
+  )
+check(
+  'Strong\'s parser preserves reviewed comma, qualifier, and resumed compound chains',
+  reviewedStrongsParentMismatches.length === 0,
+  reviewedStrongsParentMismatches
+    .map(([id, expected]) =>
+      `${id}:${referencedStrongsIds(strongsById.get(id)).join('|') || 'missing'}=>${expected.join('|')}`
+    )
+    .join(', ')
+)
+check(
+  'Strong\'s derivation parsing ignores verse and comparison IDs',
+  sameArray(referencedStrongsIds(strongsById.get('H4023')), ['H1413']) &&
+    sameArray(referencedStrongsIds(strongsById.get('H5612')), ['H5608']) &&
+    sameArray(referencedStrongsIds(strongsById.get('H5771')), ['H5753']) &&
+    sameArray(referencedStrongsIds(strongsById.get('H4192')), ['H4191', 'H1121']) &&
+    sameArray(referencedStrongsIds(strongsById.get('H3027')), []) &&
+    ['H1690', 'H1901', 'H5508', 'H6497', 'H4792', 'H2775', 'H5246',
+      'H5284', 'H2191', 'H3849', 'H8207', 'H757', 'H7945', 'H982', 'H3426']
+      .every((id) => sameArray(referencedStrongsIds(strongsById.get(id)), [])) &&
+    sameArray(referencedStrongsIds(strongsById.get('H8336')), ['H7893']) &&
+    sameArray(referencedStrongsIds(strongsById.get('H126')), ['H127']) &&
+    sameArray(referencedStrongsIds(strongsById.get('H111')), ['H2301']) &&
+    sameArray(referencedStrongsIds(strongsById.get('H3197')), ['H3027']) &&
+    sameArray(referencedStrongsIds(strongsById.get('H582')), ['H605']) &&
+    sameArray(referencedStrongsIds(strongsById.get('H8453')), ['H3427']) &&
+    sameArray(referencedStrongsIds(strongsById.get('H7014')), ['H7013']) &&
+    sameArray(referencedStrongsIds(strongsById.get('H7198')), ['H7185']) &&
+    sameArray(referencedStrongsIds(strongsById.get('H7795')), ['H7786']) &&
+    sameArray(referencedStrongsIds(strongsById.get('H8473')), ['H2734']) &&
+    sameArray(referencedStrongsIds(strongsById.get('H159')), ['H156']) &&
+    sameArray(referencedStrongsIds(strongsById.get('H6041')), ['H6031']) &&
+    sameArray(referencedStrongsIds(strongsById.get('H1460')), ['H1342']) &&
+    sameArray(referencedStrongsIds(strongsById.get('H4501')), ['H4500']) &&
+    sameArray(referencedStrongsIds(strongsById.get('H5934')), ['H5956']) &&
+    sameArray(referencedStrongsIds(strongsById.get('H3860')), ['H2005']) &&
+    sameArray(referencedStrongsIds(strongsById.get('H3942')), ['H6440']) &&
+    sameArray(referencedStrongsIds(strongsById.get('H7158')), ['H7151', 'H5577', 'H5612']) &&
+    sameArray(referencedStrongsIds(strongsById.get('H7590')), ['H7750'])
+)
+check(
+  'Strong\'s similarity, form, and alliteration references do not become root parents',
+  ['H1690', 'H1901', 'H5508', 'H4792', 'H8336']
+    .every((id) => catalogByKey.get(`strongs:${id}`)?.rootReference == null) &&
+    catalogByKey.get('strongs:H6497')?.rootReference?.sourceKey === 'bdb:q.cq.aa' &&
+    catalogByKey.get('strongs:H6497')?.rootReference?.letters === '\u05e4\u05e7\u05e2'
+)
+check(
+  'source-declared Strong\'s parents inherit every already resolved root without gaps',
+  catalog.entries
+    .filter((entry) => entry.source === 'strongs' && entry.rootReferences.length === 0)
+    .every((entry) =>
+      referencedStrongsIds(strongsById.get(entry.id)).every(
+        (parentId) =>
+          (catalogByKey.get(`strongs:${parentId}`)?.rootReferences.length || 0) === 0
+      )
+    )
+)
+const reviewedStrongsRootPropagationMismatches = [...reviewedStrongsParentOracle]
+  .flatMap(([id, parentIds]) => {
+    const actualRootKeys = new Set(
+      catalogByKey.get(`strongs:${id}`)?.rootReferences.map((root) => root.sourceKey) || []
+    )
+    return parentIds.flatMap((parentId) =>
+      (catalogByKey.get(`strongs:${parentId}`)?.rootReferences || [])
+        .filter((root) => !actualRootKeys.has(root.sourceKey))
+        .map((root) => `${id}:${parentId}=>${root.sourceKey}`)
+    )
+  })
+check(
+  'reviewed Strong\'s compound chains propagate every resolved parent root',
+  reviewedStrongsRootPropagationMismatches.length === 0,
+  reviewedStrongsRootPropagationMismatches.join(', ')
+)
+check(
+  'BDB-backed Strong\'s parents and true compounds expose all source-declared roots',
+  catalogByKey.get('strongs:H127')?.rootReference?.sourceKey === 'bdb:a.bd.aa' &&
+    catalogByKey.get('strongs:H127')?.rootReference?.letters === '\u05d0\u05d3\u05de' &&
+    catalogByKey.get('strongs:H303')?.rootReference?.sourceKey === 'bdb:h.ck.aa' &&
+    catalogByKey.get('strongs:H303')?.rootReference?.letters === '\u05d7\u05dc\u05d1' &&
+    catalogByKey.get('strongs:H97')?.rootReference?.sourceKey === 'bdb:a.au.aa' &&
+    catalogByKey.get('strongs:H97')?.rootReference?.letters === '\u05d0\u05d2\u05dc' &&
+    catalogByKey.get('strongs:H126')?.rootReference?.sourceKey === 'bdb:a.bd.aa' &&
+    catalogByKey.get('strongs:H111')?.rootReference?.sourceKey === 'strongs:H2300' &&
+    catalogByKey.get('strongs:H3197')?.rootReference?.sourceKey === 'strongs:H3027' &&
+    new Set(
+      catalogByKey.get('strongs:H25')?.rootReferences.map((root) => root.sourceKey)
+    ).size === 2 &&
+    catalogByKey.get('strongs:H25')?.rootReferences.some(
+      (root) => root.sourceKey === 'strongs:H1' && root.letters === '\u05d0\u05d1'
+    ) &&
+    catalogByKey.get('strongs:H25')?.rootReferences.some(
+      (root) => root.sourceKey === 'bdb:c.al.aa' && root.letters === '\u05d2\u05d1\u05e2'
+    )
+)
+const exactRootRoutes = new Map([
+  ['strongs:H4023', ['strongs:H1413', '\u05d2\u05d3\u05d3']],
+  ['strongs:H5612', ['strongs:H5608', '\u05e1\u05e4\u05e8']],
+  ['strongs:H5771', ['strongs:H5753', '\u05e2\u05d5\u05d4']],
+  ['strongs:H4192', ['strongs:H4191', '\u05de\u05d5\u05ea']],
+  ['bdb:m.cs.ak', ['bdb:o.ck.ac', '\u05e1\u05e4\u05e8']],
+  ['bdb:m.di.aq', ['bdb:t.ar.ab', '\u05e8\u05d2\u05dc']],
+  ['bdb:m.dw.ai', ['bdb:v.du.aa', '\u05e9\u05dc\u05e9']],
+  ['bdb:w.bq.bd', ['bdb:v.bm.aa', '\u05e9\u05d5\u05d0']],
+  ['bdb:j.bi.ac', ['bdb:j.bi.aa', '\u05d9\u05d7\u05e9']],
+  ['bdb:h.dr.ad', ['bdb:h.dr.aa', '\u05d7\u05de\u05e9']],
+  ['bdb:v.bs.aa', ['bdb:v.bs.aa', '\u05e9\u05d5\u05d8']]
+])
+const exactRootRouteMismatches = [...exactRootRoutes].filter(([key, expected]) => {
+  const rootReference = catalogByKey.get(key)?.rootReference
+  return rootReference?.sourceKey !== expected[0] || rootReference?.letters !== expected[1]
+})
+check(
+  'audited Strong\'s citations and BDB lexical references open their exact roots',
+  exactRootRouteMismatches.length === 0,
+  exactRootRouteMismatches
+    .map(([key, expected]) =>
+      `${key}:${catalogByKey.get(key)?.rootReference?.sourceKey || 'missing'}=>${expected[0]}`
+    )
+    .join(', ')
 )
 check('catalog search fields preserve normalized headword, ID, definition, and source label', searchFieldsNormalized)
 
@@ -417,7 +570,7 @@ for (const shardFile of actualShardFiles) {
   shardPayloads.set(shardId, shard)
   check(`${shardFile} stays below 1 MiB`, statSync(shardFilePath).size < 1024 * 1024)
   if (
-    shard.version !== 1 || shard.shard !== shardId ||
+    shard.version !== 2 || shard.shard !== shardId ||
     !sameArray(shard.languages || [], REQUIRED_LANGUAGES)
   ) allSlotsValid = false
   const usedCandidates = new Set()
@@ -924,8 +1077,10 @@ check(
 check(
   'every source-backed Hebrew root exposes its yellow control',
   uiText.includes('className="rootchip hebrew-row-root"') &&
-    uiText.includes('data-root-source={entry.rootReference.sourceKey}') &&
-    uiText.includes('onRootClick?.(entry.rootReference)')
+    uiText.includes('entry.rootReferences.map((reference)') &&
+    uiText.includes('data-root-source={reference.sourceKey}') &&
+    uiText.includes('data-root-language={reference.language}') &&
+    uiText.includes('onRootClick?.(reference)')
 )
 check(
   'expanded mobile rows remain renderable and failed shard loads can retry',
@@ -949,11 +1104,14 @@ check(
     readFileSync(join(root, 'src', 'main.jsx'), 'utf8').includes('__APP_BUILD_ID__')
 )
 check(
-  'catalog and all 64 opened shards have separate NetworkFirst caches',
-  viteText.includes("cacheName: 'hebrew-comparison-catalog'") &&
-    viteText.includes("cacheName: 'hebrew-comparison-shards'") &&
+  'both base schema versions and the Jastrow family have non-evicting NetworkFirst caches',
+  /attested-roots-2026-07-v\[12\][\s\S]{0,240}cacheName: 'attested-root-catalog'[\s\S]{0,160}maxEntries: 2/.test(viteText) &&
+    /hebrew-catalog-2026-07-v\[12\][\s\S]{0,240}cacheName: 'hebrew-comparison-catalog'[\s\S]{0,160}maxEntries: 2/.test(viteText) &&
+    /hebrew-comparisons-2026-07-v\[12\][\s\S]{0,320}cacheName: 'hebrew-comparison-shards'[\s\S]{0,160}maxEntries: 128/.test(viteText) &&
+    viteText.includes("cacheName: 'hebrew-jastrow-comparison-catalog'") &&
+    viteText.includes("cacheName: 'hebrew-jastrow-comparison-shards'") &&
     viteText.includes("handler: 'NetworkFirst'") &&
-    viteText.includes('maxEntries: 64')
+    viteText.includes('maxEntries: 128')
 )
 check(
   'comparison loader clears catalog and shard caches on worker replacement',
@@ -963,41 +1121,80 @@ check(
 
 // Prove the initial card path fetches the catalog and only its named shard.
 const tinyCatalog = {
-  version: 1,
+  version: 2,
   revision: 'lazy-contract-test',
   shardCount: 64,
   languages: REQUIRED_LANGUAGES,
   sources: ['strongs'],
   entries: [[0, 'H0', 'א', null, 'test', null, '00', [['s', 'test', 'test', false, []]], 'h0 א test']]
 }
+const tinyJastrowCatalog = {
+  version: 1,
+  revision: 'lazy-jastrow-contract-test',
+  shardCount: 128,
+  shardDirectory: 'dicts/hebrew-jastrow-comparisons-2026-07-v1',
+  languages: REQUIRED_LANGUAGES,
+  sources: ['jastrow'],
+  entries: [[0, 'B00486', 'בָּחַשׁ', 'bachash', 'stir', 'vb.', '00', [['stir', 'stir', 'stir', true, ['stir']]], 'jastrow b00486 בחש bachash stir', [0, 'B00486', 'בחש']]]
+}
 const emptySlots = Array.from({ length: 6 }, () => [0, null, []])
 const tinyShard = {
-  version: 1,
+  version: 2,
   shard: '00',
   languages: REQUIRED_LANGUAGES,
   candidates: [],
   records: { 'strongs:H0': [[...emptySlots]] }
 }
+const tinyJastrowShard = {
+  version: 1,
+  shard: '00',
+  languages: REQUIRED_LANGUAGES,
+  candidates: [],
+  records: { 'jastrow:B00486': [[...emptySlots]] }
+}
 const fetchCalls = []
 const originalFetch = globalThis.fetch
 globalThis.fetch = async (url) => {
   fetchCalls.push(String(url))
+  const requested = String(url)
+  let payload
+  if (requested.endsWith('/dicts/hebrew-catalog-2026-07-v2.json')) payload = tinyCatalog
+  else if (requested.endsWith('/dicts/hebrew-jastrow-catalog-2026-07-v1.json')) {
+    payload = tinyJastrowCatalog
+  } else if (requested.endsWith('/dicts/hebrew-comparisons-2026-07-v2/00.json')) {
+    payload = tinyShard
+  } else if (requested.endsWith('/dicts/hebrew-jastrow-comparisons-2026-07-v1/00.json')) {
+    payload = tinyJastrowShard
+  } else {
+    throw new Error(`unexpected lazy-contract request ${requested}`)
+  }
   return {
     ok: true,
     status: 200,
-    json: async () => String(url).includes('hebrew-catalog') ? tinyCatalog : tinyShard
+    json: async () => payload
   }
 }
 try {
   const freshLoader = await import(`../src/lib/hebrewComparisonLoader.js?lazy-contract=${Date.now()}`)
   const tinyDecoded = await freshLoader.loadHebrewCatalog()
-  await freshLoader.loadHebrewComparison(tinyDecoded.entries[0])
-  await freshLoader.loadHebrewComparison(tinyDecoded.entries[0])
+  const baseEntry = tinyDecoded.entries.find((entry) => entry.sourceKey === 'strongs:H0')
+  const jastrowEntry = tinyDecoded.entries.find((entry) => entry.sourceKey === 'jastrow:B00486')
+  await freshLoader.loadHebrewComparison(baseEntry)
+  await freshLoader.loadHebrewComparison(baseEntry)
+  await freshLoader.loadHebrewComparison(jastrowEntry)
+  await freshLoader.loadHebrewComparison(jastrowEntry)
   check(
-    'opening one card fetches only the catalog and its one shard',
-    fetchCalls.length === 2 &&
-      fetchCalls.some((url) => url.endsWith('/dicts/hebrew-catalog-2026-07-v1.json')) &&
-      fetchCalls.some((url) => url.endsWith('/dicts/hebrew-comparisons-2026-07-v1/00.json')) &&
+    'merged catalogs retain source labels and route each entry to its own cached shard family',
+    tinyDecoded.entries.length === 2 &&
+      baseEntry.sourceLabel === getDictionary('strongs').label &&
+      jastrowEntry.sourceLabel === getDictionary('jastrow').label &&
+      jastrowEntry.shardDirectory === 'dicts/hebrew-jastrow-comparisons-2026-07-v1' &&
+      jastrowEntry.rootReference?.sourceKey === 'jastrow:B00486' &&
+      fetchCalls.length === 4 &&
+      fetchCalls.some((url) => url.endsWith('/dicts/hebrew-catalog-2026-07-v2.json')) &&
+      fetchCalls.some((url) => url.endsWith('/dicts/hebrew-jastrow-catalog-2026-07-v1.json')) &&
+      fetchCalls.some((url) => url.endsWith('/dicts/hebrew-comparisons-2026-07-v2/00.json')) &&
+      fetchCalls.some((url) => url.endsWith('/dicts/hebrew-jastrow-comparisons-2026-07-v1/00.json')) &&
       fetchCalls.every((url) => !/\/(?:akkadian|sumerian|egyptian|hittite|osa)-?[^/]*\.json$/.test(url))
   )
 } finally {

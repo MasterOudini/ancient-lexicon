@@ -21,6 +21,7 @@ import { fileURLToPath } from 'node:url'
 
 import { LEXICON } from '../src/data/lexicon.js'
 import { REFERENCE_DICTIONARIES } from '../src/data/referenceDictionaries.js'
+import { REVIEWED_HEBREW_SOURCE_MAPPINGS } from '../src/data/reviewedHebrewSourceMappings.js'
 import { englishKeywords } from '../src/lib/glossSearch.js'
 import { normalize } from '../src/lib/search.js'
 
@@ -28,6 +29,16 @@ const POSTING_CAP_PER_LANGUAGE = 40
 const MAX_DISPLAY_GLOSS = 96
 const MAX_STRONGS_EXACT_FALLBACK = 48
 const HEBREW_CATALOG_SOURCES = new Set(['strongs', 'bdb'])
+const HEBREW_SCRIPT_MEANING_LANGUAGES = new Set([
+  'Hebrew',
+  'Aramaic',
+  'Hebrew/Aramaic (unclassified)'
+])
+const REVIEWED_HEBREW_ENTRY_KEYS = new Set(
+  REVIEWED_HEBREW_SOURCE_MAPPINGS.map(
+    (mapping) => `${mapping.dictionaryId}\u0000${mapping.entryId}`
+  )
+)
 const STRONGS_GENERIC_FALLBACK_WORDS = new Set([
   'a', 'an', 'the', 'and', 'or', 'of', 'to', 'in', 'on', 'at', 'by', 'for',
   'from', 'as', 'with', 'without', 'into', 'onto', 'out', 'up', 'down', 'over',
@@ -73,11 +84,30 @@ function readDictionary(dict) {
 function entryLanguage(dict, entry) {
   if (dict.id === 'strongs' && /\(Aramaic\)/i.test(entry.deriv || '')) return 'Aramaic'
   if (dict.id === 'bdb' && entry.id.startsWith('x')) return 'Aramaic'
+  if (dict.id === 'jastrow') {
+    if (entry.languageCode === 'ab') return null
+    if (REVIEWED_HEBREW_ENTRY_KEYS.has(`${dict.id}\u0000${entry.id}`)) return 'Hebrew'
+    if (entry.languageCode === 'und') return 'Hebrew/Aramaic (unclassified)'
+    // Printed mixed-origin markers retain their exact label in jastrow.json;
+    // the English bridge groups them under the printed first-named language.
+    return /^(?:ar|ar\+)/.test(entry.languageCode || '') ? 'Aramaic' : 'Hebrew'
+  }
   return dict.language
 }
 
-function cleanSenseText(dictId, entry) {
-  let text = String(entry.def || '')
+function entryLangCode(dict, entry, language) {
+  if (
+    dict.id === 'jastrow' &&
+    language === 'Hebrew' &&
+    REVIEWED_HEBREW_ENTRY_KEYS.has(`${dict.id}\u0000${entry.id}`)
+  ) {
+    return 'he'
+  }
+  return entry.lang || dict.lang
+}
+
+function cleanSenseText(dictId, entry, sourceText = entry.def) {
+  let text = String(sourceText || '')
     .replace(POS_PARENTHETICAL, '')
     .replace(/[{}\[\]]/g, '')
     .replace(SOURCE_QUALIFIERS, ' ')
@@ -96,18 +126,27 @@ function cleanSenseText(dictId, entry) {
       .replace(HEBREW, ' ')
       .replace(/\b\d+(?::\d+)?\b/g, ' ')
       .replace(MORPHOLOGY, ' ')
-    // These flattened historical dictionaries become citation-heavy very
-    // quickly. Index the leading lexicographic span only.
-    text = text.slice(0, dictId === 'bdb' ? 220 : 240)
     if (dictId === 'jastrow') {
-      // Jastrow separates head senses from citation prose with a full stop
-      // followed by a work abbreviation ("Ex. R.", "Sabb.", and so on).
-      // Keeping that prose would index names, page markers, and quotations.
+      // Each Jastrow source sense is handled independently below. Within a
+      // sense, stop before its first citation rather than truncating the whole
+      // entry (which used to discard later published senses).
       text = text.split(/\.\s+(?=(?:[A-Z][a-z]{0,12}\.?|[A-Z]\.)\s)/)[0]
     }
+    // These historical dictionaries become citation-heavy very quickly.
+    text = text.slice(0, dictId === 'bdb' ? 220 : 240)
   }
 
   return text.replace(/\s+/g, ' ').replace(/^[\s,;:.\-\u2014]+/, '').trim()
+}
+
+function jastrowSenseTexts(senses, output = []) {
+  for (const sense of senses || []) {
+    // Prefer the source's leading italic lexical gloss. Fall back to the full
+    // sense only when that compact source field is absent.
+    if (sense.gloss || sense.def) output.push(sense.gloss || sense.def)
+    if (sense.senses) jastrowSenseTexts(sense.senses, output)
+  }
+  return output
 }
 
 function shortGloss(text) {
@@ -169,9 +208,16 @@ function strongsKjvSenses(entry) {
 }
 
 function sensesFor(dictId, entry) {
-  const text = cleanSenseText(dictId, entry)
-  if (dictId !== 'strongs' && (!text || UNKNOWN.test(text))) return null
-  if ((dictId === 'bdb' || dictId === 'jastrow') && LEGACY_CROSS_REFERENCE.test(text)) return null
+  const sourceTexts = dictId === 'jastrow' && entry.senses?.length
+    ? jastrowSenseTexts(entry.senses)
+    : [entry.def]
+  const texts = sourceTexts
+    .map((sourceText) => cleanSenseText(dictId, entry, sourceText))
+    .filter((text) => text && (dictId === 'strongs' || !UNKNOWN.test(text)))
+    .filter((text) => !(
+      (dictId === 'bdb' || dictId === 'jastrow') && LEGACY_CROSS_REFERENCE.test(text)
+    ))
+  if (dictId !== 'strongs' && texts.length === 0) return null
 
   const senses = []
   const properName = dictId === 'bdb' && /n\.?pr/i.test(entry.pos || '')
@@ -180,27 +226,32 @@ function sensesFor(dictId, entry) {
   // lexicons. Commas usually join synonyms or descriptive prose, so treating
   // them as sense boundaries would promote incidental words ("father of",
   // "name of two Israelites") into false guide meanings.
-  const segments = text.split(/[;\u2014]/)
-  for (const rawSegment of segments) {
-    const segment = rawSegment.replace(/^[\s,;:.\-]+/, '').trim()
-    const words = englishKeywords(segment).filter(
-      (word) => (dictId !== 'bdb' && dictId !== 'jastrow') || !LEGACY_NOISE.has(word)
-    )
-    if (words.length === 0) continue
-    const strongsProperName = dictId === 'strongs' && /\bname of\b/i.test(segment)
-    const guide = new Set(
-      properName ? [] : dictId === 'strongs' && !strongsProperName ? words : [words[0]]
-    )
-    const exact = new Set(!properName && words.length === 1 ? [words[0]] : [])
-    senses.push({
-      display: shortGloss(segment),
-      keywords: [...new Set(words)],
-      guide,
-      exact
-    })
+  for (const text of texts) {
+    const segments = text.split(/[;\u2014]/)
+    for (const rawSegment of segments) {
+      const segment = rawSegment.replace(/^[\s,;:.\-]+/, '').trim()
+      const words = englishKeywords(segment).filter(
+        (word) => (dictId !== 'bdb' && dictId !== 'jastrow') || !LEGACY_NOISE.has(word)
+      )
+      if (words.length === 0) continue
+      const strongsProperName = dictId === 'strongs' && /\bname of\b/i.test(segment)
+      const jastrowProperName = dictId === 'jastrow' &&
+        /^(?:the\s+)?(?:father|mother|son|daughter|brother|sister|wife|husband)\s+of\b/i.test(segment)
+      const sourceProperName = properName || strongsProperName || jastrowProperName
+      const guide = new Set(
+        sourceProperName ? [] : dictId === 'strongs' ? words : [words[0]]
+      )
+      const exact = new Set(!sourceProperName && words.length === 1 ? [words[0]] : [])
+      senses.push({
+        display: shortGloss(segment),
+        keywords: [...new Set(words)],
+        guide,
+        exact
+      })
+    }
   }
   if (dictId === 'strongs') {
-    if (senses.length === 0) senses.push(strongsFallbackSense(entry, text))
+    if (senses.length === 0) senses.push(strongsFallbackSense(entry, texts[0] || ''))
     const seenDisplays = new Set(senses.map((sense) => normalize(sense.display)))
     for (const sense of strongsKjvSenses(entry)) {
       const display = normalize(sense.display)
@@ -241,6 +292,7 @@ const languageNames = [
   'Comparative',
   'Hebrew',
   'Aramaic',
+  'Hebrew/Aramaic (unclassified)',
   'Egyptian',
   'Sumerian',
   'Akkadian',
@@ -290,9 +342,14 @@ for (const dict of REFERENCE_DICTIONARIES) {
   const data = readDictionary(dict)
   let skippedNoEnglish = 0
   let skippedMeta = 0
+  let skippedOutsideLanguageScope = 0
   let indexedEntries = 0
   for (const entry of data.entries) {
     const language = entryLanguage(dict, entry)
+    if (!language) {
+      skippedOutsideLanguageScope++
+      continue
+    }
     // In the Egyptian import, `def` is English only when `de` is also
     // present; otherwise `def` contains the German fallback. German-only
     // records are deliberately skipped rather than mislabeled as English.
@@ -323,15 +380,15 @@ for (const dict of REFERENCE_DICTIONARIES) {
       continue
     }
     indexedEntries++
-    const heads = language === 'Hebrew' || language === 'Aramaic'
-      ? [entry.lemma, entry.xlit]
+    const heads = HEBREW_SCRIPT_MEANING_LANGUAGES.has(language)
+      ? [entry.lemma, entry.xlit, ...(entry.aliases || [])]
       : []
     addCandidate({
       dictId: dict.id,
       id: entry.id,
       lemma: entry.lemma,
       language,
-      langCode: entry.lang || dict.lang,
+      langCode: entryLangCode(dict, entry, language),
       translit: entry.xlit,
       script: dict.fields.script ? entry[dict.fields.script] : undefined,
       variety: entry.variety,
@@ -343,7 +400,8 @@ for (const dict of REFERENCE_DICTIONARIES) {
     sourceEntries: data.entries.length,
     indexedEntries,
     skippedNoEnglish,
-    skippedMeta
+    skippedMeta,
+    skippedOutsideLanguageScope
   }
 }
 
@@ -465,7 +523,7 @@ const output = {
 // Older installed iOS bundles can remain alive while a new service worker
 // activates, so the expanded source table ships at a versioned URL that only
 // the matching application bundle requests.
-const outputFilename = 'gloss-index-2026-07.json'
+const outputFilename = 'gloss-index-2026-07-v2.json'
 const destination = join(projectRoot, 'public', 'dicts', outputFilename)
 const json = JSON.stringify(output)
 writeFileSync(destination, json)

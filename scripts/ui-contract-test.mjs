@@ -38,7 +38,7 @@ try {
   const { RootDetail } = await server.ssrLoadModule('/src/components/RootsView.jsx')
   const { LANGUAGES } = await server.ssrLoadModule('/src/data/languages.js')
   const {
-    findAttestedRoot,
+    findAttestedRootExact,
     mergeAttestedRootCatalog
   } = await server.ssrLoadModule('/src/lib/attestedRootCatalog.js')
 
@@ -52,15 +52,16 @@ try {
     definition: 'think, count, weave',
     partOfSpeech: 'verb',
     shard: '00',
-    rootReference: {
+    rootReferences: [{
       source: 'strongs',
       sourceLabel: 'Strongâ€™s',
       id: 'H2803',
       sourceKey: 'strongs:H2803',
       letters: '\u05d7\u05e9\u05d1',
+      language: 'hebrew',
       headword: '×—Ö¸×©×Ö·×‘',
       definition: 'think, count, weave'
-    }
+    }]
   }
   const openRow = renderToStaticMarkup(
     React.createElement(HebrewEntryRow, {
@@ -79,6 +80,37 @@ try {
   assert.match(openRow, />\u05d7\u05e9\u05d1<\/button>/)
   assert.doesNotMatch(openRow, /Published lexical root entry/)
 
+  const multiRootRow = renderToStaticMarkup(
+    React.createElement(HebrewEntryRow, {
+      entry: {
+        ...entry,
+        sourceKey: 'jastrow:B00502',
+        source: 'jastrow',
+        sourceLabel: 'Jastrow',
+        id: 'B00502',
+        languageCode: 'und',
+        languageLabel: 'Hebrew/Aramaic (unmarked)',
+        rootReferences: [
+          { ...entry.rootReferences[0], sourceKey: 'jastrow:B00502', letters: 'בט', language: 'hebrew-aramaic-unclassified' },
+          { ...entry.rootReferences[0], sourceKey: 'jastrow:B00502', letters: 'פץ', language: 'hebrew-aramaic-unclassified' }
+        ]
+      },
+      onRootClick: () => {}
+    })
+  )
+  assert.match(multiRootRow, /class="lex-lemma" dir="rtl" lang="und-Hebr"/)
+  assert.match(multiRootRow, /Hebrew\/Aramaic \(unmarked\)/)
+  assert.equal((multiRootRow.match(/class="rootchip hebrew-row-root"/g) || []).length, 2)
+  assert.equal((multiRootRow.match(/data-root-language="hebrew-aramaic-unclassified"/g) || []).length, 2)
+
+  const aramaicFirstRow = renderToStaticMarkup(
+    React.createElement(HebrewEntryRow, {
+      entry: { ...entry, languageCode: 'ar+he', rootReferences: [] },
+      onRootClick: () => {}
+    })
+  )
+  assert.match(aramaicFirstRow, /class="lex-lemma" dir="rtl" lang="arc"/)
+
   const unresolvedRow = renderToStaticMarkup(
     React.createElement(HebrewEntryRow, {
       entry: {
@@ -86,7 +118,7 @@ try {
         sourceKey: 'strongs:H5',
         id: 'H5',
         headword: '\u05d0\u05b2\u05d1\u05b7\u05d2\u05b0\u05ea\u05b8\u05d0',
-        rootReference: null
+        rootReferences: []
       },
       initiallyOpen: false,
       promotionKey: null,
@@ -215,15 +247,16 @@ try {
 
   const rootPayload = JSON.parse(
     readFileSync(
-      join(root, 'public', 'dicts', 'attested-roots-2026-07-v1.json'),
+      join(root, 'public', 'dicts', 'attested-roots-2026-07-v2.json'),
       'utf8'
     )
   )
   const completeRoots = mergeAttestedRootCatalog(rootPayload)
   const noop = () => {}
-  const shmr = findAttestedRoot(completeRoots, 'hebrew', 'שמר')
-  const rshm = findAttestedRoot(completeRoots, 'hebrew', 'רשמ')
-  const abr = findAttestedRoot(completeRoots, 'hebrew', 'עבר')
+  const bachash = findAttestedRootExact(completeRoots, 'hebrew', '\u05d1\u05d7\u05e9')
+  const shmr = findAttestedRootExact(completeRoots, 'hebrew', 'שמר')
+  const rshm = findAttestedRootExact(completeRoots, 'hebrew', 'רשמ')
+  const abr = findAttestedRootExact(completeRoots, 'hebrew', 'עבר')
   const aramaicZaq = completeRoots.byKey.get('biblical-aramaic:זעק')
   const aramaicPrs = completeRoots.byKey.get('biblical-aramaic:פרס')
 
@@ -262,6 +295,19 @@ try {
   assert.equal((abrDetail.match(/class="perm-tile found"/g) || []).length, 5)
   assert.equal((abrDetail.match(/class="perm-tile ghost"/g) || []).length, 1)
   assert.match(abrDetail, /not an attested root here/)
+
+  const bachashDetail = renderToStaticMarkup(
+    React.createElement(RootDetail, {
+      root: bachash,
+      catalog: completeRoots,
+      catalogStatus: 'ready',
+      onSelectRoot: noop
+    })
+  )
+  assert.match(bachashDetail, /data-root-provenance="reviewed-mapping"/)
+  assert.match(bachashDetail, /Academy of the Hebrew Language terminology database/)
+  assert.match(bachashDetail, /term-28_2/)
+  assert.match(bachashDetail, /does not explicitly label the headword as the triliteral root/)
 
   const unavailable = renderToStaticMarkup(
     React.createElement(RootDetail, {

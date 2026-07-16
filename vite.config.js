@@ -209,31 +209,53 @@ export default defineConfig({
         // back to their runtime caches while offline.
         runtimeCaching: [
           {
-            urlPattern: /\/dicts\/attested-roots-2026-07-v1\.json$/,
+            // Keep both schemas available: suspended v1 clients still request
+            // the mutable v1 URL, while this release reads the expanded v2.
+            urlPattern: /\/dicts\/attested-roots-2026-07-v[12]\.json$/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'attested-root-catalog',
-              expiration: { maxEntries: 1, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              expiration: { maxEntries: 2, maxAgeSeconds: 60 * 60 * 24 * 365 },
               cacheableResponse: { statuses: [0, 200] }
             }
           },
           {
-            urlPattern: /\/dicts\/hebrew-catalog-2026-07-v1\.json$/,
+            urlPattern: /\/dicts\/hebrew-catalog-2026-07-v[12]\.json$/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'hebrew-comparison-catalog',
+              expiration: { maxEntries: 2, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          },
+          {
+            urlPattern: /\/dicts\/hebrew-comparisons-2026-07-v[12]\/[0-9a-f]{2}\.json$/,
+            handler: 'NetworkFirst',
+            options: {
+              // Keep every v1/v2 shard an installed client opens available
+              // offline; no full reference dictionary is pulled in with it.
+              cacheName: 'hebrew-comparison-shards',
+              expiration: { maxEntries: 128, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          },
+          {
+            urlPattern: /\/dicts\/hebrew-jastrow-catalog-2026-07-v1\.json$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'hebrew-jastrow-comparison-catalog',
               expiration: { maxEntries: 1, maxAgeSeconds: 60 * 60 * 24 * 365 },
               cacheableResponse: { statuses: [0, 200] }
             }
           },
           {
-            urlPattern: /\/dicts\/hebrew-comparisons-2026-07-v1\/[0-9a-f]{2}\.json$/,
+            urlPattern: /\/dicts\/hebrew-jastrow-comparisons-2026-07-v1\/[0-9a-f]{2}\.json$/,
             handler: 'NetworkFirst',
             options: {
-              // Every shard that an installed client opens remains available
-              // offline; no full reference dictionary is pulled in with it.
-              cacheName: 'hebrew-comparison-shards',
-              expiration: { maxEntries: 64, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              // Jastrow uses 128 shards; keep every opened shard available to
+              // the installed app without evicting Strong's/BDB shards.
+              cacheName: 'hebrew-jastrow-comparison-shards',
+              expiration: { maxEntries: 128, maxAgeSeconds: 60 * 60 * 24 * 365 },
               cacheableResponse: { statuses: [0, 200] }
             }
           },
