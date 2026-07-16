@@ -339,18 +339,16 @@ export function extractAttestedRootCandidates(strongs, bdb, jastrow = null) {
     const academyEvidence = mapping.root.evidence?.find(
       (evidence) => evidence.source === 'Academy of the Hebrew Language terminology database'
     )
-    const reviewedGloss = (entry.senses || [])
-      .flatMap((sense) => [sense, ...(sense.senses || [])])
-      .map((sense) => sense.gloss)
-      .find((gloss) => /\bstir\b/i.test(gloss || ''))
+    const reviewedGloss = mapping.root.gloss || sourceGloss('jastrow', entry)
     const record = explicitLettersCandidate(
       'academy-hebrew-terms',
       entry,
       mapping.root.letters,
       {
         sourceId: academyEvidence?.sourceId || mapping.entryId,
-        gloss: reviewedGloss ? safeGloss(reviewedGloss) : sourceGloss('jastrow', entry),
-        evidence: 'reviewed Jastrow and Academy mapping',
+        word: mapping.root.word || entry.lemma,
+        gloss: safeGloss(reviewedGloss),
+        evidence: 'reviewed published-dictionary and modern Hebrew terminology mapping',
         reviewedMapping: mapping.root
       }
     )

@@ -36,6 +36,9 @@ try {
   const { default: AboutView } = await server.ssrLoadModule('/src/components/AboutView.jsx')
   const { default: TabIcon } = await server.ssrLoadModule('/src/components/TabIcon.jsx')
   const { RootDetail } = await server.ssrLoadModule('/src/components/RootsView.jsx')
+  const { scoreReferenceIndexItem } = await server.ssrLoadModule(
+    '/src/components/ReferenceDictionaries.jsx'
+  )
   const { LANGUAGES } = await server.ssrLoadModule('/src/data/languages.js')
   const {
     findAttestedRootExact,
@@ -102,6 +105,58 @@ try {
   assert.match(multiRootRow, /Hebrew\/Aramaic \(unmarked\)/)
   assert.equal((multiRootRow.match(/class="rootchip hebrew-row-root"/g) || []).length, 2)
   assert.equal((multiRootRow.match(/data-root-language="hebrew-aramaic-unclassified"/g) || []).length, 2)
+
+  const sourceFormsRow = renderToStaticMarkup(
+    React.createElement(HebrewEntryRow, {
+      entry: {
+        ...entry,
+        sourceKey: 'jastrow:B00534',
+        source: 'jastrow',
+        sourceLabel: 'Jastrow',
+        id: 'B00534',
+        headword: '\u05d1\u05b0\u05bc\u05d8\u05b7\u05e9\u05c1',
+        transliteration: 'b\u0259\u1e6da\u0161',
+        languageCode: 'und',
+        languageLabel: 'Hebrew/Aramaic (unmarked)',
+        forms: [
+          { type: 'stem', word: '\u05d1\u05b7\u05bc\u05d8\u05b5\u05bc\u05d9\u05e9\u05c1', label: 'Pa.' },
+          { type: 'stem', word: '\u05d0\u05b4\u05ea\u05b0\u05d1\u05b7\u05bc\u05d8\u05b5\u05bc\u05e9\u05c1', label: 'Ithpa.' }
+        ]
+      },
+      initiallyOpen: true,
+      onRootClick: () => {}
+    })
+  )
+  assert.match(sourceFormsRow, /Stem forms:/)
+  assert.match(sourceFormsRow, /Pa\./)
+  assert.match(sourceFormsRow, /Ithpa\./)
+
+  const referenceScoreFixture = {
+    idLower: 'fixture',
+    head: '',
+    sub: '',
+    script: '',
+    aliases: [],
+    forms: [],
+    unresolvedLinks: [],
+    def: ''
+  }
+  assert.equal(
+    scoreReferenceIndexItem(
+      { ...referenceScoreFixture, head: '\u05d3\u05e8\u05d1\u05df' },
+      '\u05d3\u05e8\u05d1\u05df',
+      '\u05d3\u05e8\u05d1\u05df'
+    ),
+    4
+  )
+  assert.equal(
+    scoreReferenceIndexItem(
+      { ...referenceScoreFixture, unresolvedLinks: ['\u05d3\u05e8\u05d1\u05df'] },
+      '\u05d3\u05e8\u05d1\u05df',
+      '\u05d3\u05e8\u05d1\u05df'
+    ),
+    2
+  )
 
   const aramaicFirstRow = renderToStaticMarkup(
     React.createElement(HebrewEntryRow, {
@@ -207,6 +262,7 @@ try {
   assert.match(about, /aria-label="Installed app version"/)
   assert.match(about, new RegExp(`data-app-version="${contractVersion}">${contractVersion}<`))
   assert.match(about, new RegExp(`data-app-build="${contractBuild}"><code dir="ltr">${contractBuild}<`))
+  assert.match(about, /Legacy headword links that lack a stable entry ID/)
 
   for (const name of ['dictionary', 'roots', 'about', 'settings']) {
     const icon = renderToStaticMarkup(React.createElement(TabIcon, { name }))
@@ -217,6 +273,7 @@ try {
 
   const styles = readFileSync(join(root, 'src', 'styles.css'), 'utf8')
   const appSource = readFileSync(join(root, 'src', 'App.jsx'), 'utf8')
+  const referenceSource = readFileSync(join(root, 'src', 'components', 'ReferenceDictionaries.jsx'), 'utf8')
   const documentRule = styles.match(/html,\s*body\s*\{([^}]+)\}/)?.[1] || ''
   const rootRule = styles.match(/#root\s*\{([^}]+)\}/)?.[1] || ''
   const shellRule = styles.match(/\.app-shell\s*\{([^}]+)\}/)?.[1] || ''
@@ -226,6 +283,8 @@ try {
   assert.match(appSource, /className="app-shell"/)
   assert.match(appSource, /className="app-scroll" data-app-scroll/)
   assert.match(appSource, /<\/div>\s*<\/div>\s*<nav className="tabbar"/)
+  assert.match(referenceSource, /data-link-status="source-unresolved-headword-link"/)
+  assert.match(referenceSource, /Source headword links \(no stable entry ID\):/)
   assert.match(documentRule, /height:\s*100%/)
   assert.match(documentRule, /overflow:\s*hidden/)
   assert.match(documentRule, /overscroll-behavior:\s*none/)
@@ -254,6 +313,7 @@ try {
   const completeRoots = mergeAttestedRootCatalog(rootPayload)
   const noop = () => {}
   const bachash = findAttestedRootExact(completeRoots, 'hebrew', '\u05d1\u05d7\u05e9')
+  const batash = findAttestedRootExact(completeRoots, 'hebrew', '\u05d1\u05d8\u05e9')
   const shmr = findAttestedRootExact(completeRoots, 'hebrew', 'שמר')
   const rshm = findAttestedRootExact(completeRoots, 'hebrew', 'רשמ')
   const abr = findAttestedRootExact(completeRoots, 'hebrew', 'עבר')
@@ -308,6 +368,19 @@ try {
   assert.match(bachashDetail, /Academy of the Hebrew Language terminology database/)
   assert.match(bachashDetail, /term-28_2/)
   assert.match(bachashDetail, /does not explicitly label the headword as the triliteral root/)
+
+  const batashDetail = renderToStaticMarkup(
+    React.createElement(RootDetail, {
+      root: batash,
+      catalog: completeRoots,
+      catalogStatus: 'ready',
+      onSelectRoot: noop
+    })
+  )
+  assert.match(batashDetail, /data-root-provenance="reviewed-mapping"/)
+  assert.match(batashDetail, /term-26889_1/)
+  assert.match(batashDetail, /strike or hit/)
+  assert.match(batashDetail, /borrowed from Aramaic/)
 
   const unavailable = renderToStaticMarkup(
     React.createElement(RootDetail, {

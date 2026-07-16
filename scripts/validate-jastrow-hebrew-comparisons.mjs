@@ -11,12 +11,16 @@ import {
 } from '../src/lib/attestedRootCatalog.js'
 import { MEANING_LANGUAGE_ORDER, searchGlossIndex } from '../src/lib/glossSearch.js'
 import {
+  HEBREW_CATALOG_MATCH_TIER,
   decodeHebrewCatalog,
+  getHebrewCatalogMatchTier,
   mergeHebrewCatalogs,
   resolveHebrewComparison,
   searchHebrewCatalog,
   selectAutoOpenSourceKey
 } from '../src/lib/hebrewComparisonLoader.js'
+import { hebrewConsonantSearchKeys } from '../src/lib/hebrewSearchSpelling.js'
+import { normalize } from '../src/lib/search.js'
 import {
   EXPECTED_HEBREW_SEARCH_COUNT,
   EXPECTED_JASTROW_COUNT,
@@ -249,6 +253,46 @@ check(
   'the pinned Jastrow printed-origin inventory changed'
 )
 check(source.entriesWithoutDefinition === 6, 'source-empty Jastrow rows were added or dropped')
+check(
+  sameJson(source.sourceFormCounts, {
+    alternate: 11_076,
+    plural: 10_275,
+    stem: 4_913,
+    total: 26_264
+  }) &&
+    sameJson(source.hebrewSearchableFormCounts, {
+      alternate: 9_280,
+      plural: 8_271,
+      stem: 3_229,
+      total: 20_780
+    }) &&
+    sameJson(source.lexicalReferenceCounts, {
+      edges: 66_169,
+      hebrewSearchableEdges: 57_240,
+      hebrewSearchableInternalEdges: 51_497,
+      unresolvedTargets: 0
+    }),
+  'the retained Jastrow source-form or lexical-link inventory changed'
+)
+check(
+  source.entries.every((entry) => {
+    const formKeys = (entry.forms || []).map((form) =>
+      `${form.type}\u0000${form.word}\u0000${form.label || ''}`
+    )
+    return new Set(formKeys).size === formKeys.length &&
+      (entry.forms || []).every((form) =>
+        ['alternate', 'plural', 'stem'].includes(form.type) &&
+        /[\u0590-\u05ff]/u.test(form.word || '')
+      ) &&
+      new Set(entry.lexicalRefs || []).size === (entry.lexicalRefs || []).length &&
+      (entry.lexicalRefs || []).every((targetId) => sourceById.has(targetId))
+  }),
+  'a retained Jastrow form is malformed or an internal lexical link is unresolved'
+)
+check(
+  expectedEntries.every((entry) => hebrewConsonantSearchKeys(entry.lemma).length > 0),
+  'a Hebrew-searchable Jastrow headword lacks a deterministic hidden consonant key'
+)
 check(
   source.license === 'CC BY-NC 4.0 digitization; underlying 1903 work public domain' &&
     /CC BY-NC 4\.0/.test(source.conversion || '') &&
@@ -518,6 +562,53 @@ check(
   'the reference shelf lost Jastrow provenance or honest language labels'
 )
 
+const unresolvedHeadwordLinkEntries = source.entries.filter(
+  (entry) => entry.unresolvedHeadwordLinks?.length > 0
+)
+const unresolvedHeadwordLinks = unresolvedHeadwordLinkEntries.flatMap(
+  (entry) => entry.unresolvedHeadwordLinks
+)
+const selectedUnresolvedHeadwordLinkEntries = expectedEntries.filter(
+  (entry) => entry.unresolvedHeadwordLinks?.length > 0
+)
+check(
+  sameJson(source.unresolvedHeadwordLinkCounts, {
+    occurrences: 85,
+    edges: 84,
+    entries: 83,
+    hebrewSearchableOccurrences: 84,
+    hebrewSearchableEdges: 83,
+    hebrewSearchableEntries: 82
+  }) &&
+    unresolvedHeadwordLinkEntries.length === 83 &&
+    unresolvedHeadwordLinks.length === 84 &&
+    selectedUnresolvedHeadwordLinkEntries.length === 82 &&
+    selectedUnresolvedHeadwordLinkEntries.reduce(
+      (count, entry) => count + entry.unresolvedHeadwordLinks.length,
+      0
+    ) === 83 &&
+    unresolvedHeadwordLinks.every((link) =>
+      sameJson(Object.keys(link).sort(), ['displayLabel', 'status', 'targetLabel']) &&
+      link.status === 'source-unresolved-headword-link' &&
+      Boolean(link.targetLabel || link.displayLabel)
+    ),
+  'legacy Jastrow headword links were lost or promoted to invented stable targets'
+)
+check(
+  sourceById.get('D00354')?.unresolvedHeadwordLinks?.some((link) =>
+    rootKey(link.targetLabel) === rootKey('\u05d3\u05e8\u05d1\u05df') &&
+      link.status === 'source-unresolved-headword-link'
+  ) &&
+    sourceById.get('D00478')?.unresolvedHeadwordLinks?.some((link) =>
+      link.targetLabel === '\u05db\u05b8\u05bc\u05dc\u05d5\u05bc\u05dc.1'
+    ) &&
+    sourceById.get('J00597')?.unresolvedHeadwordLinks?.some((link) =>
+      link.targetLabel === '\u05d3\u05b4\u05bc\u05dc\u05b0\u05d3\u05b5\u05bc\u05dc.1' &&
+      /B\. Mets\./.test(link.displayLabel)
+    ),
+  'ordinary or malformed legacy Jastrow headword links did not fail closed as searchable labels'
+)
+
 check(
   expectedEntries.length === EXPECTED_HEBREW_SEARCH_COUNT,
   'the Hebrew-searchable or unmarked Jastrow selection changed',
@@ -532,7 +623,7 @@ check(
     payload.sources?.length === 1 && payload.sources[0] === 'jastrow' &&
     payload.counts?.catalog === EXPECTED_HEBREW_SEARCH_COUNT &&
     payload.counts?.sourceRootMappings === 375 &&
-    payload.counts?.reviewedRootMappings === 1 &&
+    payload.counts?.reviewedRootMappings === 2 &&
     payload.entries?.length === EXPECTED_HEBREW_SEARCH_COUNT &&
     sameJson(payload.languageCodeCounts, SOURCE_LANGUAGE_COUNTS) &&
     payload.originLabels?.und === 'Hebrew/Aramaic (unmarked)',
@@ -620,6 +711,22 @@ check(
     merged.entries.length === 48_597,
   'the merged All Hebrew catalog is incomplete'
 )
+check(
+  expectedEntries.every((sourceEntry) => {
+    const decoded = decodedJastrowById.get(String(sourceEntry.id))
+    const compactForms = (forms) => (forms || []).map((form) => [
+      form.type,
+      form.word,
+      form.label || null
+    ])
+    return sameJson(compactForms(decoded?.forms), compactForms(sourceEntry.forms)) &&
+      (decoded?.forms || []).every((form) =>
+        decoded.formSearches.includes(normalize(form.word)) &&
+        decoded.searchText.includes(normalize(form.word))
+      )
+  }),
+  'a retained Jastrow alternate, plural, or stem form is missing from Comparative search'
+)
 
 const expectedB00486 = sourceById.get('B00486')
 const b00486 = decodedJastrowById.get('B00486')
@@ -663,6 +770,56 @@ check(
   resolvedB00486.some((sense) => /\bstir\b/i.test(sense.label)) &&
     resolvedB00486.every((sense) => sense.slots.length === 6),
   'B00486 does not open a complete sense-specific comparison card'
+)
+
+const expectedB00534 = sourceById.get('B00534')
+const b00534 = decodedJastrowById.get('B00534')
+check(
+  expectedB00534?.languageCode === 'und' &&
+    b00534?.headword === expectedB00534.lemma &&
+    b00534.transliteration === 'bəṭaš' &&
+    ['batash', 'betash', 'battash', 'botesh', 'livtosh', 'bitesh']
+      .every((alias) => b00534.aliases.includes(alias)) &&
+    b00534.languageCode === 'und' &&
+    b00534.languageLabel === 'Hebrew/Aramaic (unmarked)' &&
+    sameJson(rootReferenceSummary(b00534), ['hebrew:\u05d1\u05d8\u05e9']) &&
+    sameJson(expectedB00534.lexicalRefs, ['B00502', 'B00586', 'B01397']) &&
+    b00534.forms.length === 2 &&
+    b00534.forms.every((form) => form.type === 'stem' && ['Pa.', 'Ithpa.'].includes(form.label)) &&
+    b00534.senses.some((sense) => /\b(?:kick|stamp)\b/i.test(sense.label)),
+  'the reviewed B00534 word, forms, links, provenance, or root mapping is incomplete'
+)
+for (const query of ['\u05d1\u05d8\u05e9', 'B00534', 'batash', 'betash', 'battash', 'botesh']) {
+  const results = searchHebrewCatalog(merged, query)
+  check(
+    results[0]?.sourceKey === 'jastrow:B00534' &&
+      selectAutoOpenSourceKey(results, query) === 'jastrow:B00534',
+    'an exact B00534 spelling or reviewed alias does not auto-open its source row',
+    query
+  )
+}
+for (const form of b00534.forms) {
+  const tier = getHebrewCatalogMatchTier(b00534, form.word)
+  check(
+    tier >= HEBREW_CATALOG_MATCH_TIER.sourceFormExactDisplayOnly &&
+      tier <= HEBREW_CATALOG_MATCH_TIER.sourceFormExact &&
+      selectAutoOpenSourceKey([b00534], form.word) === null,
+    'a B00534 source-listed stem form is not searchable as a closed result',
+    form.word
+  )
+}
+const genericBatashResults = searchHebrewCatalog(merged, 'butsha')
+check(
+  genericBatashResults.some((entry) => entry.sourceKey === 'jastrow:B00534') &&
+    genericBatashResults.length > 1 &&
+    selectAutoOpenSourceKey(genericBatashResults, 'butsha') === null,
+  'the hidden consonant fallback does not return an ambiguity-preserving B00534 result list'
+)
+const resolvedB00534 = resolveHebrewComparison(b00534, shardById.get(b00534.shard))
+check(
+  resolvedB00534.some((sense) => /\b(?:kick|stamp)\b/i.test(sense.label)) &&
+    resolvedB00534.every((sense) => sense.slots.length === 6),
+  'B00534 does not open a complete sense-specific comparison card'
 )
 
 const completeRoots = mergeAttestedRootCatalog(rootPayload, ROOTS)
@@ -845,6 +1002,20 @@ check(
     hasSource(bachashSourceRoot, 'B00486', 'hebrew-aramaic-unclassified'),
   'the reviewed B00486 mapping or its separate unclassified source root lost evidence'
 )
+const batashRoot = findAttestedRootExact(completeRoots, 'hebrew', '\u05d1\u05d8\u05e9')
+check(
+  batashRoot?.reviewedMapping?.status === 'reviewed modern Hebrew mapping' &&
+    batashRoot.sources.some((record) =>
+      record.source === 'academy-hebrew-terms' && record.sourceId === 'term-26889_1'
+    ) &&
+    batashRoot.attested.some((record) =>
+      record.word === '\u05d1\u05b8\u05bc\u05d8\u05b7\u05e9\u05c1' &&
+        /(?:strike|hit)/i.test(record.gloss)
+    ) &&
+    /unmarked/i.test(batashRoot.reviewedMapping.caveat) &&
+    /borrowed from Aramaic/i.test(batashRoot.reviewedMapping.caveat),
+  'the reviewed B00534 modern Hebrew root card lost its word, evidence, meaning, or provenance caveat'
+)
 
 for (const { entry, mention } of comparativeRootMentions) {
   const entryId = entry.id
@@ -905,6 +1076,20 @@ for (const alias of ['bachash', 'bakhash']) {
       entry.lc === 'he'
     ),
     'By meaning does not resolve the reviewed B00486 alias',
+    alias
+  )
+}
+for (const alias of ['batash', 'betash', 'battash', 'botesh', 'livtosh', 'bitesh']) {
+  const result = searchGlossIndex(glossIndex, alias)
+  check(
+    result.direct.some((entry) =>
+      entry.d === 'jastrow' &&
+      entry.i === 'B00534' &&
+      entry.lang === 'Hebrew' &&
+      entry.lc === 'he' &&
+      entry.x === 'b\u0259\u1e6da\u0161'
+    ),
+    'By meaning does not resolve a reviewed B00534 alias to the Hebrew result',
     alias
   )
 }

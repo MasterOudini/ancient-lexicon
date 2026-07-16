@@ -1,4 +1,10 @@
 import { normalize } from './search.js'
+import {
+  hasConsonantSearchMatch,
+  hebrewConsonantSearchKeys,
+  isLatinConsonantSearchQuery,
+  latinConsonantSearchKeys
+} from './hebrewSearchSpelling.js'
 
 // Shared by the build-time indexer and the browser resolver. These words do
 // not carry enough lexical meaning to be useful bridge keys. Number words are
@@ -108,7 +114,8 @@ export function searchGlossIndex(index, query, { recordId = null } = {}) {
   }
 
   const vocabulary = Object.keys(index.keywords)
-  const headRecordIds = forcedRecordId == null
+  let generatedHeadMatch = false
+  let headRecordIds = forcedRecordId == null
     ? index.heads?.[normalizedQuery] || []
     : [forcedRecordId]
   const queryWords = forcedRecordId == null ? englishKeywords(query) : []
@@ -125,6 +132,22 @@ export function searchGlossIndex(index, query, { recordId = null } = {}) {
     queryWords.push(normalizedQuery)
   }
   const exactEnglish = queryWords.filter((word) => index.keywords[word])
+  if (
+    forcedRecordId == null &&
+    headRecordIds.length === 0 &&
+    exactEnglish.length === 0 &&
+    isLatinConsonantSearchQuery(query)
+  ) {
+    const generatedKeys = latinConsonantSearchKeys(query)
+    headRecordIds = (index.hebrew?.spellingRecordIds || []).filter((candidateId) => {
+      const record = index.records[candidateId]
+      return hasConsonantSearchMatch(
+        [record?.[2], ...(record?.[10] || [])].flatMap(hebrewConsonantSearchKeys),
+        generatedKeys
+      )
+    })
+    generatedHeadMatch = headRecordIds.length > 0
+  }
   const hasHebrew = /[\u0590-\u05ff]/.test(query)
   const exactCuratedEnglish = exactEnglish.some((word) =>
     index.keywords[word].some((encoded) => {
@@ -153,8 +176,10 @@ export function searchGlossIndex(index, query, { recordId = null } = {}) {
         ? curatedHeadRecords
         : headRecordIds
     const termIds = new Set()
-    for (const recordId of pivotRecords) {
-      for (const termId of index.records[recordId]?.[5] || []) termIds.add(termId)
+    if (!generatedHeadMatch) {
+      for (const recordId of pivotRecords) {
+        for (const termId of index.records[recordId]?.[5] || []) termIds.add(termId)
+      }
     }
     termMatches = [...termIds].map((termId) => ({ key: vocabulary[termId], exact: true }))
   } else if (exactEnglish.length > 0) {

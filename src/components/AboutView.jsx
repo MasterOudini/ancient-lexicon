@@ -43,7 +43,7 @@ export default function AboutView() {
           outside the app&rsquo;s two-to-five-radical model.
           Source-derived cards retain their source IDs. A separately labeled
           reviewed mapping is added only when named evidence supports it, as
-          with Jastrow B00486 and the Academy of the Hebrew Language.
+          with Jastrow B00486 and B00534 against named modern Hebrew evidence.
         </p>
         <p>
           Comparative also has an &lsquo;All Hebrew&rsquo; layer containing all 18,992
@@ -53,7 +53,11 @@ export default function AboutView() {
           rows are visibly labeled Hebrew/Aramaic (unmarked), not asserted to
           be Hebrew. Explicit Aramaic-only rows stay in their correctly labeled
           reference and meaning-search areas; Arabic-marked rows stay available
-          in the Jastrow reference dictionary. Each
+          in the Jastrow reference dictionary. Source-listed Jastrow alternate
+          heads, plurals, and stem forms remain searchable, and its internal
+          dictionary links remain available without being promoted to roots.
+          Legacy headword links that lack a stable entry ID remain searchable
+          chips and are explicitly labeled unresolved instead of being guessed. Each
           source-distinct entry opens a sense-specific card with fixed slots
           for the same six ancient languages as the curated cards. English is
           shown only as explanatory bridge metadata, not as a comparison
@@ -90,6 +94,14 @@ export default function AboutView() {
           records an unresolved source relationship, not an invented answer.
         </p>
         <p>
+          When a Hebrew-script source supplies no Latin transliteration, search
+          may use a hidden consonant-spelling key to return an ambiguity-preserving
+          result list. That key is search assistance only: it is never displayed
+          as a scholarly transliteration, never creates a root, and never opens a
+          generic match automatically. Source-supplied pronunciations and
+          explicitly reviewed aliases rank above this fallback.
+        </p>
+        <p>
           A form tagged &lsquo;verify against corpus&rsquo; is conventional or
           uncertain and should be checked against corpus records (CAD, Wb.,
           TAD, DASI/CSAI, museum catalogues) before scholarly use. A language
@@ -105,8 +117,8 @@ export default function AboutView() {
           Results marked &lsquo;Verified/curated comparison&rsquo; come from the
           authoritative hand-curated card, including its intentional gaps.
           Jastrow rows without a printed origin fragment stay in their own
-          &lsquo;Hebrew/Aramaic (unclassified)&rsquo; meaning group; the reviewed B00486
-          bridge is the narrow, evidence-labeled exception shown under Hebrew.
+          &lsquo;Hebrew/Aramaic (unclassified)&rsquo; meaning group; reviewed B00486 and
+          B00534 bridges are narrow, evidence-labeled exceptions shown under Hebrew.
         </p>
         <p>{HEBREW_CAVEAT}</p>
         {LANGUAGES.map((l) => (
