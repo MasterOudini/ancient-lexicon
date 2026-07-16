@@ -71,7 +71,7 @@ function ComparisonCandidate({ candidate, language, compact = false }) {
       data-dictionary={candidate.dictionaryId}
       data-entry-id={candidate.entryId}
     >
-      <div className={`comparison-candidate-main${language.id === 'egyptian' ? ' plaque-body-egyptian' : ''}`}>
+      <div className={`comparison-candidate-main${candidate.script ? ' plaque-body-script' : ''}`}>
         {candidate.script && (
           <bdi
             className={`plaque-glyph ${language.fontClass}`}

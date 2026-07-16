@@ -1379,14 +1379,14 @@ details.langfields summary {
     max-width: 100%;
   }
 
-  /* Egyptian signs can paint wider than their font's measured advance in
-     mobile Safari. Give them a row of their own so they cannot cover the
+  /* Ancient-script glyphs can paint wider than their font's measured advance
+     in mobile Safari. Give them a row of their own so they cannot cover the
      transliteration or note. */
-  .plaque-body-egyptian {
+  .plaque-body-script {
     display: block;
   }
 
-  .plaque-body-egyptian .plaque-glyph {
+  .plaque-body-script .plaque-glyph {
     display: block;
     margin-bottom: 8px;
   }

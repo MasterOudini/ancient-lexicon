@@ -42,7 +42,7 @@ function Plaque({ language, form, strings }) {
         {eyebrow}
         {form.verify && <span className="tag-verify">{strings.verifyTag}</span>}
       </div>
-      <div className={`plaque-body${language.id === 'egyptian' ? ' plaque-body-egyptian' : ''}`}>
+      <div className={`plaque-body${glyphs ? ' plaque-body-script' : ''}`}>
         {glyphs && (
           <bdi
             className={`plaque-glyph ${language.fontClass}`}
