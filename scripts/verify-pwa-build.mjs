@@ -44,7 +44,7 @@ const releaseLegacyRootDatasetPath = join(
   `release-${expectedReleaseId}`,
   ...legacyRootDatasetUrl.split('/')
 )
-const legacyRootDatasetHash = '581c21283b566af75b075bd78e485017f4a28e433b861e64f6fa24532c4299ee'
+const legacyRootDatasetHash = '2677e7e20bd09640120e2a586306ae9fcf3ecfeb492c494f22c3dd386e22143d'
 const hebrewCatalogUrl = 'dicts/hebrew-catalog-2026-07-v2.json'
 const hebrewCatalogPath = join(distDir, ...hebrewCatalogUrl.split('/'))
 const releaseHebrewCatalogPath = join(
@@ -95,7 +95,11 @@ function verify(condition, message) {
 }
 
 function sha256(value) {
-  return createHash('sha256').update(value).digest('hex')
+  // Git may materialize tracked JSON with CRLF on Windows. Compare the
+  // canonical LF payload that Pages deploys, independently of checkout OS.
+  return createHash('sha256')
+    .update(Buffer.from(value.toString('utf8').replace(/\r\n/g, '\n')))
+    .digest('hex')
 }
 
 function versionedFamilyHash(directory) {
