@@ -141,16 +141,32 @@ try {
   }
 
   const styles = readFileSync(join(root, 'src', 'styles.css'), 'utf8')
+  const appSource = readFileSync(join(root, 'src', 'App.jsx'), 'utf8')
+  const documentRule = styles.match(/html,\s*body\s*\{([^}]+)\}/)?.[1] || ''
+  const rootRule = styles.match(/#root\s*\{([^}]+)\}/)?.[1] || ''
+  const shellRule = styles.match(/\.app-shell\s*\{([^}]+)\}/)?.[1] || ''
+  const scrollRule = styles.match(/\.app-scroll\s*\{([^}]+)\}/)?.[1] || ''
   const tabbarRule = styles.match(/\.tabbar\s*\{([^}]+)\}/)?.[1] || ''
-  const tabbarSkirtRule = styles.match(/\.tabbar::after\s*\{([^}]+)\}/)?.[1] || ''
-  assert.match(tabbarRule, /bottom:\s*0/)
-  assert.doesNotMatch(tabbarRule, /bottom:\s*calc\(100svh - 100dvh\)/)
+
+  assert.match(appSource, /className="app-shell"/)
+  assert.match(appSource, /className="app-scroll" data-app-scroll/)
+  assert.match(appSource, /<\/div>\s*<\/div>\s*<nav className="tabbar"/)
+  assert.match(documentRule, /height:\s*100%/)
+  assert.match(documentRule, /overflow:\s*hidden/)
+  assert.match(documentRule, /overscroll-behavior:\s*none/)
+  assert.match(rootRule, /height:\s*100dvh/)
+  assert.match(rootRule, /overflow:\s*hidden/)
+  assert.match(shellRule, /grid-template-rows:\s*minmax\(0,\s*1fr\) auto/)
+  assert.match(shellRule, /overflow:\s*hidden/)
+  assert.match(scrollRule, /min-height:\s*0/)
+  assert.match(scrollRule, /overflow-y:\s*auto/)
+  assert.match(scrollRule, /overscroll-behavior-y:\s*none/)
+  assert.match(tabbarRule, /position:\s*relative/)
   assert.match(tabbarRule, /padding:\s*6px 8px max\(6px, env\(safe-area-inset-bottom\)\)/)
-  assert.match(tabbarRule, /isolation:\s*isolate/)
-  assert.match(tabbarRule, /transform:\s*translateZ\(0\)/)
-  assert.match(tabbarSkirtRule, /top:\s*100%/)
-  assert.match(tabbarSkirtRule, /height:\s*100dvh/)
-  assert.match(tabbarSkirtRule, /background:\s*var\(--card\)/)
+  assert.doesNotMatch(tabbarRule, /position:\s*fixed/)
+  assert.doesNotMatch(tabbarRule, /\bbottom\s*:/)
+  assert.doesNotMatch(tabbarRule, /transform\s*:/)
+  assert.doesNotMatch(styles, /\.tabbar::after\s*\{/)
 
   const rootPayload = JSON.parse(
     readFileSync(

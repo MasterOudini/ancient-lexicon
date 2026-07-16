@@ -22,6 +22,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - run: npm run test:pwa-update
       - name: Build for a root deployment
         run: npm run build
         env:
